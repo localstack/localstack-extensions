@@ -156,7 +156,7 @@ packages = find:
 install_requires =
     localstack>=1.0.0
 
-[options.entrypoints]
+[options.entry_points]
 localstack.extensions =
     my_ready_annoucer = localstack_annoucer.extension:ReadyAnnoucerExtension
 ```
