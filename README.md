@@ -158,7 +158,7 @@ install_requires =
 
 [options.entrypoints]
 localstack.extensions =
-    my_ready_annoucer = localstack_annoucer.exension:ReadyAnnoucerExtension
+    my_ready_annoucer = localstack_annoucer.extension:ReadyAnnoucerExtension
 ```
 
 The entry point group is the Plux namespace `locastack.extensions`, and the
