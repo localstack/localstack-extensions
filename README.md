@@ -2,21 +2,21 @@
 
 With LocalStack 1.0 we have introduced LocalStack Extensions that allow
 developers to extend and customize LocalStack. Both the feature and the API
-are currently experimental.
+are currently experimental and may be subject to change.
 
 ## Using Extensions
 
 Extensions are a LocalStack Pro feature.
 To use and install extensions, use the CLI to first log in to your account
 
-```bash
-localstack login
+```console
+$ localstack login
 Please provide your login credentials below
-...
+Username: ...
 ```
 
-```bash
-localstack extensions --help
+```console
+$ localstack extensions --help
 
 Usage: localstack extensions [OPTIONS] COMMAND [ARGS]...
 
@@ -29,6 +29,20 @@ Commands:
   init       Initialize the LocalStack extensions environment
   install    Install a LocalStack extension
   uninstall  Remove a LocalStack extension
+```
+
+To install an extension, specify the name of the pip dependency that contains
+the extension. For example, for the official Stripe extension, you can either
+use the package distributed on pypi:
+
+```console
+$ localstack extensions install localstack-extensions-stripe
+```
+
+or you can install it directly from this git repository
+
+```console
+$ localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extensions-stripe&subdirectory=stripe"
 ```
 
 ## Developing Extensions
@@ -44,8 +58,9 @@ The basic interface to implement is as follows:
 ```python
 class Extension(BaseExtension):
     """
-    An extension that is loaded into LocalStack dynamically.
-    The method execution order of an extension is as follows:
+    An extension that is loaded into LocalStack dynamically. The method
+    execution order of an extension is as follows:
+
     - on_extension_load
     - on_platform_start
     - update_gateway_routes
@@ -55,8 +70,10 @@ class Extension(BaseExtension):
     """
 
     namespace: str = "localstack.extensions"
+    """The namespace of all basic localstack extensions."""
 
-    name: str # needs to be set by the subclass
+    name: str
+    """The unique name of the extension set by the implementing class."""
 
     def on_extension_load(self):
         """
@@ -107,7 +124,7 @@ from localstack.extensions.api import Extension
 LOG = logging.getLogger(__name__)
 
 class ReadyAnnoucerExtension(Extension):
-	name = "my_ready_annoucer"
+    name = "my_ready_annoucer"
 
     def on_platform_ready(self):
     	LOG.info("my plugin is laded and localstack is ready to roll!")
@@ -115,18 +132,20 @@ class ReadyAnnoucerExtension(Extension):
 
 ### Package your Extension
 
-LocalStack uses the [Plux](https://github.com/localstack/plux) code loading
-framework to load your code from a Python entrypoint. You can either use Plux
-to discover the entrypoints from your code, or manually define them.
+Your extensions needs to be packaged as a Python distribution with a
+`setup.cfg` or `setup.py` config. LocalStack uses the
+[Plux](https://github.com/localstack/plux) code loading framework to load your
+code from a Python [entry point](https://packaging.python.org/en/latest/specifications/entry-points/).
+You can either use Plux to discover the entrypoints from your code when
+building and publishing your distribution, or manually define them as in the
+example below.
 
-In any case, your extensions needs to be packaged as a Python distribution
-with a `setup.cfg` or `setup.py` config. A minimal `setup.cfg` for your
-extension would look like this:
+A minimal `setup.cfg` for the extension above could look like this:
 
-```toml
+```ini
 [metadata]
 name = localstack-extension-ready-announcer
-description = LocalStack Extension to annouce when localstack is Ready
+description = LocalStack extension that logs when LocalStack is ready to receive requests
 author = Your Name
 author_email = your@email.com
 url = https://link-to-your-project
@@ -136,4 +155,12 @@ zip_safe = False
 packages = find:
 install_requires =
     localstack>=1.0.0
+
+[options.entrypoints]
+localstack.extensions =
+    my_ready_annoucer = localstack_annoucer.exension:ReadyAnnoucerExtension
 ```
+
+The entry point group is the Plux namespace `locastack.extensions`, and the
+entry point name is the plugin name `my_ready_announcer`. The object
+reference points to the plugin class.
