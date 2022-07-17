@@ -1,6 +1,6 @@
 [tool.black]
 line_length = 100
-include = 'aws_replicator/.*'
+include = 'aws_replicator/.*\.py$'
 
 [tool.isort]
 profile = 'black'

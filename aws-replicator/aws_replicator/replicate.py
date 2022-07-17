@@ -43,15 +43,15 @@ SERVICE_RESOURCES = {
     },
 }
 
-# TODO: hack for now, to reduce the search time
+# TODO: hardcoded for now, to reduce the search time
 TMP_RESOURCE_TYPES = [
     # "AWS::Athena::WorkGroup", "AWS::Athena::DataCatalog", "AWS::CloudFront::Distribution",
     # "AWS::DynamoDB::Table",
     # "AWS::EC2::VPC",
     # "AWS::Lambda::EventSourceMapping",
     # "AWS::Lambda::Function",
-    "AWS::S3::Bucket",
-    # "AWS::SQS::Queue",
+    # "AWS::S3::Bucket",
+    "AWS::SQS::Queue",
     # "AWS::IAM::Role",
 ]
 

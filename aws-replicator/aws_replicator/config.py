@@ -1,3 +1,2 @@
-from localstack.constants import INTERNAL_RESOURCE_PATH
-
-HANDLER_PATH = f"{INTERNAL_RESOURCE_PATH}/aws-replicate"
+# handler path within the internal /_localstack endpoint
+HANDLER_PATH = "/aws-replicate"

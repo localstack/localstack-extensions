@@ -5,6 +5,7 @@ from typing import Any, Dict, Type, TypedDict
 import boto3
 import requests
 from localstack.config import get_edge_url
+from localstack.constants import INTERNAL_RESOURCE_PATH
 from localstack.services.cloudformation.models.dynamodb import DynamoDBTable
 from localstack.services.cloudformation.models.s3 import S3Bucket
 from localstack.services.cloudformation.models.sqs import SQSQueue
@@ -51,26 +52,45 @@ def load_resource_models():
 
 @extend(SQSQueue, "add_extended_state")
 def sqs_add_extended_state(self, state: Dict = None):
-    print("!!SQS add_extended_state", self, state)
+    queue_name = self.props["QueueName"]
 
     if state is None:
-        # call server from CLI
-        url = f"{get_edge_url()}{HANDLER_PATH}"
-        state = {}
+        # executing in the context of the CLI
 
         remote = boto3.client("sqs")
+        queue_url = remote.get_queue_url(QueueName=queue_name)["QueueUrl"]
 
+        messages = []
+        while True:
+            response = remote.receive_message(QueueUrl=queue_url, WaitTimeSeconds=1)
+            msgs = response.get("Messages")
+            if not msgs:
+                break
+            messages.extend(msgs)
+
+        state = {**self.props, "Messages": messages}
         request = ReplicateStateRequest(
             Type=self.cloudformation_type(),
             Properties=state,
-            PhysicalResourceId=self.get_physical_resource_id(),
+            PhysicalResourceId=queue_url,
         )
-        response = requests.post(url, data=json.dumps(request))
-        assert response.ok
+        _post_request(request)
         return
 
-    # TODO
-    print("insert!")
+    # executing in the context of the server
+    from localstack.aws.api.sqs import Message
+    from localstack.services.sqs.provider import SqsBackend
+
+    messages = state.get("Messages") or []
+    LOG.info("Inserting %s messages into queue", len(messages), queue_name)
+    for region, details in SqsBackend.regions().items():
+        queue = details.queues.get(queue_name)
+        if not queue:
+            continue
+        for message in messages:
+            message.setdefault("MD5OfMessageAttributes", None)
+            queue.put(Message(**message))
+        break
 
 
 @extend(DynamoDBTable, "add_extended_state")
@@ -103,6 +123,7 @@ def s3_add_extended_state(self, state: Dict = None):
     local = aws_stack.connect_to_resource("s3")
     remote_bucket = remote.Bucket(bucket_name)
     local_bucket = local.Bucket(bucket_name)
+    # TODO: make configurable
     max_object_size = 1000 * 1000
 
     def copy_object(obj):
@@ -112,3 +133,10 @@ def s3_add_extended_state(self, state: Dict = None):
         local_bucket.put_object(Key=obj.key, Body=obj.get()["Body"].read())
 
     parallelize(copy_object, list(remote_bucket.objects.all()), size=15)
+
+
+def _post_request(request: ReplicateStateRequest):
+    url = f"{get_edge_url()}{INTERNAL_RESOURCE_PATH}{HANDLER_PATH}"
+    response = requests.post(url, data=json.dumps(request))
+    assert response.ok
+    return response

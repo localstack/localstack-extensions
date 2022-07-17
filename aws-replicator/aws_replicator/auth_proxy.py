@@ -20,6 +20,9 @@ from localstack.utils.strings import to_str
 LOG = logging.getLogger(__name__)
 
 
+# TODO: not currently being used - needs to be integrated into the extension
+
+
 class AuthProxyAWS:
     def start(self):
         class Handler(ProxyListener):

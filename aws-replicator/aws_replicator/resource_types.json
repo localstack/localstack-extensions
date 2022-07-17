@@ -438,5 +438,5 @@
     {"TypeName": "TF::PagerDuty::Service"},
     {"TypeName": "TF::Random::String"},
     {"TypeName": "TF::Random::Uuid"},
-    {"TypeName": "TrendMicro::CloudOneContainer::Helm"},
+    {"TypeName": "TrendMicro::CloudOneContainer::Helm"}
 ]
