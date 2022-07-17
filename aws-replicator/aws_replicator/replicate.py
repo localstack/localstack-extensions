@@ -3,7 +3,7 @@ import logging
 import os
 import threading
 from copy import deepcopy
-from typing import Dict, List
+from typing import Dict, List, Type
 
 import boto3
 from localstack.services.cloudformation.provider import Stack
@@ -15,7 +15,7 @@ from localstack.utils.json import extract_jsonpath
 from localstack.utils.testutil import list_all_resources
 from localstack.utils.threads import parallelize
 
-from aws_replicator.service_states import load_resource_models
+from aws_replicator.service_states import ExtendedResourceStateReplicator
 
 LOG = logging.getLogger(__name__)
 
@@ -222,16 +222,18 @@ class ResourceReplicator:
 
     def add_extended_resource_state(self, resource: Dict, state: Dict = None):
         model_class = self._get_resource_model(resource)
-        if not hasattr(model_class, "add_extended_state"):
+        if not issubclass(model_class, ExtendedResourceStateReplicator):
             return
         model_instance = model_class(resource)
-        model_instance.add_extended_state(state)
+        if state is None:
+            return model_instance.add_extended_state_external()
+        return model_instance.add_extended_state_internal(state)
 
     def _resource_type(self, resource: Dict) -> str:
         res_type = resource.get("Type") or resource["TypeName"]
         return canonical_resource_type(res_type)
 
-    def _get_resource_model(self, resource: Dict) -> str:
+    def _get_resource_model(self, resource: Dict) -> Type:
         res_type = self._resource_type(resource)
         model_class = load_resource_models().get(res_type)
         if not model_class:
@@ -263,3 +265,14 @@ def replicate_state_into_local(services: List[str]):
     scraper = AwsAccountScraper(boto3.Session())
     creator = ResourceReplicator()
     return replicate_state(scraper, creator, services=services)
+
+
+def load_resource_models():
+    if not hasattr(template_deployer, "_ls_patch_applied"):
+        from localstack_ext.services.cloudformation.cloudformation_extended import (
+            patch_cloudformation,
+        )
+
+        patch_cloudformation()
+        template_deployer._ls_patch_applied = True
+    return template_deployer.RESOURCE_MODELS
