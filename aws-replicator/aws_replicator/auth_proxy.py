@@ -37,7 +37,13 @@ class AuthProxyAWS:
             return 400
         region_name, service_name = parsed
 
-        LOG.debug("Proxying request to %s (%s): %s %s", service_name, region_name, method, path)
+        LOG.debug(
+            "Proxying request to %s (%s): %s %s",
+            service_name,
+            region_name,
+            method,
+            path,
+        )
 
         path, _, query_string = path.partition("?")
         request = HttpRequest(

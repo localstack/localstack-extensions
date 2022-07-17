@@ -1,9 +1,9 @@
 import sys
+
 import click
-from localstack.cli import LocalstackCliPlugin, LocalstackCli
-from localstack_ext.bootstrap.licensing import is_logged_in
-from localstack.cli import console
+from localstack.cli import LocalstackCli, LocalstackCliPlugin, console
 from localstack.logging.setup import setup_logging
+from localstack_ext.bootstrap.licensing import is_logged_in
 
 
 class AwsReplicatorPlugin(LocalstackCliPlugin):
