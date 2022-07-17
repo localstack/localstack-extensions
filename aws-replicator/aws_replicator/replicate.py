@@ -34,6 +34,12 @@ SERVICE_RESOURCES = {
                 "$.Table.KeySchema",
                 "$.Table.LocalSecondaryIndexes",
                 "$.Table.GlobalSecondaryIndexes",
+                {
+                    "GlobalSecondaryIndexes": lambda params: [
+                        select_attributes(p, ["IndexName", "KeySchema", "Projection"])
+                        for p in params["Table"].get("GlobalSecondaryIndexes", [])
+                    ]
+                },
                 {"BillingMode": "PAY_PER_REQUEST"},
                 "$.Table.StreamSpecification",
                 "$.Table.Tags",
@@ -42,18 +48,6 @@ SERVICE_RESOURCES = {
         },
     },
 }
-
-# TODO: hardcoded for now, to reduce the search time
-TMP_RESOURCE_TYPES = [
-    # "AWS::Athena::WorkGroup", "AWS::Athena::DataCatalog", "AWS::CloudFront::Distribution",
-    # "AWS::DynamoDB::Table",
-    # "AWS::EC2::VPC",
-    # "AWS::Lambda::EventSourceMapping",
-    # "AWS::Lambda::Function",
-    # "AWS::S3::Bucket",
-    "AWS::SQS::Queue",
-    # "AWS::IAM::Role",
-]
 
 
 class AwsAccountScraper:
@@ -170,7 +164,7 @@ class AwsAccountScraper:
         result = []
         for _resource in res_list:
             props = {}
-            props_mapping = details.get("props")
+            props_mapping = details.get("props") or {}
             for prop_key, prop_val in props_mapping.items():
                 if "$" in prop_val:
                     props[prop_key] = extract_jsonpath(_resource, prop_val)
@@ -187,6 +181,8 @@ class AwsAccountScraper:
                     if isinstance(res_field, dict):
                         field_name = list(res_field.keys())[0]
                         field_value = list(res_field.values())[0]
+                        if callable(field_value):
+                            field_value = field_value(res_details)
                     else:
                         field_name = res_field.split(".")[-1]
                         field_value = extract_jsonpath(res_details, res_field)
@@ -243,7 +239,9 @@ class ResourceReplicator:
         return model_class
 
 
-def replicate_state(scraper: AwsAccountScraper, creator: ResourceReplicator):
+def replicate_state(
+    scraper: AwsAccountScraper, creator: ResourceReplicator, services: List[str] = None
+):
     """Replicate the state from a source AWS account into a target account (or LocalStack)"""
 
     res_types = scraper.get_resource_types()
@@ -251,15 +249,17 @@ def replicate_state(scraper: AwsAccountScraper, creator: ResourceReplicator):
 
     for res_type in res_types:
         type_name = res_type["TypeName"]
-        if TMP_RESOURCE_TYPES and type_name not in TMP_RESOURCE_TYPES:
-            continue
+        if services:
+            service_name = type_name.removeprefix("AWS::").lower().split("::")[0]
+            if service_name not in services:
+                continue
         resources = scraper.get_resources(type_name)
         LOG.info("Found %s resources of type %s", len(resources), type_name)
         for resource in resources:
             creator.create(resource)
 
 
-def replicate_state_into_local():
+def replicate_state_into_local(services: List[str]):
     scraper = AwsAccountScraper(boto3.Session())
     creator = ResourceReplicator()
-    return replicate_state(scraper, creator)
+    return replicate_state(scraper, creator, services=services)

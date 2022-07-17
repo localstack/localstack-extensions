@@ -34,8 +34,15 @@ def cmd_aws_proxy():
 
 
 @aws.command(name="replicate", help="Replicate the state of an AWS account into LocalStack")
-def cmd_aws_replicate():
+@click.option(
+    "-s",
+    "--services",
+    help="Comma-delimited list of services to replicate (e.g., sqs,s3)",
+    required=True,
+)
+def cmd_aws_replicate(services: str):
     from aws_replicator.replicate import replicate_state_into_local
 
     setup_logging()
-    replicate_state_into_local()
+    services = [s.strip().lower() for s in services.split(",") if s.strip()]
+    replicate_state_into_local(services)
