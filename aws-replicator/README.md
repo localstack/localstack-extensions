@@ -8,6 +8,7 @@ A LocalStack extension to replicate AWS resources into your local machine.
 ## Overview
 
 The figure below illustrates how the extension can be used to replicate the state, e.g., an SQS queue and the messages contained in it, from AWS into your LocalStack instance.
+
 ![overview](etc/aws-replicate-overview.png)
 
 ## Installing
