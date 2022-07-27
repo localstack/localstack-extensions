@@ -1,22 +1,18 @@
-import json
-
-from localstack.http import Request, Response
+from localstack.http import Request
+from localstack.http.dispatcher import Handler, ResultValue
 
 from aws_replicator.replicate import ResourceReplicator
 from aws_replicator.service_states import ReplicateStateRequest
 
 
-class RequestHandler:
+class RequestHandler(Handler):
     def on_post(self, request: Request):
         return self.__call__(request)
 
-    def __call__(self, request: Request, **kwargs) -> Response:
-        if request.method != "POST":
-            return Response(status=404)
-        content = json.loads(request.get_data(as_text=True))
-        req = ReplicateStateRequest(**content)
+    def __call__(self, request: Request, **kwargs) -> ResultValue:
+        req = ReplicateStateRequest(**request.json)
         result = handle_replicate_request(req) or {}
-        return Response(json.dumps(result))
+        return result
 
 
 def handle_replicate_request(request: ReplicateStateRequest):

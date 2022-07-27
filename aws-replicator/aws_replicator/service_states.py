@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Any, Dict, Type, TypedDict
 
@@ -146,6 +145,6 @@ class StateReplicatorS3Bucket(ExtendedResourceStateReplicator):
 
 def _post_request_to_instance(request: ReplicateStateRequest):
     url = f"{get_edge_url()}{INTERNAL_RESOURCE_PATH}{HANDLER_PATH}"
-    response = requests.post(url, data=json.dumps(request))
+    response = requests.post(url, json=request)
     assert response.ok
     return response
