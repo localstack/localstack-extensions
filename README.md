@@ -51,7 +51,7 @@ $ localstack extensions install "git+https://github.com/localstack/localstack-ex
 
 LocalStack exposes a Python API for building extensions that can be found in
 the core codebase in
-[`localstack.extensions.api`](https://github.com/localstack/localstack/tree/v1/localstack/extensions/api).
+[`localstack.extensions.api`](https://github.com/localstack/localstack/tree/master/localstack/extensions/api).
 
 The basic interface to implement is as follows:
 
@@ -127,7 +127,7 @@ class ReadyAnnoucerExtension(Extension):
     name = "my_ready_annoucer"
 
     def on_platform_ready(self):
-    	LOG.info("my plugin is laded and localstack is ready to roll!")
+    	LOG.info("my plugin is loaded and localstack is ready to roll!")
 ```
 
 ### Package your Extension
