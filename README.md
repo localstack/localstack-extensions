@@ -168,3 +168,80 @@ localstack.extensions =
 The entry point group is the Plux namespace `locastack.extensions`, and the
 entry point name is the plugin name `my_ready_announcer`. The object
 reference points to the plugin class.
+
+
+### Using the extensions CLI
+
+The extensions CLI has a set of developer commands that allow you to create new extensions, and toggle local dev mode for extensions.
+Extensions that are toggled for developer mode will be mounted into the localstack container so you don't need to re-install them every time you change something.
+
+```console
+Usage: localstack extensions dev [OPTIONS] COMMAND [ARGS]...
+
+  Developer tools for developing Localstack extensions
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  disable  Disables an extension on the host for developer mode.
+  enable   Enables an extension on the host for developer mode.
+  list     List LocalStack extensions for which dev mode is enabled.
+  new      Create a new LocalStack extension from the official extension...
+```
+
+#### Creating a new extensions
+
+First, create a new extensions from a template:
+
+```console
+ % localstack extensions dev new
+project_name [My LocalStack Extension]: 
+project_short_description [All the boilerplate you need to create a LocalStack extension.]: 
+project_slug [my-localstack-extension]: 
+module_name [my_localstack_extension]: 
+full_name [Jane Doe]: 
+email [jane@example.com]: 
+github_username [janedoe]: 
+version [0.1.0]: 
+```
+
+This will create a new python project with the following layout:
+
+```
+my-localstack-extension
+├── Makefile
+├── my_localstack_extension
+│   ├── extension.py
+│   └── __init__.py
+├── README.md
+├── setup.cfg
+└── setup.py
+```
+
+Then run `make install` in the newly created project to make a distribution package.
+
+#### Start LocalStack with the extension
+
+To start LocalStack with the extension in dev mode, first enable it by running:
+
+```console
+localstack extensions dev enable ./my-localstack-extension
+```
+
+Then, start LocalStack with `EXTENSIONS_DEV_MODE=1`
+
+```console
+EXTENSION_DEV_MODE=1 LOCALSTACK_API_KEY=... localstack start
+```
+
+In the LocalStack logs you should then see something like:
+```
+==================================================
+👷 LocalStack extension developer mode enabled 🏗
+- mounting extension /opt/code/extensions/my-localstack-extension
+Resuming normal execution, ...
+==================================================
+```
+
+Now, when you make changes to your extensions, you just need to restart LocalStack and the changes will be picked up by LocalStack automatically.
