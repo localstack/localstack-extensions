@@ -1,8 +1,8 @@
 from localstack.http import Request
 from localstack.http.dispatcher import Handler, ResultValue
 
-from aws_replicator.replicate import ResourceReplicator
-from aws_replicator.service_states import ReplicateStateRequest
+from aws_replicator.client.service_states import ReplicateStateRequest
+from aws_replicator.server.resource_replicator import ResourceReplicatorServer
 
 
 class RequestHandler(Handler):
@@ -16,5 +16,5 @@ class RequestHandler(Handler):
 
 
 def handle_replicate_request(request: ReplicateStateRequest):
-    replicator = ResourceReplicator()
-    return replicator.add_extended_resource_state(request, state=request["Properties"])
+    replicator = ResourceReplicatorServer()
+    return replicator.create(request)

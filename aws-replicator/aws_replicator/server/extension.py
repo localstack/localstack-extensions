@@ -11,7 +11,7 @@ class AwsReplicatorExtension(Extension):
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
         from aws_replicator.config import HANDLER_PATH
-        from aws_replicator.server import RequestHandler
+        from aws_replicator.server.request_handler import RequestHandler
 
         LOG.info("AWS resource replicator: adding routes to activate extension")
         endpoint = RequestHandler()

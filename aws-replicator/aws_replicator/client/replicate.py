@@ -3,22 +3,28 @@ import logging
 import os
 import threading
 from copy import deepcopy
-from typing import Dict, List, Type
+from typing import Dict, List
 
 import boto3
-from localstack.services.cloudformation.provider import Stack
 from localstack.utils.cloudformation import template_deployer
 from localstack.utils.cloudformation.template_deployer import canonical_resource_type
 from localstack.utils.collections import select_attributes
 from localstack.utils.files import load_file, save_file
 from localstack.utils.json import extract_jsonpath
-from localstack.utils.testutil import list_all_resources
 from localstack.utils.threads import parallelize
 
-from aws_replicator.service_states import ExtendedResourceStateReplicator
+from aws_replicator.client.utils import post_request_to_instance
+from aws_replicator.shared.models import (
+    ExtendedResourceStateReplicator,
+    ReplicateStateRequest,
+    ResourceReplicator,
+)
+from aws_replicator.shared.utils import list_all_resources
 
 LOG = logging.getLogger(__name__)
 
+# maximum number of pages to fetch for paginated APIs
+MAX_PAGES = 3
 
 # additional service resources that are currently not yet supported by Cloud Control
 SERVICE_RESOURCES = {
@@ -44,6 +50,19 @@ SERVICE_RESOURCES = {
                 "$.Table.StreamSpecification",
                 "$.Table.Tags",
                 "$.Table.TableClass",
+            ],
+        },
+    },
+    "SSM::Parameter": {
+        "list_operation": "describe_parameters",
+        "results": "$.Parameters",
+        "fetch_details": {
+            "operation": "get_parameter",
+            "parameters": {"Name": "$.Name"},
+            "results": [
+                "$.Parameter.Name",
+                "$.Parameter.Type",
+                "$.Parameter.Value",
             ],
         },
     },
@@ -91,8 +110,11 @@ class AwsAccountScraper:
 
     def get_resources(self, resource_type: str) -> List[Dict]:
         result = []
-        result += self.get_resources_cloudcontrol(resource_type)
-        result += self.get_resources_custom(resource_type)
+        try:
+            result += self.get_resources_cloudcontrol(resource_type)
+            result += self.get_resources_custom(resource_type)
+        except Exception as e:
+            LOG.info("Unable to fetch resources of type %s: %s", resource_type, e)
         return result
 
     def get_resources_cloudcontrol(self, resource_type: str) -> List[Dict]:
@@ -103,6 +125,7 @@ class AwsAccountScraper:
                 lambda kwargs: cloudcontrol.list_resources(TypeName=resource_type),
                 last_token_attr_name="NextToken",
                 list_attr_name="ResourceDescriptions",
+                max_pages=MAX_PAGES,
             )
 
             # fetch the detailed resource descriptions
@@ -147,10 +170,6 @@ class AwsAccountScraper:
             return []
 
         resource_type = canonical_resource_type(resource_type)
-        model_class = load_resource_models().get(resource_type)
-        if not model_class:
-            return []
-
         service_name = template_deployer.get_service_name({"Type": resource_type})
         from_client = boto3.client(service_name)
 
@@ -195,50 +214,16 @@ class AwsAccountScraper:
         return result
 
 
-class ResourceReplicator:
-    """Utility that creates resources from CloudFormation/CloudControl templates."""
-
+class ResourceReplicatorClient(ResourceReplicator):
     def create(self, resource: Dict):
-        model_class = self._get_resource_model(resource)
-        if not model_class:
-            return
+        # request creation via server
+        request = ReplicateStateRequest(**resource)
+        post_request_to_instance(request)
 
-        res_type = self._resource_type(resource)
-        res_json = {"Type": res_type, "Properties": resource["Properties"]}
-        LOG.debug("Deploying CloudFormation resource: %s", res_json)
-
-        # note: quick hack for now - creating a fake Stack for each individual resource to be deployed
-        stack = Stack({"StackName": "s1"})
-        stack.template_resources["myres"] = res_json
-        resource_status = template_deployer.retrieve_resource_details("myres", {}, stack)
-
-        if not resource_status:
-            # deploy resource, if it doesn't exist yet
-            template_deployer.deploy_resource(stack, "myres")
-            # TODO: need to ensure that the ID of the created resource also matches!
-
-        # add extended state (e.g., actual S3 objects)
-        self.add_extended_resource_state(res_json)
-
-    def add_extended_resource_state(self, resource: Dict, state: Dict = None):
-        model_class = self._get_resource_model(resource)
-        if not issubclass(model_class, ExtendedResourceStateReplicator):
-            return
-        model_instance = model_class(resource)
-        if state is None:
-            return model_instance.add_extended_state_external()
-        return model_instance.add_extended_state_internal(state)
-
-    def _resource_type(self, resource: Dict) -> str:
-        res_type = resource.get("Type") or resource["TypeName"]
-        return canonical_resource_type(res_type)
-
-    def _get_resource_model(self, resource: Dict) -> Type:
-        res_type = self._resource_type(resource)
-        model_class = load_resource_models().get(res_type)
-        if not model_class:
-            LOG.info("Unable to find CloudFormation model class for resource: %s", res_type)
-        return model_class
+        # add extended state attributes
+        model_instance = ExtendedResourceStateReplicator.get_resource_instance(resource)
+        if model_instance:
+            model_instance.add_extended_state_external()
 
 
 def replicate_state(
@@ -263,16 +248,5 @@ def replicate_state(
 
 def replicate_state_into_local(services: List[str]):
     scraper = AwsAccountScraper(boto3.Session())
-    creator = ResourceReplicator()
+    creator = ResourceReplicatorClient()
     return replicate_state(scraper, creator, services=services)
-
-
-def load_resource_models():
-    if not hasattr(template_deployer, "_ls_patch_applied"):
-        from localstack_ext.services.cloudformation.cloudformation_extended import (
-            patch_cloudformation,
-        )
-
-        patch_cloudformation()
-        template_deployer._ls_patch_applied = True
-    return template_deployer.RESOURCE_MODELS

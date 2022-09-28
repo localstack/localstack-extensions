@@ -7,4 +7,7 @@ lint:            ## Run code linter to check code style
 format:          ## Run black and isort code formatter
 	python -m isort . ; python -m black .
 
-.PHONY: lint usage
+entrypoints:
+	python setup.py egg_info
+
+.PHONY: lint usage format entrypoints

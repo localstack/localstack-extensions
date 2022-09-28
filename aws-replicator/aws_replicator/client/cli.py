@@ -24,7 +24,7 @@ def aws():
 
 @aws.command(name="proxy", help="Start up an authentication proxy against real AWS")
 def cmd_aws_proxy():
-    from aws_replicator.auth_proxy import start_aws_auth_proxy
+    from aws_replicator.client.auth_proxy import start_aws_auth_proxy
 
     try:
         start_aws_auth_proxy()
@@ -41,7 +41,7 @@ def cmd_aws_proxy():
     required=True,
 )
 def cmd_aws_replicate(services: str):
-    from aws_replicator.replicate import replicate_state_into_local
+    from aws_replicator.client.replicate import replicate_state_into_local
 
     setup_logging()
     services = [s.strip().lower() for s in services.split(",") if s.strip()]
