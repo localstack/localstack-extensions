@@ -1,4 +1,3 @@
-import json
 import logging
 import re
 from typing import Optional, Tuple
@@ -17,10 +16,10 @@ from localstack.utils.bootstrap import setup_logging
 from localstack.utils.net import get_free_tcp_port
 from localstack.utils.strings import to_str
 
+from aws_replicator.config import HANDLER_PATH_PROXIES
+from aws_replicator.shared.models import AddProxyRequest
+
 LOG = logging.getLogger(__name__)
-
-
-# TODO: not currently being used - needs to be integrated into the extension
 
 
 class AuthProxyAWS:
@@ -31,6 +30,7 @@ class AuthProxyAWS:
 
         self.port = get_free_tcp_port()
         self.register_in_instance()
+        # TODO: change to using Gateway!
         proxy = start_proxy_server(self.port, update_listener=Handler())
         proxy.join()
 
@@ -73,21 +73,27 @@ class AuthProxyAWS:
         signer.add_auth(aws_request)
 
         # send request to upstream AWS
+        LOG.debug("Sending request for service %s to AWS: %s %s", service_name, method, url)
         response = requests.request(method=method, url=url, data=data, headers=aws_request.headers)
+        LOG.debug(
+            "Received response for service %s from AWS: %s", service_name, response.status_code
+        )
         return response
 
     def register_in_instance(self):
         port = getattr(self, "port", None)
         if not port:
             raise Exception("Proxy currently not running")
-        url = f"{get_edge_url()}{INTERNAL_RESOURCE_PATH}/aws/proxies"
-        data = json.dumps({"port": port})
+        url = f"{get_edge_url()}{INTERNAL_RESOURCE_PATH}{HANDLER_PATH_PROXIES}"
+        data = AddProxyRequest(port=port, services=["s3"])
         try:
-            response = requests.post(url, data=data)
+            response = requests.post(url, json=data)
             assert response.ok
             return response
         except Exception:
-            LOG.warning("Unable to register auth proxy - is LocalStack running?")
+            LOG.warning(
+                "Unable to register auth proxy - is LocalStack running with the extension enabled?"
+            )
             raise
 
     def _parse_aws_request(self, request, service_name, region_name, client):

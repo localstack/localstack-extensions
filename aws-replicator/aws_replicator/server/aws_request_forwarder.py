@@ -1,72 +1,55 @@
-import json
 import logging
+from typing import Dict
 
 import requests
-from flask import Response as FlaskResponse
 from localstack import config
+from localstack.aws.api import RequestContext
+from localstack.aws.chain import Handler, HandlerChain
 from localstack.constants import LOCALHOST
-from localstack.services.edge import PROXY_LISTENER_EDGE
-from localstack.services.internal import get_internal_apis
-from localstack.utils.patch import patch
-from localstack.utils.strings import to_str
-from requests import Response as RequestsResponse
+from localstack.http import Response
 
 LOG = logging.getLogger(__name__)
 
 
-# TODO: outdated / not currently being used - needs to be adjusted to new Gateway
+class AwsProxyHandler(Handler):
 
+    # maps port numbers to proxy instances
+    PROXY_INSTANCES: Dict[int, Dict] = {}
 
-class AwsProxyInstancesResource:
-    """Resource for the /_localstack/aws/proxies endpoint."""
+    def __call__(self, chain: HandlerChain, context: RequestContext, response: Response):
+        if not self.should_forward(context):
+            return
+        response = self.forward_request(context)
+        if response is None:
+            return
+        # set response details, then stop handler chain to return response
+        chain.response.data = response.content
+        chain.response.status_code = response.status_code
+        chain.response.headers.update(dict(response.headers))
+        chain.stop()
 
-    PROXY_INSTANCES = {}
-
-    def on_post(self, request):
-        data = json.loads(to_str(request.data))
-        port = data["port"]
-        self.PROXY_INSTANCES[port] = data
-        return {}
-
-
-def add_edge_routes():
-    proxy_resource = AwsProxyInstancesResource()
-    get_internal_apis().add("/aws/proxies", proxy_resource)
-
-    def should_forward(result, method, path, data, headers) -> bool:
-        if not AwsProxyInstancesResource.PROXY_INSTANCES:
+    def should_forward(self, context: RequestContext) -> bool:
+        if not self.PROXY_INSTANCES:
             return False
-        # simple heuristic to determine whether a request is "not found" and should be forwarded to real AWS
-        not_found_codes = [400, 404]
-        not_found_strings = ["does not exist", "ResourceNotFound"]
-        try:
-            status_code = content = result
-            if isinstance(result, (RequestsResponse, FlaskResponse)):
-                status_code = result.status_code
-                content = result.content
-            if status_code not in not_found_codes:
-                return False
-            data_str = str(content)
-            return any(nfs in data_str for nfs in not_found_strings)
-        except Exception:
-            return False
+        # simple heuristic to determine whether a request should be forwarded to real AWS
 
-    def forward_request(result, method, path, data, headers):
-        proxy_instances = AwsProxyInstancesResource.PROXY_INSTANCES
+        # TODO
+        if context.service.service_name == "s3":
+            return True
+
+    def forward_request(self, context: RequestContext):
+        proxy_instances = self.PROXY_INSTANCES
         port = next(iter(proxy_instances.keys()))
         target_host = config.DOCKER_HOST_FROM_CONTAINER if config.is_in_docker else LOCALHOST
-        url = f"http://{target_host}:{port}{path}"
+        request = context.request
+        url = f"http://{target_host}:{port}{request.path}"
+        result = None
         try:
-            result = requests.request(method=method, url=url, data=data, headers=headers)
+            result = requests.request(
+                method=request.method, url=url, data=request.data, headers=request.headers
+            )
         except requests.exceptions.ConnectionError:
             # remove unreachable proxy
             LOG.info("Removing unreachable AWS forward proxy due to connection issue: %s", url)
             proxy_instances.pop(port, None)
-        return result
-
-    @patch(PROXY_LISTENER_EDGE.forward_request)
-    def forward(self, fn, method, path, data, headers):
-        result = fn(method, path, data, headers)
-        if should_forward(result, method, path, data, headers):
-            result = forward_request(result, method, path, data, headers)
         return result
