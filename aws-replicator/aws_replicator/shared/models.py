@@ -64,12 +64,16 @@ class ResourceReplicator(ABC):
         """Create the resource specified via the given resource dict."""
 
 
-class AddProxyRequest(TypedDict):
-    """
-    Represents a request to register a new local proxy instance with the extension inside LocalStack.
-    """
+class ProxyInstance(TypedDict):
+    """Represents a proxy instance"""
 
     # port of the proxy on the host
     port: int
     # name of AWS services to proxy
     services: List[str]
+
+
+class AddProxyRequest(ProxyInstance):
+    """
+    Represents a request to register a new local proxy instance with the extension inside LocalStack.
+    """

@@ -1,12 +1,16 @@
+import json
 import logging
-from typing import Dict
+from typing import Dict, Optional
 
 import requests
 from localstack import config
 from localstack.aws.api import RequestContext
 from localstack.aws.chain import Handler, HandlerChain
-from localstack.constants import LOCALHOST
+from localstack.constants import APPLICATION_JSON, LOCALHOST
 from localstack.http import Response
+from requests.structures import CaseInsensitiveDict
+
+from aws_replicator.shared.models import ProxyInstance
 
 LOG = logging.getLogger(__name__)
 
@@ -14,12 +18,13 @@ LOG = logging.getLogger(__name__)
 class AwsProxyHandler(Handler):
 
     # maps port numbers to proxy instances
-    PROXY_INSTANCES: Dict[int, Dict] = {}
+    PROXY_INSTANCES: Dict[int, ProxyInstance] = {}
 
     def __call__(self, chain: HandlerChain, context: RequestContext, response: Response):
-        if not self.should_forward(context):
+        proxy = self.select_proxy(context)
+        if not proxy:
             return
-        response = self.forward_request(context)
+        response = self.forward_request(context, proxy)
         if response is None:
             return
         # set response details, then stop handler chain to return response
@@ -28,28 +33,35 @@ class AwsProxyHandler(Handler):
         chain.response.headers.update(dict(response.headers))
         chain.stop()
 
-    def should_forward(self, context: RequestContext) -> bool:
-        if not self.PROXY_INSTANCES:
-            return False
-        # simple heuristic to determine whether a request should be forwarded to real AWS
+    def select_proxy(self, context: RequestContext) -> Optional[ProxyInstance]:
+        """select a proxy responsible to forward a request to real AWS"""
 
-        # TODO
-        if context.service.service_name == "s3":
-            return True
+        for port, proxy in self.PROXY_INSTANCES.items():
+            if context.service.service_name in proxy["services"]:
+                return proxy
 
-    def forward_request(self, context: RequestContext):
-        proxy_instances = self.PROXY_INSTANCES
-        port = next(iter(proxy_instances.keys()))
+    def forward_request(self, context: RequestContext, proxy: ProxyInstance):
+        port = proxy["port"]
         target_host = config.DOCKER_HOST_FROM_CONTAINER if config.is_in_docker else LOCALHOST
         request = context.request
         url = f"http://{target_host}:{port}{request.path}"
         result = None
         try:
+            headers = CaseInsensitiveDict(dict(request.headers))
+            headers.pop("Host", None)
+            ctype = headers.get("Content-Type")
+            data = b""
+            if ctype == APPLICATION_JSON:
+                data = json.dumps(request.json)
+            elif request.form:
+                data = request.form
+            elif request.data:
+                data = request.data
             result = requests.request(
-                method=request.method, url=url, data=request.data, headers=request.headers
+                method=request.method, url=url, data=data, headers=dict(headers)
             )
         except requests.exceptions.ConnectionError:
             # remove unreachable proxy
             LOG.info("Removing unreachable AWS forward proxy due to connection issue: %s", url)
-            proxy_instances.pop(port, None)
+            self.PROXY_INSTANCES.pop(port, None)
         return result

@@ -1,3 +1,4 @@
+import re
 import sys
 
 import click
@@ -23,11 +24,18 @@ def aws():
 
 
 @aws.command(name="proxy", help="Start up an authentication proxy against real AWS")
-def cmd_aws_proxy():
+@click.option(
+    "-s",
+    "--services",
+    help="Comma-delimited list of services to replicate (e.g., sqs,s3)",
+    required=True,
+)
+def cmd_aws_proxy(services: str):
     from aws_replicator.client.auth_proxy import start_aws_auth_proxy
 
     try:
-        start_aws_auth_proxy()
+        services = _split_string(services)
+        start_aws_auth_proxy(services)
     except Exception as e:
         console.print("Unable to start and register auth proxy: %s" % e)
         sys.exit(1)
@@ -44,5 +52,9 @@ def cmd_aws_replicate(services: str):
     from aws_replicator.client.replicate import replicate_state_into_local
 
     setup_logging()
-    services = [s.strip().lower() for s in services.split(",") if s.strip()]
+    services = _split_string(services)
     replicate_state_into_local(services)
+
+
+def _split_string(string):
+    return [s.strip().lower() for s in re.split(r"[\s,]+", string) if s.strip()]

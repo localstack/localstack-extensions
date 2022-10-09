@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import boto3
 import requests
@@ -23,6 +23,9 @@ LOG = logging.getLogger(__name__)
 
 
 class AuthProxyAWS:
+    def __init__(self, services: List[str]):
+        self.services = services
+
     def start(self):
         class Handler(ProxyListener):
             def forward_request(_self, method, path, data, headers):
@@ -74,18 +77,24 @@ class AuthProxyAWS:
 
         # send request to upstream AWS
         LOG.debug("Sending request for service %s to AWS: %s %s", service_name, method, url)
-        response = requests.request(method=method, url=url, data=data, headers=aws_request.headers)
-        LOG.debug(
-            "Received response for service %s from AWS: %s", service_name, response.status_code
-        )
-        return response
+        try:
+            response = requests.request(
+                method=method, url=url, data=data, headers=aws_request.headers
+            )
+            LOG.debug(
+                "Received response for service %s from AWS: %s", service_name, response.status_code
+            )
+            return response
+        except Exception as e:
+            LOG.debug("Error when making request to AWS service %s: %s", service_name, e)
+            return 400
 
     def register_in_instance(self):
         port = getattr(self, "port", None)
         if not port:
             raise Exception("Proxy currently not running")
         url = f"{get_edge_url()}{INTERNAL_RESOURCE_PATH}{HANDLER_PATH_PROXIES}"
-        data = AddProxyRequest(port=port, services=["s3"])
+        data = AddProxyRequest(port=port, services=self.services)
         try:
             response = requests.post(url, json=data)
             assert response.ok
@@ -134,7 +143,7 @@ class AuthProxyAWS:
         return parts[2], parts[3]
 
 
-def start_aws_auth_proxy():
+def start_aws_auth_proxy(services: List[str]):
     setup_logging()
-    proxy = AuthProxyAWS()
+    proxy = AuthProxyAWS(services)
     proxy.start()
