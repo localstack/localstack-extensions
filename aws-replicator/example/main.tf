@@ -1,3 +1,4 @@
+
 resource "aws_lambda_function" "test" {
   function_name = "func1"
   role          = "r1"

@@ -131,3 +131,5 @@ dmypy.json
 # IDE files
 .idea
 .vscode
+
+node_modules/

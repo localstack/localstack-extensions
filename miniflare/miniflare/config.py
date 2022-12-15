@@ -1,0 +1,1 @@
+HANDLER_PATH_MINIFLARE = "/miniflare"
