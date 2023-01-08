@@ -1,7 +1,9 @@
-Miniflare LocalStack extension
-================================
+Miniflare LocalStack extension (experimental)
+=============================================
 
 This extension makes [Miniflare](https://miniflare.dev) (dev environment for Cloudflare workers) available directly in LocalStack!
+
+⚠️ Please note that this extension is experimental and currently under active development.
 
 ## Installing
 

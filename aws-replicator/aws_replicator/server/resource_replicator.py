@@ -1,9 +1,9 @@
 import logging
 from typing import Dict, Optional, Type
 
+from localstack.services.cloudformation.engine import template_deployer
+from localstack.services.cloudformation.engine.template_deployer import canonical_resource_type
 from localstack.services.cloudformation.provider import Stack
-from localstack.utils.cloudformation import template_deployer
-from localstack.utils.cloudformation.template_deployer import canonical_resource_type
 
 from aws_replicator.client.service_states import ExtendedResourceStateReplicator
 from aws_replicator.shared.models import ResourceReplicator
