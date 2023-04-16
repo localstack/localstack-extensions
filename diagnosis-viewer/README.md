@@ -26,6 +26,11 @@ Make sure to also set `DEBUG=1` so the diagnose endpoint necessary to populate t
 EXTENSION_DEV_MODE=1 DEBUG=1 localstack start
 ```
 
+## Access Diagnosis Data
+
+The extension is a web UI for the diagnosis endpoint of LocalStack, which is enabled when LocalStack is started with `DEBUG=1` and available at `curl -s localhost:4566/_localstack/diagnose`.
+The web UI can then be reached at `http://localhost:4566/diapretty`.
+
 ## Install from GitHub repository
 
 To distribute your extension, simply upload it to your github account. Your extension can then be installed via:
