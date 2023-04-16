@@ -19,10 +19,11 @@ Then, to enable the extension for LocalStack, run
 localstack extensions dev enable .
 ```
 
-You can then start LocalStack with `EXTENSION_DEV_MODE=1` to load all enabled extensions:
+You can then start LocalStack with `EXTENSION_DEV_MODE=1` to load all enabled extensions.
+Make sure to also set `DEBUG=1` so the diagnose endpoint necessary to populate the report is loaded.
 
 ```bash
-EXTENSION_DEV_MODE=1 localstack start
+EXTENSION_DEV_MODE=1 DEBUG=1 localstack start
 ```
 
 ## Install from GitHub repository
