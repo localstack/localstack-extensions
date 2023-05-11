@@ -2,7 +2,6 @@ import logging
 from typing import Dict, Optional, Type
 
 from localstack.services.cloudformation.engine import template_deployer
-from localstack.services.cloudformation.engine.template_deployer import canonical_resource_type
 from localstack.services.cloudformation.provider import Stack
 
 from aws_replicator.client.service_states import ExtendedResourceStateReplicator
@@ -43,8 +42,7 @@ class ResourceReplicatorServer(ResourceReplicator):
         return model_instance.add_extended_state_internal(resource["Properties"])
 
     def _resource_type(self, resource: Dict) -> str:
-        res_type = resource.get("Type") or resource["TypeName"]
-        return canonical_resource_type(res_type)
+        return resource.get("Type")
 
     def _get_cf_model_class(self, resource: Dict) -> Optional[Type]:
         res_type = self._resource_type(resource)

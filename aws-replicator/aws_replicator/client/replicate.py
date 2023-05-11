@@ -6,8 +6,7 @@ from copy import deepcopy
 from typing import Dict, List
 
 import boto3
-from localstack.utils.cloudformation import template_deployer
-from localstack.utils.cloudformation.template_deployer import canonical_resource_type
+from localstack.services.cloudformation.engine import template_deployer
 from localstack.utils.collections import select_attributes
 from localstack.utils.files import load_file, save_file
 from localstack.utils.json import extract_jsonpath
@@ -28,7 +27,7 @@ MAX_PAGES = 3
 
 # additional service resources that are currently not yet supported by Cloud Control
 SERVICE_RESOURCES = {
-    "DynamoDB::Table": {
+    "AWS::DynamoDB::Table": {
         "list_operation": "list_tables",
         "results": "$.TableNames",
         "fetch_details": {
@@ -53,7 +52,7 @@ SERVICE_RESOURCES = {
             ],
         },
     },
-    "SSM::Parameter": {
+    "AWS::SSM::Parameter": {
         "list_operation": "describe_parameters",
         "results": "$.Parameters",
         "fetch_details": {
@@ -101,7 +100,6 @@ class AwsAccountScraper:
 
         # add custom resource types
         for res_type, details in SERVICE_RESOURCES.items():
-            res_type = canonical_resource_type(res_type)
             existing = [ts for ts in all_types if ts["TypeName"] == res_type]
             if not existing:
                 all_types.append({"TypeName": res_type})
@@ -169,7 +167,6 @@ class AwsAccountScraper:
         if not details:
             return []
 
-        resource_type = canonical_resource_type(resource_type)
         service_name = template_deployer.get_service_name({"Type": resource_type})
         from_client = boto3.client(service_name)
 
