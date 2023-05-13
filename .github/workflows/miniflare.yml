@@ -1,0 +1,47 @@
+name: LocalStack Miniflare Extension Tests
+
+on:
+  push:
+    paths:
+      - miniflare/**
+    branches:
+      - main
+  pull_request:
+    paths:
+      - .github/workflows/miniflare.yml
+      - miniflare/**
+  workflow_dispatch:
+
+jobs:
+  tests-miniflare:
+    name: Run extension tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        id: setup-python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Run LocalStack
+        env:
+          LOCALSTACK_API_KEY: ${{ secrets.LOCALSTACK_API_KEY }}
+        run: |
+          pip install localstack
+          DEBUG=1 localstack start -d
+          localstack wait
+
+      - name: Install extension
+        run: |
+          localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-miniflare&subdirectory=miniflare"
+
+      - name: Run test
+        run: |
+          cd example
+          npm install
+          npm run deploy
+          sleep 20 # TODO
+          curl http://hello.miniflare.localhost.localstack.cloud:4566/test
