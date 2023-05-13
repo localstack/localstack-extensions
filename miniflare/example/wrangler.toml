@@ -4,4 +4,3 @@ compatibility_date = "2022-12-14"
 
 [build.upload]
 format = "service-worker"
-

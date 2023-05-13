@@ -8,7 +8,7 @@ from localstack.extensions.api import Extension, http
 from localstack.http import Request, Response
 from localstack.packages import InstallTarget
 from localstack.packages.core import ExecutableInstaller
-from localstack.utils.files import new_tmp_file
+from localstack.utils.files import load_file, new_tmp_file, save_file
 from localstack.utils.net import get_free_tcp_port
 from localstack.utils.run import run
 from localstack.utils.serving import Server
@@ -19,6 +19,12 @@ LOG = logging.getLogger(__name__)
 SCRIPT_CODES = {}
 # maps script names to miniflare servers
 SCRIPT_SERVERS = {}
+
+# miniflare npm package to install - note: version 3 is not yet released to npmjs.com
+MINIFLARE_NPM_PACKAGE_REF = "https://github.com/cloudflare/miniflare.git#tre"
+
+# identifier for default version installed by package installer
+DEFAULT_VERSION = "latest"
 
 
 class MiniflareExtension(Extension):
@@ -130,7 +136,7 @@ def handle_scripts(request: Request, account_id: str, script_name: str) -> Dict:
         SCRIPT_CODES[script_name] = files = dict(request.files)
         MiniflareInstaller().install()
         port = get_free_tcp_port()
-        script_path = new_tmp_file()
+        script_path = f"{new_tmp_file()}.js"
         # TODO add support for multiple script files!
         if len(files) > 1:
             LOG.warning(
@@ -221,25 +227,48 @@ class MiniflareServer(Server):
         super().__init__(port)
 
     def do_run(self):
-        path = os.path.join(
-            config.dirs.var_libs,
-            "miniflare",
-            "latest",
-            "node_modules",
-            ".bin/miniflare",
-        )
-        cmd = [path, "--modules", "-p", str(self.port), self.script_path]
+        root_dir = os.path.join(config.dirs.var_libs, "miniflare", DEFAULT_VERSION)
+        wranger_bin = os.path.join(root_dir, "node_modules", ".bin", "wrangler")
+
+        cmd = [
+            wranger_bin,
+            "dev",
+            "--experimental-local",
+            "--port",
+            str(self.port),
+            self.script_path,
+        ]
         LOG.info("Running command: %s", cmd)
-        run(cmd)
+        # setting CI=1, to force non-interactive mode of wrangler script
+        env_vars = {"CI": "1"}
+        run(cmd, env_vars=env_vars, cwd=root_dir)
 
 
 class MiniflareInstaller(ExecutableInstaller):
     def __init__(self):
-        super().__init__("miniflare", version="latest")
+        super().__init__("miniflare", version=DEFAULT_VERSION)
 
     def _get_install_marker_path(self, install_dir: str) -> str:
-        return os.path.join(install_dir, "node_modules", "miniflare/dist/src/cli.js")
+        # force re-install on every start (requires npm package + system libs like libc++)
+        return os.path.join(install_dir, "__invalid_file_path__")
 
     def _install(self, target: InstallTarget) -> None:
         target_dir = self._get_install_dir(target)
-        run(["npm", "install", "--prefix", target_dir, "miniflare"])
+
+        # note: latest version of miniflare/workerd requires libc++ dev libs
+        sources_list_file = "/etc/apt/sources.list"
+        sources_list = load_file(sources_list_file)
+        sources_list += "\ndeb https://deb.debian.org/debian testing main contrib"
+        save_file(sources_list_file, sources_list)
+        run(["apt", "update"])
+
+        # bit tricky to get around the libcrypt1.so install issue, see:
+        #   https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=993755
+        cmd = "cd /tmp; apt -y download libcrypt1 && dpkg-deb -x libcrypt1*.deb . && cp /tmp/lib/*/libcrypt.so.1 /lib/"
+        run(["bash", "-c", cmd])
+        run(["apt", "install", "-y", "libc++-dev"])
+        run(["npm", "i", "-g", "patch-package"])
+
+        # install npm package
+        run(["npm", "install", "--prefix", target_dir, "wrangler"])
+        run(["npm", "install", "--prefix", target_dir, "@miniflare/tre"])

@@ -8,7 +8,7 @@ This extension makes [Miniflare](https://miniflare.dev) (dev environment for Clo
 ## Installing
 
 ```bash
-localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-hello-world&subdirectory=miniflare"
+localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-miniflare&subdirectory=miniflare"
 ```
 
 ## How to use
@@ -24,3 +24,14 @@ Once deployed, the Cloudflare worker can be easily invoked via `curl`:
 $ curl http://hello.miniflare.localhost.localstack.cloud:4566/test
 Hello World!
 ```
+
+## Change Log
+
+* `0.1.0`: Upgrade to Miniflare 3.0
+* `0.0.1`: Initial version.
+
+## License
+
+The `cloudflare/miniflare` package and related tooling is licensed under the MIT License.
+
+The code of this LocalStack Extension is published under the Apache 2.0 license.
