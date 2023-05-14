@@ -26,22 +26,33 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Run LocalStack
+      - name: Install LocalStack and extension
         env:
           LOCALSTACK_API_KEY: ${{ secrets.LOCALSTACK_API_KEY }}
         run: |
-          pip install localstack
-          DEBUG=1 localstack start -d
-          localstack wait
+          docker pull localstack/localstack-pro &
+          pip install localstack localstack-ext
 
-      - name: Install extension
-        run: |
+          # TODO remove
+          mkdir ~/.localstack; echo '{"token":"test"}' > ~/.localstack/auth.json
+          localstack extensions init
           localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-miniflare&subdirectory=miniflare"
 
+          DEBUG=1 localstack start -d
+          localstack wait
+          curl http://localhost:4566/_localstack/health
+          curl http://localhost:4566/miniflare/user
+
       - name: Run test
+        env:
+          CLOUDFLARE_API_TOKEN: test
+          CLOUDFLARE_API_BASE_URL: "https://localhost.localstack.cloud:4566/miniflare"
         run: |
-          cd example
+          cd miniflare/example
           npm install
           npm run deploy
-          sleep 20 # TODO
-          curl http://hello.miniflare.localhost.localstack.cloud:4566/test
+          curl http://hello.miniflare.localhost.localstack.cloud:4566/test | grep 'Hello World'
+
+      - name: Print LocalStack logs
+        if: always()
+        run: localstack logs

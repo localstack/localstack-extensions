@@ -20,9 +20,6 @@ SCRIPT_CODES = {}
 # maps script names to miniflare servers
 SCRIPT_SERVERS = {}
 
-# miniflare npm package to install - note: version 3 is not yet released to npmjs.com
-MINIFLARE_NPM_PACKAGE_REF = "https://github.com/cloudflare/miniflare.git#tre"
-
 # identifier for default version installed by package installer
 DEFAULT_VERSION = "latest"
 
