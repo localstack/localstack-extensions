@@ -15,8 +15,14 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 To publish the sample application to Miniflare running in LocalStack, we can use the `wrangler` CLI with the following environment variables for local dev mode:
 ```
-export CLOUDFLARE_API_TOKEN=test CLOUDFLARE_API_BASE_URL=http://localhost:4566/miniflare
+export CLOUDFLARE_API_TOKEN=test
+export CLOUDFLARE_API_BASE_URL=http://localhost:4566/miniflare
 wrangler publish
+```
+
+Note: if you're having troubles with this configuration, e.g., seeing "Fetch failed" error messages on `wrangler publish`, try using this API endpoint instead:
+```
+export CLOUDFLARE_API_BASE_URL=https://localhost.localstack.cloud:4566/miniflare
 ```
 
 Once deployed, the Cloudflare worker can be easily invoked via `curl`:
