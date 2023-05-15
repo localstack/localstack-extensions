@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type, TypedDict
+from typing import Any, Dict, List, Optional, Type, TypedDict, Union
 
 from botocore.client import BaseClient
 from localstack.services.cloudformation.service_models import GenericBaseModel
@@ -64,13 +64,23 @@ class ResourceReplicator(ABC):
         """Create the resource specified via the given resource dict."""
 
 
+class ProxyServiceConfig(TypedDict, total=False):
+    # list of regexes identifying resources to be proxied requests to
+    resources: Union[str, List[str]]
+
+
+class ProxyConfig(TypedDict, total=False):
+    # maps service name to service proxy configs
+    services: Dict[str, ProxyServiceConfig]
+
+
 class ProxyInstance(TypedDict):
     """Represents a proxy instance"""
 
     # port of the proxy on the host
     port: int
-    # name of AWS services to proxy
-    services: List[str]
+    # configuration for the proxy
+    config: ProxyConfig
 
 
 class AddProxyRequest(ProxyInstance):

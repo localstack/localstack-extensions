@@ -2,9 +2,13 @@ import re
 import sys
 
 import click
+import yaml
 from localstack.cli import LocalstackCli, LocalstackCliPlugin, console
 from localstack.logging.setup import setup_logging
+from localstack.utils.files import load_file
 from localstack_ext.bootstrap.licensing import is_logged_in
+
+from aws_replicator.shared.models import ProxyConfig, ProxyServiceConfig
 
 
 class AwsReplicatorPlugin(LocalstackCliPlugin):
@@ -28,14 +32,26 @@ def aws():
     "-s",
     "--services",
     help="Comma-delimited list of services to replicate (e.g., sqs,s3)",
-    required=True,
+    required=False,
 )
-def cmd_aws_proxy(services: str):
+@click.option(
+    "-c",
+    "--config",
+    help="Path to config file for detailed proxy configurations",
+    required=False,
+)
+def cmd_aws_proxy(services: str, config: str):
     from aws_replicator.client.auth_proxy import start_aws_auth_proxy
 
-    try:
+    config_json: ProxyConfig = {"services": {}}
+    if config:
+        config_json = yaml.load(load_file(config), Loader=yaml.SafeLoader)
+    if services:
         services = _split_string(services)
-        start_aws_auth_proxy(services)
+        for service in services:
+            config_json["services"][service] = ProxyServiceConfig(resources=".*")
+    try:
+        start_aws_auth_proxy(config_json)
     except Exception as e:
         console.print("Unable to start and register auth proxy: %s" % e)
         sys.exit(1)

@@ -9,6 +9,7 @@ from localstack.aws.api import RequestContext
 from localstack.aws.chain import Handler, HandlerChain
 from localstack.constants import APPLICATION_JSON, LOCALHOST, LOCALHOST_HOSTNAME
 from localstack.http import Response
+from localstack.utils.aws import arns
 from localstack.utils.aws.aws_stack import get_valid_regions, mock_aws_request_headers
 from requests.structures import CaseInsensitiveDict
 
@@ -18,7 +19,6 @@ LOG = logging.getLogger(__name__)
 
 
 class AwsProxyHandler(Handler):
-
     # maps port numbers to proxy instances
     PROXY_INSTANCES: Dict[int, ProxyInstance] = {}
 
@@ -47,8 +47,26 @@ class AwsProxyHandler(Handler):
     def select_proxy(self, context: RequestContext) -> Optional[ProxyInstance]:
         """select a proxy responsible to forward a request to real AWS"""
         for port, proxy in self.PROXY_INSTANCES.items():
-            if context.service.service_name in proxy["services"]:
-                return proxy
+            proxy_config = proxy["config"]
+            service_config = proxy_config["services"].get(context.service.service_name)
+            if not service_config:
+                continue
+            resource_names = service_config.get("resources", [])
+            if not resource_names:
+                continue
+            for resource_name_pattern in resource_names:
+                if self._request_matches_resource(context, resource_name_pattern):
+                    return proxy
+
+    def _request_matches_resource(
+        self, context: RequestContext, resource_name_pattern: str
+    ) -> bool:
+        if context.service.service_name == "s3":
+            bucket_name = context.service_request.get("Bucket") or ""
+            s3_bucket_arn = arns.s3_bucket_arn(bucket_name, account_id=context.account_id)
+            return bool(re.match(resource_name_pattern, s3_bucket_arn))
+        # TODO: add more resource patterns
+        return True
 
     def forward_request(self, context: RequestContext, proxy: ProxyInstance):
         port = proxy["port"]

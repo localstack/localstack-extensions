@@ -1,0 +1,5 @@
+services:
+  s3:
+    resources:
+      # list of ARNs of S3 buckets to proxy to real AWS
+      - '.*:bucket1'

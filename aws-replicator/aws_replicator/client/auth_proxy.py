@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import boto3
 import requests
@@ -10,7 +10,6 @@ from localstack.aws.api import HttpRequest
 from localstack.aws.protocol.parser import create_parser
 from localstack.aws.spec import load_service
 from localstack.config import get_edge_url
-from localstack.constants import INTERNAL_RESOURCE_PATH
 from localstack.services.generic_proxy import ProxyListener, start_proxy_server
 from localstack.utils.bootstrap import setup_logging
 from localstack.utils.net import get_free_tcp_port
@@ -18,14 +17,14 @@ from localstack.utils.strings import to_str, truncate
 
 from aws_replicator.client.utils import truncate_content
 from aws_replicator.config import HANDLER_PATH_PROXIES
-from aws_replicator.shared.models import AddProxyRequest
+from aws_replicator.shared.models import AddProxyRequest, ProxyConfig
 
 LOG = logging.getLogger(__name__)
 
 
 class AuthProxyAWS:
-    def __init__(self, services: List[str]):
-        self.services = services
+    def __init__(self, config: ProxyConfig):
+        self.config = config
 
     def start(self):
         class Handler(ProxyListener):
@@ -109,8 +108,8 @@ class AuthProxyAWS:
         port = getattr(self, "port", None)
         if not port:
             raise Exception("Proxy currently not running")
-        url = f"{get_edge_url()}{INTERNAL_RESOURCE_PATH}{HANDLER_PATH_PROXIES}"
-        data = AddProxyRequest(port=port, services=self.services)
+        url = f"{get_edge_url()}{HANDLER_PATH_PROXIES}"
+        data = AddProxyRequest(port=port, config=self.config)
         try:
             response = requests.post(url, json=data)
             assert response.ok
@@ -176,7 +175,7 @@ class AuthProxyAWS:
         return parts[2], parts[3]
 
 
-def start_aws_auth_proxy(services: List[str]):
+def start_aws_auth_proxy(config: ProxyConfig):
     setup_logging()
-    proxy = AuthProxyAWS(services)
+    proxy = AuthProxyAWS(config)
     proxy.start()
