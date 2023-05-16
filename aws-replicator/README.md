@@ -29,6 +29,38 @@ $ localstack aws proxy -s dynamodb,s3,cognito-idp
 
 **Warning:** Be careful when using the proxy - make sure to _never_ give access to production accounts or any critical/sensitive data!
 
+### Resource-specific proxying
+
+As an alternative to forwarding all requests for a particular service, you can also proxy only requests for specific service resources to AWS. 
+
+For example, assume we own an S3 bucket `my-s3-bucket` in AWS, then we can use the following configuration to forward any requests to `s3://my-s3-bucket` to real AWS, whereas requests to other buckets will be handled by LocalStack locally:
+```
+services:
+  s3:
+    resources:
+      # list of ARNs of S3 buckets to proxy to real AWS
+      - '.*:my-s3-bucket'
+```
+
+Store the configuration above to a file named `proxy_config.yml`, then we can start up the proxy via:
+```
+localstack aws proxy -c proxy_config.yml
+```
+
+If we then perform local operations against the S3 bucket `my-s3-bucket`, the proxy will forward the request and will return the results from real AWS:
+```
+$ awslocal s3 ls s3://my-s3-bucket
+2023-01-18 15:53:40        148 my-file-1.txt
+2023-01-18 15:53:43         22 my-file-2.txt
+```
+
+Any other S3 requests targeting other buckets will be run against the local state in LocalStack itself, for example:
+```
+$ awslocal s3 mb s3://test123
+make_bucket: test123
+...
+```
+
 ## Resource Replicator CLI
 
 The figure below illustrates how the extension can be used to replicate the state, e.g., an SQS queue and the messages contained in it, from AWS into your LocalStack instance.
