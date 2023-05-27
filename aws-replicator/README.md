@@ -31,15 +31,21 @@ $ localstack aws proxy -s dynamodb,s3,cognito-idp
 
 ### Resource-specific proxying
 
-As an alternative to forwarding all requests for a particular service, you can also proxy only requests for specific service resources to AWS. 
+As an alternative to forwarding _all_ requests for a particular service, you can also proxy only requests for _specific_ resources to AWS. 
 
-For example, assume we own an S3 bucket `my-s3-bucket` in AWS, then we can use the following configuration to forward any requests to `s3://my-s3-bucket` to real AWS, whereas requests to other buckets will be handled by LocalStack locally:
+For example, assume we own an S3 bucket `my-s3-bucket` in AWS, then we can use the following configuration to forward any requests to `s3://my-s3-bucket` to real AWS, while still handling requests to all other buckets locally in LocalStack:
 ```
 services:
   s3:
     resources:
       # list of ARNs of S3 buckets to proxy to real AWS
       - '.*:my-s3-bucket'
+    operations:
+      # list of operation name regex patterns (optional)
+      - 'Get.*'
+      - 'Put.*'
+    # optionally, specify that only read requests should be allowed (Get*/List*/Describe*, etc)
+    read_only: false
 ```
 
 Store the configuration above to a file named `proxy_config.yml`, then we can start up the proxy via:
@@ -50,8 +56,8 @@ localstack aws proxy -c proxy_config.yml
 If we then perform local operations against the S3 bucket `my-s3-bucket`, the proxy will forward the request and will return the results from real AWS:
 ```
 $ awslocal s3 ls s3://my-s3-bucket
-2023-01-18 15:53:40        148 my-file-1.txt
-2023-01-18 15:53:43         22 my-file-2.txt
+2023-05-14 15:53:40        148 my-file-1.txt
+2023-05-15 10:24:43         22 my-file-2.txt
 ```
 
 Any other S3 requests targeting other buckets will be run against the local state in LocalStack itself, for example:
@@ -60,6 +66,8 @@ $ awslocal s3 mb s3://test123
 make_bucket: test123
 ...
 ```
+
+A more comprehensive sample, involving local Lambda functions combined with remote SQS queues and S3 buckets, can be found in the `example` folder of this repo.
 
 ## Resource Replicator CLI
 

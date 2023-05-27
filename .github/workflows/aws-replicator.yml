@@ -1,0 +1,79 @@
+name: LocalStack AWS Replicator Extension Tests
+
+on:
+  push:
+    paths:
+      - aws-replicator/**
+    branches:
+      - main
+  pull_request:
+    paths:
+      - .github/workflows/aws-replicator.yml
+      - aws-replicator/**
+  workflow_dispatch:
+
+jobs:
+  tests-miniflare:
+    name: Run extension tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Set up Terraform CLI
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Install LocalStack and extension
+        env:
+          LOCALSTACK_API_KEY: ${{ secrets.LOCALSTACK_API_KEY }}
+        run: |
+          docker pull localstack/localstack-pro &
+          docker pull public.ecr.aws/lambda/python:3.8 &
+          pip install localstack localstack-ext
+
+          # TODO remove
+          mkdir ~/.localstack; echo '{"token":"test"}' > ~/.localstack/auth.json
+
+          branchName=${GITHUB_HEAD_REF##*/}
+          if [ "$branchName" = "" ]; then branchName=main; fi
+          echo "Installing from branch name $branchName"
+          localstack extensions init
+          localstack extensions install "git+https://github.com/localstack/localstack-extensions.git#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
+
+          # install dependencies
+          sudo apt-get update
+          sudo apt-get install -y libsasl2-dev
+          (cd aws-replicator; pip install -e .)
+
+          # install awslocal/tflocal command lines
+          pip install awscli-local[ver1]
+          pip install terraform-local
+
+          find  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.10/site-packages/aws*
+          ls -la  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.10/site-packages/aws*
+          DEBUG=1 localstack start -d
+          localstack wait
+
+      - name: Run linter
+        run: |
+          pip install pyproject-flake8
+          cd aws-replicator
+          make lint
+
+      - name: Run test
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd aws-replicator/example
+          make test
+
+      - name: Print LocalStack logs
+        if: always()
+        run: localstack logs

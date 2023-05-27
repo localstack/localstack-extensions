@@ -6,3 +6,6 @@ def handler(event, context):
     buckets = s3.list_buckets().get("Buckets")
     print("event:", event)
     print("buckets:", buckets)
+    return {
+        "buckets": buckets
+    }

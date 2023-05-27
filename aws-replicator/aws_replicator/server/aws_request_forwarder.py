@@ -11,6 +11,7 @@ from localstack.constants import APPLICATION_JSON, LOCALHOST, LOCALHOST_HOSTNAME
 from localstack.http import Response
 from localstack.utils.aws import arns
 from localstack.utils.aws.aws_stack import get_valid_regions, mock_aws_request_headers
+from localstack.utils.collections import ensure_list
 from requests.structures import CaseInsensitiveDict
 
 from aws_replicator.shared.models import ProxyInstance
@@ -25,8 +26,6 @@ class AwsProxyHandler(Handler):
     def __call__(self, chain: HandlerChain, context: RequestContext, response: Response):
         proxy = self.select_proxy(context)
         if not proxy:
-            return
-        if not self.should_forward(context, proxy):
             return
 
         # forward request to proxy
@@ -51,12 +50,36 @@ class AwsProxyHandler(Handler):
             service_config = proxy_config["services"].get(context.service.service_name)
             if not service_config:
                 continue
-            resource_names = service_config.get("resources", [])
+
+            # get resource name patterns
+            resource_names = ensure_list(service_config.get("resources", []))
             if not resource_names:
                 continue
-            for resource_name_pattern in resource_names:
-                if self._request_matches_resource(context, resource_name_pattern):
-                    return proxy
+
+            # check if any resource name pattern matches
+            resource_name_matches = any(
+                self._request_matches_resource(context, resource_name_pattern)
+                for resource_name_pattern in resource_names
+            )
+            if not resource_name_matches:
+                continue
+
+            # check if only read requests should be forwarded
+            read_only = service_config.get("read_only")
+            if read_only and not self._is_read_request(context):
+                return
+
+            # check if any operation name pattern matches
+            operation_names = ensure_list(service_config.get("operations", []))
+            operation_name_matches = any(
+                re.match(op_name_pattern, context.operation.name)
+                for op_name_pattern in operation_names
+            )
+            if operation_names and not operation_name_matches:
+                continue
+
+            # all checks passed -> return and use this proxy
+            return proxy
 
     def _request_matches_resource(
         self, context: RequestContext, resource_name_pattern: str
@@ -106,17 +129,18 @@ class AwsProxyHandler(Handler):
             self.PROXY_INSTANCES.pop(port, None)
         return result
 
-    def should_forward(self, context: RequestContext, proxy: ProxyInstance) -> bool:
-        # TODO: make configurable whether proxies should be read-only or write-enabled!
-        return self._is_read_request(context)
-
     def _is_read_request(self, context: RequestContext) -> bool:
+        """
+        Function to determine whether a request is a read request.
+        Note: Uses only simple heuristics, and may not be accurate for all services and operations!
+        """
         operation_name = context.service_operation.operation
         if operation_name.lower().startswith(("describe", "get", "list", "query")):
             return True
         # service-specific rules
         if context.service.service_name == "cognito-idp" and operation_name == "InitiateAuth":
             return True
+        # TODO: add more rules
         return False
 
     def _extract_region_from_domain(self, context: RequestContext):
