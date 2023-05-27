@@ -1,0 +1,55 @@
+name: LocalStack AWS Replicator Extension Tests
+
+on:
+  push:
+    paths:
+      - aws-replicator/**
+    branches:
+      - main
+  pull_request:
+    paths:
+      - .github/workflows/aws-replicator.yml
+      - aws-replicator/**
+  workflow_dispatch:
+
+jobs:
+  tests-miniflare:
+    name: Run extension tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        id: setup-python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install LocalStack and extension
+        env:
+          LOCALSTACK_API_KEY: ${{ secrets.LOCALSTACK_API_KEY }}
+        run: |
+          docker pull localstack/localstack-pro &
+          pip install localstack localstack-ext
+
+          # TODO remove
+          mkdir ~/.localstack; echo '{"token":"test"}' > ~/.localstack/auth.json
+          localstack extensions init
+          localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
+
+          DEBUG=1 localstack start -d
+          localstack wait
+
+      - name: Run test
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd aws-replicator/example
+          make test
+
+      - name: Print LocalStack logs
+        if: always()
+        run: localstack logs

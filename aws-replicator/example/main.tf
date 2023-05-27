@@ -3,7 +3,7 @@ resource "aws_lambda_function" "test" {
   function_name = "func1"
   role          = "r1"
 
-  s3_bucket = "__local__"
+  s3_bucket = "hot-reload"
   s3_key    = path.cwd
 
   handler       = "lambda.handler"
