@@ -40,6 +40,12 @@ services:
     resources:
       # list of ARNs of S3 buckets to proxy to real AWS
       - '.*:my-s3-bucket'
+    operations:
+      # list of operation name regex patterns (optional)
+      - 'Get.*'
+      - 'Put.*'
+    # optionally, specify that only read requests should be allowed (Get*/List*/Describe*, etc)
+    read_only: false
 ```
 
 Store the configuration above to a file named `proxy_config.yml`, then we can start up the proxy via:
