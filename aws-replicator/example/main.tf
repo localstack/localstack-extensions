@@ -1,13 +1,13 @@
 
 resource "aws_lambda_function" "test" {
   function_name = "func1"
-  role          = "r1"
+  role          = "arn:aws:iam::000000000000:role/test-role"
 
   s3_bucket = "hot-reload"
   s3_key    = path.cwd
 
   handler       = "lambda.handler"
-  runtime       = "python3.7"
+  runtime       = "python3.8"
 }
 
 resource "aws_sqs_queue" "test" {

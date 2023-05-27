@@ -17,7 +17,7 @@ $ aws sqs create-queue --queue-name test-queue1
 4. Use `tflocal` to deploy the sample Terraform script against LocalStack:
 ```
 $ tflocal init
-$ tflocal apply
+$ tflocal apply -
 ```
 
 5. Open the AWS console (or use the CLI) and put a new message to the `test-queue1` SQS queue.

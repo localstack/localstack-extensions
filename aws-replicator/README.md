@@ -61,6 +61,8 @@ make_bucket: test123
 ...
 ```
 
+A more comprehensive sample, involving local Lambda functions combined with remote SQS queues and S3 buckets, can be found in the `example` folder of this repo.
+
 ## Resource Replicator CLI
 
 The figure below illustrates how the extension can be used to replicate the state, e.g., an SQS queue and the messages contained in it, from AWS into your LocalStack instance.
