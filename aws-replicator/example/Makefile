@@ -14,9 +14,9 @@ test:            ## Run the end-to-end test with a simple sample app
 		echo "Puting a message to the queue in real AWS"; \
 		aws sqs send-message --queue-url $$queueUrl --message-body '{"test":"foobar 123"}'; \
 		echo "Waiting a bit for Lambda to be triggered by SQS message ..."; \
-		sleep 10; \
+		sleep 7; \
 		logStream=$$(awslocal logs describe-log-streams --log-group-name /aws/lambda/func1 | jq -r '.logStreams[0].logStreamName'); \
-		awslocal logs get-log-events --log-stream-name '2023/05/27/[LATEST]34808c64' --log-group-name /aws/lambda/func1 | grep "foobar 123"; \
+		awslocal logs get-log-events --log-stream-name "$$logStream" --log-group-name /aws/lambda/func1 | grep "foobar 123"; \
 		exitCode=$$?; \
 		echo "Cleaning up ..."; \
 		aws sqs delete-queue --queue-url $$queueUrl; \

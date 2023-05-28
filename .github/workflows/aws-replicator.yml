@@ -43,7 +43,7 @@ jobs:
           if [ "$branchName" = "" ]; then branchName=main; fi
           echo "Installing from branch name $branchName"
           localstack extensions init
-          localstack extensions install "git+https://github.com/localstack/localstack-extensions.git#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
+          localstack extensions install "git+https://github.com/localstack/localstack-extensions.git@"$branchName"#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
 
           # install dependencies
           sudo apt-get update

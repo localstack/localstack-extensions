@@ -67,7 +67,7 @@ class ResourceReplicator(ABC):
 class ProxyServiceConfig(TypedDict, total=False):
     # list of regexes identifying resources to be proxied requests to
     resources: Union[str, List[str]]
-    # whether only read requests should be forwarded
+    # list of operation names (regexes) that should be proxied
     operations: List[str]
     # whether only read requests should be forwarded
     read_only: bool

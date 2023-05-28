@@ -31,7 +31,7 @@ $ localstack aws proxy -s dynamodb,s3,cognito-idp
 
 ### Resource-specific proxying
 
-As an alternative to forwarding _all_ requests for a particular service, you can also proxy only requests for _specific_ resources to AWS. 
+As an alternative to forwarding _all_ requests for a particular service, you can also proxy only requests for _specific_ resources to AWS.
 
 For example, assume we own an S3 bucket `my-s3-bucket` in AWS, then we can use the following configuration to forward any requests to `s3://my-s3-bucket` to real AWS, while still handling requests to all other buckets locally in LocalStack:
 ```
