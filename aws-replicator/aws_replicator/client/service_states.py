@@ -1,8 +1,9 @@
 import logging
-from typing import Dict
+from typing import Dict, Type
 
 import boto3
 from botocore.client import BaseClient
+from localstack.services.cloudformation.models.s3 import S3Bucket
 from localstack.utils.aws import aws_stack
 from localstack.utils.threads import parallelize
 
@@ -13,13 +14,13 @@ LOG = logging.getLogger(__name__)
 
 
 # # TODO: move to patch utils
-# def mixin_for(wrapped_clazz: Type):
-#     """Decorator that adds the decorated class as a mixin to the base classes of the given class"""
-#
-#     def wrapper(wrapping_clazz):
-#         wrapped_clazz.__bases__ = (wrapping_clazz,) + wrapped_clazz.__bases__
-#
-#     return wrapper
+def mixin_for(wrapped_clazz: Type):
+    """Decorator that adds the decorated class as a mixin to the base classes of the given class"""
+
+    def wrapper(wrapping_clazz):
+        wrapped_clazz.__bases__ = (wrapping_clazz,) + wrapped_clazz.__bases__
+
+    return wrapper
 
 
 # resource-specific replications
@@ -27,9 +28,9 @@ LOG = logging.getLogger(__name__)
 
 # @mixin_for(SQSQueue)
 class StateReplicatorSQSQueue(ExtendedResourceStateReplicator):
-    @classmethod
-    def cloudformation_type(cls):
-        return "AWS::SQS::Queue"
+    # @classmethod
+    # def cloudformation_type(cls):
+    #     return "AWS::SQS::Queue"
 
     def add_extended_state_external(self, state: Dict = None, remote_client: BaseClient = None):
         # executing in the context of the CLI
@@ -57,12 +58,12 @@ class StateReplicatorSQSQueue(ExtendedResourceStateReplicator):
     def add_extended_state_internal(self, state: Dict = None):
         # executing in the context of the server
         from localstack.aws.api.sqs import Message
-        from localstack.services.sqs.provider import SqsBackend
+        from localstack.services.sqs.provider import sqs_stores
 
         queue_name = self.props["QueueName"]
         messages = state.get("Messages") or []
         LOG.info("Inserting %s messages into queue", len(messages), queue_name)
-        for region, details in SqsBackend.regions().items():
+        for region, details in sqs_stores.regions().items():
             queue = details.queues.get(queue_name)
             if not queue:
                 continue
@@ -98,11 +99,11 @@ class StateReplicatorDynamoDBTable(ExtendedResourceStateReplicator):
                     batch.put_item(Item=item)
 
 
-# @mixin_for(S3Bucket)
+@mixin_for(S3Bucket)
 class StateReplicatorS3Bucket(ExtendedResourceStateReplicator):
-    @classmethod
-    def cloudformation_type(cls):
-        return "AWS::S3::Bucket"
+    # @classmethod
+    # def cloudformation_type(cls):
+    #     return "AWS::S3::Bucket"
 
     def add_extended_state_external(self, remote_client: BaseClient = None):
         bucket_name = self.props["BucketName"]
