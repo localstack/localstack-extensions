@@ -51,7 +51,8 @@ def cmd_aws_proxy(services: str, config: str):
         for service in services:
             config_json["services"][service] = ProxyServiceConfig(resources=".*")
     try:
-        start_aws_auth_proxy(config_json)
+        proxy = start_aws_auth_proxy(config_json)
+        proxy.join()
     except Exception as e:
         console.print("Unable to start and register auth proxy: %s" % e)
         sys.exit(1)

@@ -46,9 +46,13 @@ class AwsProxyHandler(Handler):
 
     def select_proxy(self, context: RequestContext) -> Optional[ProxyInstance]:
         """select a proxy responsible to forward a request to real AWS"""
-        for port, proxy in self.PROXY_INSTANCES.items():
-            proxy_config = proxy["config"]
-            service_config = proxy_config["services"].get(context.service.service_name)
+        # reverse the list, to start with more recently added proxies first ...
+        proxy_ports = reversed(self.PROXY_INSTANCES.keys())
+        for port in proxy_ports:
+            proxy = self.PROXY_INSTANCES[port]
+            proxy_config = proxy.get("config") or {}
+            services = proxy_config.get("services") or {}
+            service_config = services.get(context.service.service_name)
             if not service_config:
                 continue
 
