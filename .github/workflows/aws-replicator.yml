@@ -65,7 +65,16 @@ jobs:
           cd aws-replicator
           make lint
 
-      - name: Run test
+      - name: Run integration tests
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd aws-replicator
+          make test
+
+      - name: Deploy and test sample app
         env:
           AWS_DEFAULT_REGION: us-east-1
           AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
