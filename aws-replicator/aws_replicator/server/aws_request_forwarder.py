@@ -12,7 +12,7 @@ from localstack.http import Response
 from localstack.utils.aws import arns
 from localstack.utils.aws.aws_stack import get_valid_regions, mock_aws_request_headers
 from localstack.utils.collections import ensure_list
-from localstack.utils.strings import to_str
+from localstack.utils.strings import to_str, truncate
 from requests.structures import CaseInsensitiveDict
 
 from aws_replicator.shared.models import ProxyInstance
@@ -39,7 +39,7 @@ class AwsProxyHandler(Handler):
             return
 
         # set response details, then stop handler chain to return response
-        chain.response.data = response.content
+        chain.response.data = response.raw_content
         chain.response.status_code = response.status_code
         chain.response.headers.update(dict(response.headers))
         chain.stop()
@@ -120,13 +120,15 @@ class AwsProxyHandler(Handler):
                 data = request.data
             LOG.debug("Forward request: %s %s - %s - %s", request.method, url, dict(headers), data)
             result = requests.request(
-                method=request.method, url=url, data=data, headers=dict(headers)
+                method=request.method, url=url, data=data, headers=dict(headers), stream=True
             )
+            # TODO: ugly hack for now, simply attaching an additional attribute for raw response content
+            result.raw_content = result.raw.read()
             LOG.debug(
                 "Returned response: %s %s - %s",
                 result.status_code,
                 dict(result.headers),
-                result.content,
+                truncate(result.raw_content),
             )
         except requests.exceptions.ConnectionError:
             # remove unreachable proxy

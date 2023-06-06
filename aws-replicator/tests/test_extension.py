@@ -1,5 +1,6 @@
 # Note: these tests depend on the extension being installed and actual AWS credentials being configured, such
 # that the proxy can be started within the tests. They are designed to be mostly run in CI at this point.
+import gzip
 
 import boto3
 import pytest
@@ -27,7 +28,8 @@ def start_aws_proxy():
         proxy.shutdown()
 
 
-def test_s3_requests(start_aws_proxy, s3_create_bucket):
+@pytest.mark.parametrize("metadata_gzip", [True, False])
+def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
     # start proxy
     config = ProxyConfig(services={"s3": {"resources": ".*"}})
     start_aws_proxy(config)
@@ -44,11 +46,19 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket):
 
     # put object
     key = "test-key-with-urlencoded-chars-:+"
-    s3_client.put_object(Bucket=bucket, Key=key, Body=b"test 123")
+    body = b"test 123"
+    kwargs = {}
+    if metadata_gzip:
+        kwargs = {"ContentEncoding": "gzip", "ContentType": "text/plain"}
+        body = gzip.compress(body)
+    s3_client.put_object(Bucket=bucket, Key=key, Body=body, **kwargs)
 
     # get object
+    result = s3_client_aws.get_object(Bucket=bucket, Key=key)
+    result_body_aws = result["Body"].read()
     result = s3_client.get_object(Bucket=bucket, Key=key)
-    assert result["Body"].read() == b"test 123"
+    result_body_proxied = result["Body"].read()
+    assert result_body_proxied == result_body_aws
 
     # delete object
     s3_client.delete_object(Bucket=bucket, Key=key)
