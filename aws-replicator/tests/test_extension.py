@@ -47,7 +47,6 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
     bucket = s3_create_bucket()
     buckets_proxied = s3_client.list_buckets()["Buckets"]
     bucket_aws = s3_client_aws.list_buckets()["Buckets"]
-    print("!buckets_proxied, bucket_aws", buckets_proxied, bucket_aws)  # TODO CI debugging
     assert buckets_proxied == bucket_aws
 
     # put object

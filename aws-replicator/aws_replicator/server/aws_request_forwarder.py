@@ -130,16 +130,6 @@ class AwsProxyHandler(Handler):
                 dict(result.headers),
                 truncate(result.raw_content, max_length=500),
             )
-            # TODO CI debugging - remove!
-            print(
-                "Returned response:",
-                request.method,
-                url,
-                data,
-                result.status_code,
-                dict(result.headers),
-                truncate(result.raw_content, max_length=500),
-            )
         except requests.exceptions.ConnectionError:
             # remove unreachable proxy
             LOG.info("Removing unreachable AWS forward proxy due to connection issue: %s", url)
