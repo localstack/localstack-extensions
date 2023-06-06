@@ -5,6 +5,7 @@ from typing import Dict, Optional, Tuple
 import boto3
 import requests
 from botocore.awsrequest import AWSPreparedRequest
+from botocore.config import Config
 from botocore.model import OperationModel
 from localstack.aws.api import HttpRequest
 from localstack.aws.protocol.parser import create_parser
@@ -62,8 +63,13 @@ class AuthProxyAWS(Server):
             path=path,
             query_string=query_string,
         )
+
+        # prepare client kwargs - use path addressing style for S3 clients
+        kwargs = {}
+        # if service_name == "s3":
+        #     kwargs = {"config": Config(s3={"addressing_style": "path"})}
         session = boto3.Session()
-        client = session.client(service_name, region_name=region_name)
+        client = session.client(service_name, region_name=region_name, **kwargs)
 
         # fix headers (e.g., "Host") and create client
         self._fix_headers(request, service_name)
@@ -77,6 +83,14 @@ class AuthProxyAWS(Server):
         self._adjust_request_dict(request_dict)
 
         headers_truncated = {k: truncate(to_str(v)) for k, v in dict(aws_request.headers).items()}
+        print(
+            "Sending request for service %s to AWS: %s %s - %s - %s",
+            service_name,
+            method,
+            aws_request.url,
+            truncate_content(request_dict.get("body"), max_length=500),
+            headers_truncated,
+        )  # TODO remove
         LOG.debug(
             "Sending request for service %s to AWS: %s %s - %s - %s",
             service_name,
@@ -86,8 +100,18 @@ class AuthProxyAWS(Server):
             headers_truncated,
         )
         try:
+            client_endpoint = client._endpoint
+            if service_name == "s3":
+                _client = session.client(
+                    service_name,
+                    region_name=region_name,
+                    config=Config(s3={"addressing_style": "path"}),
+                )
+                client_endpoint = _client._endpoint
+
             # send request to upstream AWS
-            result = client._endpoint.make_request(operation_model, request_dict)
+            print("!!client._endpoint", client_endpoint, client_endpoint.host)  # TODO remove
+            result = client_endpoint.make_request(operation_model, request_dict)
 
             # create response object
             response = requests.Response()
@@ -95,6 +119,12 @@ class AuthProxyAWS(Server):
             response._content = result[0].content
             response.headers = dict(result[0].headers)
 
+            print(
+                "Received response for service from AWS:",
+                service_name,
+                response.status_code,
+                response.content,
+            )  # TODO remove
             LOG.debug(
                 "Received response for service %s from AWS: %s - %s",
                 service_name,
@@ -127,6 +157,14 @@ class AuthProxyAWS(Server):
     ) -> Tuple[OperationModel, AWSPreparedRequest, Dict]:
         parser = create_parser(load_service(service_name))
         operation_model, parsed_request = parser.parse(request)
+        print(
+            "!!client.meta.config",
+            client.meta.config,
+            dict(request.headers),
+            operation_model,
+            operation_model.name,
+            operation_model.endpoint,
+        )  # TODO CI debugging
         request_context = {
             "client_region": region_name,
             "has_streaming_input": operation_model.has_streaming_input,
@@ -139,6 +177,14 @@ class AuthProxyAWS(Server):
             operation_model, parsed_request, request_context
         )
 
+        # TODO: fix for switch between path/host addressing - seems to be causing issues in CI, to be investigated!
+        path_parts = request.path.strip("/").split("/")
+        if service_name == "s3" and endpoint_url:
+            # path_parts = request_dict.get("url_path", "").strip("/").split("/")
+            bucket_subdomain_prefix = f"//{path_parts[0]}.s3."
+            if path_parts and bucket_subdomain_prefix in endpoint_url:
+                endpoint_url = endpoint_url.replace(bucket_subdomain_prefix, "//s3.")
+
         # create request dict
         request_dict = client._convert_to_request_dict(
             parsed_request,
@@ -147,6 +193,7 @@ class AuthProxyAWS(Server):
             context=request_context,
             headers=additional_headers,
         )
+        print("!!request_dict", request_dict, endpoint_url)  # TODO CI debugging
         aws_request = client._endpoint.create_request(request_dict, operation_model)
 
         return operation_model, aws_request, request_dict

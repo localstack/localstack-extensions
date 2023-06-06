@@ -128,7 +128,17 @@ class AwsProxyHandler(Handler):
                 "Returned response: %s %s - %s",
                 result.status_code,
                 dict(result.headers),
-                truncate(result.raw_content),
+                truncate(result.raw_content, max_length=500),
+            )
+            # TODO CI debugging - remove!
+            print(
+                "Returned response:",
+                request.method,
+                url,
+                data,
+                result.status_code,
+                dict(result.headers),
+                truncate(result.raw_content, max_length=500),
             )
         except requests.exceptions.ConnectionError:
             # remove unreachable proxy
