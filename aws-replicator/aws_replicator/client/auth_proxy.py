@@ -140,11 +140,12 @@ class AuthProxyAWS(Server):
         )
 
         # TODO: fix for switch between path/host addressing - seems to be causing issues in CI, to be investigated!
-        path_parts = request.path.strip("/").split("/")
-        if service_name == "s3" and endpoint_url:
-            bucket_subdomain_prefix = f"//{path_parts[0]}.s3."
-            if path_parts and bucket_subdomain_prefix in endpoint_url:
-                endpoint_url = endpoint_url.replace(bucket_subdomain_prefix, "//s3.")
+        # TODO: still required?
+        # path_parts = request.path.strip("/").split("/")
+        # if service_name == "s3" and endpoint_url:
+        #     bucket_subdomain_prefix = f"://{path_parts[0]}.s3."
+        #     if path_parts and bucket_subdomain_prefix in endpoint_url:
+        #         endpoint_url = endpoint_url.replace(bucket_subdomain_prefix, "//s3.")
 
         # create request dict
         request_dict = client._convert_to_request_dict(

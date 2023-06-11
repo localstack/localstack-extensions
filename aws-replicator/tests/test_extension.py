@@ -67,6 +67,16 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
 
     # delete object
     s3_client.delete_object(Bucket=bucket, Key=key)
+    with pytest.raises(ClientError) as aws_exc:
+        s3_client_aws.get_object(Bucket=bucket, Key=key)
     with pytest.raises(ClientError) as exc:
         s3_client.get_object(Bucket=bucket, Key=key)
-    exc.match("does not exist")
+    assert str(exc.value) == str(aws_exc.value)
+
+    # delete bucket
+    s3_client_aws.delete_bucket(Bucket=bucket)
+    with pytest.raises(ClientError) as aws_exc:
+        s3_client_aws.head_bucket(Bucket=bucket)
+    with pytest.raises(ClientError) as exc:
+        s3_client.head_bucket(Bucket=bucket)
+    assert str(exc.value) == str(aws_exc.value)
