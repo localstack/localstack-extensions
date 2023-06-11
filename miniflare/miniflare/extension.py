@@ -122,20 +122,14 @@ class MiniflareInstaller(ExecutableInstaller):
     def _install(self, target: InstallTarget) -> None:
         target_dir = self._get_install_dir(target)
 
-        # TODO remove - no longer required?
         # note: latest version of miniflare/workerd requires libc++ dev libs
-        # sources_list_file = "/etc/apt/sources.list"
-        # sources_list = load_file(sources_list_file)
-        # sources_list += "\ndeb https://deb.debian.org/debian testing main contrib"
-        # save_file(sources_list_file, sources_list)
-        # run(["apt", "update"])
-
-        # bit tricky to get around the libcrypt1.so install issue, see:
-        #   https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=993755
-        # cmd = "cd /tmp; apt -y download libcrypt1 && dpkg-deb -x libcrypt1*.deb . && cp /tmp/lib/*/libcrypt.so.1 /lib/"
-        # run(["bash", "-c", cmd])
-        # run(["apt", "install", "-y", "libc++-dev"])
-        # run(["npm", "i", "-g", "patch-package"])
+        if config.is_in_docker:
+            sources_list_file = "/etc/apt/sources.list"
+            sources_list = load_file(sources_list_file)
+            sources_list += "\ndeb https://deb.debian.org/debian testing main contrib"
+            save_file(sources_list_file, sources_list)
+            run(["apt", "update"])
+            run(["apt", "install", "-y", "libc++-dev"])
 
         # install npm package
         run(["npm", "install", "--prefix", target_dir, "wrangler"])
