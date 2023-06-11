@@ -34,9 +34,6 @@ class AwsProxyHandler(Handler):
 
         if response is None:
             return
-        if response.status_code == 404:
-            # TODO: make this fallback configurable?
-            return
 
         # set response details, then stop handler chain to return response
         chain.response.data = response.raw_content
