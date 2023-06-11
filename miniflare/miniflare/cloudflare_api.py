@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any
 
 import requests
 from localstack.http import Request, Response
@@ -74,7 +74,7 @@ def handle_user(request: Request) -> dict:
     )
 
 
-def handle_memberships(request: Request) -> Dict[str, Any]:
+def handle_memberships(request: Request) -> dict[str, Any]:
     return _wrap(
         [
             {
@@ -99,7 +99,7 @@ def handle_memberships(request: Request) -> Dict[str, Any]:
     )
 
 
-def handle_scripts(request: Request, account_id: str, script_name: str) -> Dict:
+def handle_scripts(request: Request, account_id: str, script_name: str) -> dict:
     from miniflare.extension import MiniflareInstaller, MiniflareServer
 
     account = State.accounts.setdefault(account_id, Account())
@@ -131,7 +131,7 @@ def handle_scripts(request: Request, account_id: str, script_name: str) -> Dict:
 
         existing_server = SCRIPT_SERVERS.get(script_name)
         if existing_server:
-            existing_server.stop()
+            existing_server.shutdown()
 
         # start new server
         server = MiniflareServer(script, port=port)
@@ -141,7 +141,7 @@ def handle_scripts(request: Request, account_id: str, script_name: str) -> Dict:
     return _wrap({})
 
 
-def handle_services(request: Request, account_id: str, service_name: str) -> Dict:
+def handle_services(request: Request, account_id: str, service_name: str) -> dict:
     return _wrap(
         {
             "default_environment": {
@@ -155,17 +155,17 @@ def handle_services(request: Request, account_id: str, service_name: str) -> Dic
     )
 
 
-def handle_subdomain(request: Request, account_id: str) -> Dict:
+def handle_subdomain(request: Request, account_id: str) -> dict:
     return _wrap({})
 
 
 def handle_script_subdomain(
     request: Request, account_id: str, script_name: str
-) -> Dict:
+) -> dict:
     return _wrap({})
 
 
-def handle_deployments(request: Request, account_id: str, script_name: str) -> Dict:
+def handle_deployments(request: Request, account_id: str, script_name: str) -> dict:
     return _wrap(
         {
             "latest": {
@@ -207,7 +207,7 @@ def handle_deployments(request: Request, account_id: str, script_name: str) -> D
     )
 
 
-def handle_secrets(request: Request, account_id: str, script_name: str) -> Dict:
+def handle_secrets(request: Request, account_id: str, script_name: str) -> dict:
     account = State.accounts.setdefault(account_id, Account())
 
     if request.method == "PUT":
@@ -218,7 +218,7 @@ def handle_secrets(request: Request, account_id: str, script_name: str) -> Dict:
     return _wrap({})
 
 
-def _wrap(result: dict, success: bool = True):
-    if "result" not in result:
+def _wrap(result: dict | list, success: bool = True) -> dict:
+    if isinstance(result, list) or "result" not in result:
         result = {"result": result}
     return {"success": success, "errors": [], "messages": [], **result}
