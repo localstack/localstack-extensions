@@ -1,6 +1,7 @@
 import logging
 import re
 from typing import Dict, Optional, Tuple
+from urllib.parse import urlparse
 
 import boto3
 import requests
@@ -139,14 +140,6 @@ class AuthProxyAWS(Server):
             operation_model, parsed_request, request_context
         )
 
-        # TODO: fix for switch between path/host addressing - seems to be causing issues in CI, to be investigated!
-        # TODO: still required?
-        # path_parts = request.path.strip("/").split("/")
-        # if service_name == "s3" and endpoint_url:
-        #     bucket_subdomain_prefix = f"://{path_parts[0]}.s3."
-        #     if path_parts and bucket_subdomain_prefix in endpoint_url:
-        #         endpoint_url = endpoint_url.replace(bucket_subdomain_prefix, "//s3.")
-
         # create request dict
         request_dict = client._convert_to_request_dict(
             parsed_request,
@@ -155,6 +148,21 @@ class AuthProxyAWS(Server):
             context=request_context,
             headers=additional_headers,
         )
+
+        # TODO: fix for switch between path/host addressing
+        # Note: the behavior seems to be different across botocore versions. Seems to be working
+        # with 1.29.97 (fix below not required) whereas newer versions like 1.29.151 require the fix.
+        if service_name == "s3":
+            request_url = request_dict["url"]
+            url_parsed = urlparse(request_url)
+            path_parts = url_parsed.path.strip("/").split("/")
+            bucket_subdomain_prefix = f"://{path_parts[0]}.s3."
+            if bucket_subdomain_prefix in request_url:
+                request_dict["url"] = re.sub(f"(.+://.+)/{path_parts[0]}(.*)", r"\1\2", request_url)
+                request_dict["url_path"] = request_dict["url_path"].removeprefix(
+                    f"/{path_parts[0]}"
+                )
+
         aws_request = client._endpoint.create_request(request_dict, operation_model)
 
         return operation_model, aws_request, request_dict
