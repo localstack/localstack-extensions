@@ -162,6 +162,9 @@ class AuthProxyAWS(Server):
                 request_dict["url_path"] = request_dict["url_path"].removeprefix(
                     f"/{path_parts[0]}"
                 )
+                if not request_dict["url_path"]:
+                    request_dict["url_path"] = "/"
+                    request_dict["url"] += "/"
 
         aws_request = client._endpoint.create_request(request_dict, operation_model)
 
