@@ -4,20 +4,23 @@ import { DynamoDBClient, GetItemCommand, PutItemCommand } from '@aws-sdk/client-
 import { RDSDataClient, ExecuteStatementCommand } from '@aws-sdk/client-rds-data';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
-addEventListener('fetch', event => {
-	event.respondWith(handleRequest(event.request));
+export default {
+    async fetch(request) { return handleRequest(request); },
+};
+
+const myCredentialProvider = () => ({
+    // use wrangler secrets to provide these global variables
+    accessKeyId: AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
 });
 
-// define LocalStack endpoint
+// define AWS SDK client config with LocalStack endpoint
 const endpoint = "http://localhost:4566";
-
-async function myCredentialProvider() {
-	return {
-		// use wrangler secrets to provide these global variables
-		accessKeyId: AWS_ACCESS_KEY_ID,
-		secretAccessKey: AWS_SECRET_ACCESS_KEY,
-	};
-}
+const clientConfig = {
+    region: AWS_REGION,
+    credentialDefaultProvider: myCredentialProvider,
+    endpoint,
+};
 
 async function handleRequest() {
 	// The AWS SDK tries to use crypto from off of the window,
@@ -37,11 +40,7 @@ async function handleRequest() {
 }
 
 async function sqsExample() {
-	const client = new SQSClient({
-		region: AWS_REGION,
-		credentialDefaultProvider: myCredentialProvider,
-		endpoint,
-	});
+	const client = new SQSClient(clientConfig);
 
 	const send = new SendMessageCommand({
 		// use wrangler secrets to provide this global variable
@@ -53,11 +52,7 @@ async function sqsExample() {
 }
 
 async function dynamoExample() {
-	const client = new DynamoDBClient({
-		region: AWS_REGION,
-		credentialDefaultProvider: myCredentialProvider,
-		endpoint,
-	});
+	const client = new DynamoDBClient(clientConfig);
 
 	// replace with your table name and key as appropriate
 	const put = new PutItemCommand({
@@ -91,11 +86,7 @@ async function auroraExample(request) {
 }
 
 async function auroraGetData(ID) {
-	const client = new RDSDataClient({
-		region: AWS_REGION,
-		credentialDefaultProvider: myCredentialProvider,
-		endpoint,
-	});
+	const client = new RDSDataClient(clientConfig);
 
 	const call = new ExecuteStatementCommand({
 		// IMPORTANT: This is NOT production ready!
@@ -111,11 +102,7 @@ async function auroraGetData(ID) {
 }
 
 async function auroraPostData(jsonData) {
-	const client = new RDSDataClient({
-		region: AWS_REGION,
-		credentialDefaultProvider: myCredentialProvider,
-		endpoint,
-	});
+	const client = new RDSDataClient(clientConfig);
 
 	const keysArray = Object.keys(jsonData);
 	let keys = '';

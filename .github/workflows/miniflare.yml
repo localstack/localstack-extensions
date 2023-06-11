@@ -35,8 +35,12 @@ jobs:
 
           # TODO remove
           mkdir ~/.localstack; echo '{"token":"test"}' > ~/.localstack/auth.json
+
+          branchName=${GITHUB_HEAD_REF##*/}
+          if [ "$branchName" = "" ]; then branchName=main; fi
+          echo "Installing from branch name $branchName"
           localstack extensions init
-          localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-miniflare&subdirectory=miniflare"
+          localstack extensions install "git+https://github.com/localstack/localstack-extensions.git@"$branchName"#egg=localstack-extension-miniflare&subdirectory=miniflare"
 
           DEBUG=1 localstack start -d
           localstack wait
