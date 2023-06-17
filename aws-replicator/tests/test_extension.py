@@ -66,6 +66,17 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
     result_body_aws = result["Body"].read()
     assert result_body_proxied == result_body_aws
 
+    for kwargs in [{}, {"Delimiter": "/"}]:
+        # list objects
+        result_aws = s3_client_aws.list_objects(Bucket=bucket, **kwargs)
+        result_proxied = s3_client.list_objects(Bucket=bucket, **kwargs)
+        assert result_proxied["Contents"] == result_aws["Contents"]
+
+        # list objects v2
+        result_aws = s3_client_aws.list_objects_v2(Bucket=bucket, **kwargs)
+        result_proxied = s3_client.list_objects_v2(Bucket=bucket, **kwargs)
+        assert result_proxied["Contents"] == result_aws["Contents"]
+
     # delete object
     s3_client.delete_object(Bucket=bucket, Key=key)
     with pytest.raises(ClientError) as aws_exc:

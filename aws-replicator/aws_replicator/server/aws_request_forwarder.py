@@ -15,7 +15,7 @@ from localstack.utils.collections import ensure_list
 from localstack.utils.strings import to_str, truncate
 from requests.structures import CaseInsensitiveDict
 
-from aws_replicator.shared.models import ProxyInstance
+from aws_replicator.shared.models import ProxyInstance, ProxyServiceConfig
 
 LOG = logging.getLogger(__name__)
 
@@ -46,8 +46,11 @@ class AwsProxyHandler(Handler):
         if not context.service:
             # this doesn't look like an AWS service invocation -> return
             return
+
         # reverse the list, to start with more recently added proxies first ...
         proxy_ports = reversed(self.PROXY_INSTANCES.keys())
+
+        # find a matching proxy for this request
         for port in proxy_ports:
             proxy = self.PROXY_INSTANCES[port]
             proxy_config = proxy.get("config") or {}
@@ -57,9 +60,7 @@ class AwsProxyHandler(Handler):
                 continue
 
             # get resource name patterns
-            resource_names = ensure_list(service_config.get("resources", []))
-            if not resource_names:
-                continue
+            resource_names = self._get_resource_names(service_config)
 
             # check if any resource name pattern matches
             resource_name_matches = any(
@@ -96,7 +97,8 @@ class AwsProxyHandler(Handler):
         # TODO: add more resource patterns
         return True
 
-    def forward_request(self, context: RequestContext, proxy: ProxyInstance):
+    def forward_request(self, context: RequestContext, proxy: ProxyInstance) -> requests.Response:
+        """Forward the given request to the proxy instance, and return the response."""
         port = proxy["port"]
         request = context.request
         target_host = config.DOCKER_HOST_FROM_CONTAINER if config.is_in_docker else LOCALHOST
@@ -167,3 +169,11 @@ class AwsProxyHandler(Handler):
                     context.service.service_name, region_name=part
                 )
                 return
+
+    @classmethod
+    def _get_resource_names(cls, service_config: ProxyServiceConfig) -> list[str]:
+        """Get name patterns of resources to proxy from service config."""
+        # match all by default
+        default_names = [".*"]
+        result = service_config.get("resources") or default_names
+        return ensure_list(result)
