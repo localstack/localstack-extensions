@@ -13,7 +13,7 @@ A LocalStack extension to replicate AWS resources into your local machine.
 
 ## Overview
 
-This extension currently offers two modes of operation - (1) the AWS connection proxy, and (2) the resource replicator CLI.
+This extension currently offers two modes of operation: (1) the AWS connection proxy, and (2) the resource replicator CLI.
 
 ## AWS Connection Proxy
 

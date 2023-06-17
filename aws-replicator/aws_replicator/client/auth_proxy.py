@@ -1,7 +1,7 @@
 import logging
 import re
 from typing import Dict, Optional, Tuple
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 import boto3
 import requests
@@ -154,17 +154,18 @@ class AuthProxyAWS(Server):
         # with 1.29.97 (fix below not required) whereas newer versions like 1.29.151 require the fix.
         if service_name == "s3":
             request_url = request_dict["url"]
-            url_parsed = urlparse(request_url)
-            path_parts = url_parsed.path.strip("/").split("/")
+            url_parsed = list(urlparse(request_url))
+            path_parts = url_parsed[2].strip("/").split("/")
             bucket_subdomain_prefix = f"://{path_parts[0]}.s3."
             if bucket_subdomain_prefix in request_url:
-                request_dict["url"] = re.sub(f"(.+://.+)/{path_parts[0]}(.*)", r"\1\2", request_url)
-                request_dict["url_path"] = request_dict["url_path"].removeprefix(
-                    f"/{path_parts[0]}"
-                )
-                if not request_dict["url_path"]:
-                    request_dict["url_path"] = "/"
-                    request_dict["url"] += "/"
+                prefix = f"/{path_parts[0]}"
+                url_parsed[2] = url_parsed[2].removeprefix(prefix)
+                request_dict["url_path"] = request_dict["url_path"].removeprefix(prefix)
+                # replace empty path with "/" (seems required for signature calculation)
+                request_dict["url_path"] = request_dict["url_path"] or "/"
+                url_parsed[2] = url_parsed[2] or "/"
+                # re-construct final URL
+                request_dict["url"] = urlunparse(url_parsed)
 
         aws_request = client._endpoint.create_request(request_dict, operation_model)
 
