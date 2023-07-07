@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  tests-miniflare:
+  tests-aws-proxy:
     name: Run extension tests
     runs-on: ubuntu-latest
     steps:
@@ -34,7 +34,8 @@ jobs:
         run: |
           docker pull localstack/localstack-pro &
           docker pull public.ecr.aws/lambda/python:3.8 &
-          pip install localstack localstack-ext
+          # install latest CLI packages (dev releases)
+          pip install --upgrade --pre localstack localstack-ext
 
           # TODO remove
           mkdir ~/.localstack; echo '{"token":"test"}' > ~/.localstack/auth.json

@@ -75,9 +75,9 @@ class StateReplicatorSQSQueue(ExtendedResourceStateReplicator):
 
 # @mixin_for(DynamoDBTable)
 class StateReplicatorDynamoDBTable(ExtendedResourceStateReplicator):
-    @classmethod
-    def cloudformation_type(cls):
-        return "AWS::DynamoDB::Table"
+    # @classmethod
+    # def cloudformation_type(cls):
+    #     return "AWS::DynamoDB::Table"
 
     def add_extended_state_external(self, remote_client: BaseClient = None):
         table_name = self.props["TableName"]
