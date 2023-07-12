@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 import re
 from typing import Dict, Optional, Tuple
 from urllib.parse import urlparse, urlunparse
@@ -7,17 +9,23 @@ import boto3
 import requests
 from botocore.awsrequest import AWSPreparedRequest
 from botocore.model import OperationModel
+from localstack import config as localstack_config
 from localstack.aws.api import HttpRequest
 from localstack.aws.protocol.parser import create_parser
 from localstack.aws.spec import load_service
 from localstack.config import get_edge_url
-from localstack.constants import AWS_REGION_US_EAST_1
+from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO
 from localstack.services.generic_proxy import ProxyListener, start_proxy_server
 from localstack.utils.bootstrap import setup_logging
+from localstack.utils.collections import select_attributes
+from localstack.utils.container_utils.container_client import PortMappings
+from localstack.utils.docker_utils import DOCKER_CLIENT, reserve_available_container_port
+from localstack.utils.files import new_tmp_file, save_file
 from localstack.utils.functions import run_safe
 from localstack.utils.net import get_free_tcp_port
 from localstack.utils.serving import Server
-from localstack.utils.strings import to_str, truncate
+from localstack.utils.strings import short_uid, to_str, truncate
+from localstack_ext.bootstrap.licensing import ENV_LOCALSTACK_API_KEY
 
 from aws_replicator.client.utils import truncate_content
 from aws_replicator.config import HANDLER_PATH_PROXIES
@@ -25,11 +33,15 @@ from aws_replicator.shared.models import AddProxyRequest, ProxyConfig
 
 LOG = logging.getLogger(__name__)
 
+# TODO make configurable
+CLI_PIP_PACKAGE = "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
+
 
 class AuthProxyAWS(Server):
-    def __init__(self, config: ProxyConfig):
+    def __init__(self, config: ProxyConfig, port: int = None):
         self.config = config
-        super().__init__(port=get_free_tcp_port())
+        port = port or get_free_tcp_port()
+        super().__init__(port=port)
 
     def do_run(self):
         class Handler(ProxyListener):
@@ -211,8 +223,78 @@ class AuthProxyAWS(Server):
         return parts[2], parts[3]
 
 
-def start_aws_auth_proxy(config: ProxyConfig) -> AuthProxyAWS:
+def start_aws_auth_proxy(config: ProxyConfig, port: int = None) -> AuthProxyAWS:
     setup_logging()
-    proxy = AuthProxyAWS(config)
+    proxy = AuthProxyAWS(config, port=port)
     proxy.start()
     return proxy
+
+
+def start_aws_auth_proxy_in_container(config: ProxyConfig):
+    """
+    Run the auth proxy in a separate local container. This can help in cases where users
+    are running into version/dependency issues on their host machines.
+    """
+    # TODO: Currently running a container and installing the extension on the fly - we
+    #  should consider building pre-baked images for the extension in the future. Also,
+    #  the new packaged CLI binary can help us gain more stability over time...
+
+    logging.getLogger("localstack.utils.container_utils.docker_cmd_client").setLevel(logging.INFO)
+    logging.getLogger("localstack.utils.docker_utils").setLevel(logging.INFO)
+    logging.getLogger("localstack.utils.run").setLevel(logging.INFO)
+
+    print("Proxy container is starting up...")
+
+    # determine port mapping
+    localstack_config.PORTS_CHECK_DOCKER_IMAGE = DOCKER_IMAGE_NAME_PRO
+    port = reserve_available_container_port()
+    ports = PortMappings()
+    ports.add(port, port)
+
+    # create container
+    container_name = f"ls-aws-proxy-{short_uid()}"
+    image_name = DOCKER_IMAGE_NAME_PRO
+    env_var_names = [
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SESSION_TOKEN",
+        "AWS_DEFAULT_REGION",
+        ENV_LOCALSTACK_API_KEY,
+    ]
+    env_vars = select_attributes(dict(os.environ), env_var_names)
+    env_vars["LOCALSTACK_HOSTNAME"] = "host.docker.internal"
+    DOCKER_CLIENT.create_container(
+        image_name,
+        name=container_name,
+        entrypoint="",
+        command=["bash", "-c", "while true; do sleep 1; done"],
+        env_vars=env_vars,
+        ports=ports,
+    )
+
+    # start container in detached mode
+    DOCKER_CLIENT.start_container(container_name)
+
+    # install extension CLI package
+    venv_activate = ". .venv/bin/activate"
+    command = ["bash", "-c", f"{venv_activate}; pip install --upgrade '{CLI_PIP_PACKAGE}'"]
+    DOCKER_CLIENT.exec_in_container(container_name, command=command)
+
+    # create config file in container
+    config_file_host = new_tmp_file()
+    save_file(config_file_host, json.dumps(config))
+    config_file_cnt = "/tmp/ls.aws.proxy.yml"
+    DOCKER_CLIENT.copy_into_container(
+        container_name, config_file_host, container_path=config_file_cnt
+    )
+
+    try:
+        print("Proxy container is ready.")
+        command = [
+            "bash",
+            "-c",
+            f"{venv_activate}; localstack aws proxy -c {config_file_cnt} -p {port}",
+        ]
+        DOCKER_CLIENT.exec_in_container(container_name, command=command)
+    except KeyboardInterrupt:
+        DOCKER_CLIENT.remove_container(container_name, force=True)
