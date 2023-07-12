@@ -104,7 +104,8 @@ class AuthProxyAWS(Server):
             )
             return response
         except Exception as e:
-            LOG.debug("Error when making request to AWS service %s: %s", service_name, e)
+            if LOG.isEnabledFor(logging.DEBUG):
+                LOG.exception("Error when making request to AWS service %s: %s", service_name, e)
             return 400
 
     def register_in_instance(self):

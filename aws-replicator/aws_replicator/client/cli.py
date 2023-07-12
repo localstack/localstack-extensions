@@ -22,7 +22,7 @@ class AwsReplicatorPlugin(LocalstackCliPlugin):
         group.add_command(aws)
 
 
-@click.group(name="aws", help="Utilities for replicating resources from real AWS environments")
+@click.group(name="aws-hybrid", help="Utilities for working with real AWS environments in hybrid settings")
 def aws():
     pass
 
