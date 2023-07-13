@@ -254,21 +254,11 @@ def start_aws_auth_proxy_in_container(config: ProxyConfig):
     # create container
     container_name = f"ls-aws-proxy-{short_uid()}"
     image_name = DOCKER_IMAGE_NAME_PRO
-    env_var_names = [
-        "AWS_SECRET_ACCESS_KEY",
-        "AWS_ACCESS_KEY_ID",
-        "AWS_SESSION_TOKEN",
-        "AWS_DEFAULT_REGION",
-        ENV_LOCALSTACK_API_KEY,
-    ]
-    env_vars = select_attributes(dict(os.environ), env_var_names)
-    env_vars["LOCALSTACK_HOSTNAME"] = "host.docker.internal"
     DOCKER_CLIENT.create_container(
         image_name,
         name=container_name,
         entrypoint="",
         command=["bash", "-c", "while true; do sleep 1; done"],
-        env_vars=env_vars,
         ports=ports,
     )
 
@@ -277,7 +267,11 @@ def start_aws_auth_proxy_in_container(config: ProxyConfig):
 
     # install extension CLI package
     venv_activate = ". .venv/bin/activate"
-    command = ["bash", "-c", f"{venv_activate}; pip install --upgrade '{CLI_PIP_PACKAGE}'"]
+    command = [
+        "bash",
+        "-c",
+        f"{venv_activate}; pip install --upgrade --no-deps '{CLI_PIP_PACKAGE}'",
+    ]
     DOCKER_CLIENT.exec_in_container(container_name, command=command)
 
     # create config file in container
@@ -288,6 +282,17 @@ def start_aws_auth_proxy_in_container(config: ProxyConfig):
         container_name, config_file_host, container_path=config_file_cnt
     )
 
+    # prepare environment variables
+    env_var_names = [
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SESSION_TOKEN",
+        "AWS_DEFAULT_REGION",
+        ENV_LOCALSTACK_API_KEY,
+    ]
+    env_vars = select_attributes(dict(os.environ), env_var_names)
+    env_vars["LOCALSTACK_HOSTNAME"] = "host.docker.internal"
+
     try:
         print("Proxy container is ready.")
         command = [
@@ -295,6 +300,7 @@ def start_aws_auth_proxy_in_container(config: ProxyConfig):
             "-c",
             f"{venv_activate}; localstack aws proxy -c {config_file_cnt} -p {port}",
         ]
-        DOCKER_CLIENT.exec_in_container(container_name, command=command)
-    except KeyboardInterrupt:
+        DOCKER_CLIENT.exec_in_container(container_name, command=command, env_vars=env_vars)
+    except Exception as e:
+        print("Error:", e)
         DOCKER_CLIENT.remove_container(container_name, force=True)

@@ -19,6 +19,9 @@ class AwsReplicatorPlugin(LocalstackCliPlugin):
         return is_logged_in() or api_key_configured()
 
     def attach(self, cli: LocalstackCli) -> None:
+        group: click.Group = cli.group
+        if not group.get_command(ctx=None, cmd_name="aws"):
+            group.add_command(aws)
         aws.add_command(cmd_aws_proxy)
         aws.add_command(cmd_aws_replicate)
 
