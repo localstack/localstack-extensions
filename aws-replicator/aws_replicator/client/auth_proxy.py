@@ -2,6 +2,8 @@ import json
 import logging
 import os
 import re
+import subprocess
+import sys
 from typing import Dict, Optional, Tuple
 from urllib.parse import urlparse, urlunparse
 
@@ -34,7 +36,7 @@ from aws_replicator.shared.models import AddProxyRequest, ProxyConfig
 LOG = logging.getLogger(__name__)
 
 # TODO make configurable
-CLI_PIP_PACKAGE = "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
+CLI_PIP_PACKAGE = "git+https://github.com/localstack/localstack-extensions/@proxy-container#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
 
 
 class AuthProxyAWS(Server):
@@ -284,23 +286,36 @@ def start_aws_auth_proxy_in_container(config: ProxyConfig):
 
     # prepare environment variables
     env_var_names = [
+        "DEBUG",
         "AWS_SECRET_ACCESS_KEY",
         "AWS_ACCESS_KEY_ID",
         "AWS_SESSION_TOKEN",
-        "AWS_DEFAULT_REGION",
+        # "AWS_DEFAULT_REGION",
         ENV_LOCALSTACK_API_KEY,
     ]
     env_vars = select_attributes(dict(os.environ), env_var_names)
     env_vars["LOCALSTACK_HOSTNAME"] = "host.docker.internal"
 
     try:
-        print("Proxy container is ready.")
+        env_vars_list = []
+        for key, value in env_vars.items():
+            env_vars_list += ["-e", f"{key}={value}"]
+        # note: using docker command directly, as our Docker client doesn't fully support log piping yet
         command = [
+            "docker",
+            "exec",
+            "-it",
+            *env_vars_list,
+            container_name,
             "bash",
             "-c",
             f"{venv_activate}; localstack aws proxy -c {config_file_cnt} -p {port}",
         ]
-        DOCKER_CLIENT.exec_in_container(container_name, command=command, env_vars=env_vars)
+        print("Proxy container is ready.")
+        subprocess.run(command, stdout=sys.stdout, stderr=sys.stderr)
+    except KeyboardInterrupt:
+        pass
     except Exception as e:
         print("Error:", e)
+    finally:
         DOCKER_CLIENT.remove_container(container_name, force=True)
