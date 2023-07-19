@@ -236,7 +236,7 @@ To start LocalStack with the extension in dev mode, first enable it by running:
 localstack extensions dev enable ./my-localstack-extension
 ```
 
-Then, start LocalStack with `EXTENSIONS_DEV_MODE=1`
+Then, start LocalStack with `EXTENSION_DEV_MODE=1`
 
 ```console
 EXTENSION_DEV_MODE=1 LOCALSTACK_API_KEY=... localstack start
