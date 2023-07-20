@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 
 def list_all_resources(
@@ -26,3 +26,7 @@ def list_all_resources(
         pages += 1
 
     return collected_items
+
+
+def get_resource_type(resource: Dict) -> str:
+    return resource.get("Type") or resource.get("TypeName")

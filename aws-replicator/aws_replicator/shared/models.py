@@ -6,6 +6,8 @@ from botocore.client import BaseClient
 from localstack.services.cloudformation.service_models import GenericBaseModel
 from localstack.utils.objects import get_all_subclasses
 
+from aws_replicator.shared.utils import get_resource_type
+
 LOG = logging.getLogger(__name__)
 
 
@@ -20,7 +22,8 @@ class ExtendedResourceStateReplicator(GenericBaseModel):
 
     @classmethod
     def get_resource_instance(cls, resource: Dict) -> Optional["ExtendedResourceStateReplicator"]:
-        resource_class = cls.find_resource_classes().get(resource["Type"])
+        resource_type = get_resource_type(resource)
+        resource_class = cls.find_resource_classes().get(resource_type)
         if resource_class:
             return resource_class(resource)
 
