@@ -3,12 +3,12 @@ LocalStack Mailhog Extension
 
 Web and API based STMP testing directly in LocalStack using [MailHog](https://github.com/mailhog/MailHog).
 
-If the standard configuration is used, LocalStack will serve the UI through http://mailhog.localhost.localstack.cloud:4566.
+If the standard configuration is used, LocalStack will serve the UI through http://mailhog.localhost.localstack.cloud:4566 or http://localhost:4566/mailhog/.
 It will also configure `SMTP_HOST` automatically, which points all services using SMTP, including [SES](https://docs.localstack.cloud/user-guide/aws/ses/), to mailhog.
 
 ## Install from GitHub repository
 
-To distribute your extension, simply upload it to your github account. Your extension can then be installed via:
+To distribute your extension, simply upload it to your GitHub account. Your extension can then be installed via:
 
 ```bash
 localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-mailhog-extension&subdirectory=mailhog"

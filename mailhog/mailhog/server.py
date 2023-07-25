@@ -16,7 +16,6 @@ LOG = logging.getLogger(__name__)
 
 
 class MailHogServer(Server):
-
     """
     Mailhog server abstraction. Uses environment-based configuration as described here:
     https://github.com/mailhog/MailHog/blob/master/docs/CONFIG.md.
@@ -28,6 +27,9 @@ class MailHogServer(Server):
 
     It supports snapshot persistence by pointing the MH_MAILDIR_PATH to the asset directory.
     """
+
+    default_web_path = "mailhog"
+    """WebPath under which the UI is served (without leading or trailing slashes)"""
 
     def __init__(self, host: str = "0.0.0.0") -> None:
         super().__init__(self._get_configured_or_random_api_port(), host)
@@ -66,10 +68,16 @@ class MailHogServer(Server):
         return 25
 
     def _create_env_vars(self) -> dict:
+        # pre-populate the relevant variables
         env = {k: v for k, v in os.environ.items() if k.startswith("MH_")}
 
-        if not os.getenv("MH_STORAGE") and config.PERSISTENCE:
+        # web path is needed to not conflict with the default router
+        env["MH_UI_WEB_PATH"] = self.web_path
+
+        # configure persistence unless the user overwrites it
+        if config.PERSISTENCE and not os.getenv("MH_STORAGE"):
             env["MH_STORAGE"] = "maildir"
+            # pointing it to the asset directory will make persistence work out of the box
             env["MH_MAILDIR_PATH"] = env.get(
                 "MH_MAILDIR_PATH", os.path.join(config.dirs.data, "mailhog")
             )
@@ -88,6 +96,10 @@ class MailHogServer(Server):
             env["MH_HOSTNAME"] = "mailhog.localhost.localstack.cloud"
 
         return env
+
+    @property
+    def web_path(self):
+        return os.getenv("MH_UI_WEB_PATH") or self.default_web_path
 
     def _create_command(self) -> list[str]:
         cmd = [mailhog_package.get_installer().get_executable_path()]
