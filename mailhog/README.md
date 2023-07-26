@@ -40,6 +40,7 @@ $ awslocal ses send-email \
 ```
 
 You should see the mail arriving in MailHog.
+![Screenshot at 2023-07-26 12-08-54](https://github.com/localstack/localstack-extensions/assets/3996682/7b0bb4e5-2fc1-4f6b-a90e-0ed31663b411)
 
 
 ## Configure
