@@ -1,15 +1,15 @@
+import logging
 import os
 from typing import TYPE_CHECKING, Optional
 
+from localstack import config, constants
 from localstack.extensions.api import Extension, http
+from localstack_ext import config as config_ext
 
 if TYPE_CHECKING:
+    # conditional import for type checking during development. the actual import is deferred to plugin loading
+    # to help with startup times
     from mailhog.server import MailHogServer
-
-import logging
-
-from localstack import config, constants
-from localstack_ext import config as config_ext
 
 LOG = logging.getLogger(__name__)
 
@@ -58,14 +58,15 @@ class MailHogExtension(Extension):
         self.server.start()
 
         if not config_ext.SMTP_HOST:
-            config_ext.SMTP_HOST = f"localhost:{self.server.get_smtp_port()}"
+            config_ext.SMTP_HOST = f"localhost:{self.server.smtp_port}"
             os.environ["SMTP_HOST"] = config_ext.SMTP_HOST
             LOG.info("configuring SMTP host to internal mailhog smtp: %s", config_ext.SMTP_HOST)
 
     def on_platform_ready(self):
         # FIXME: reconcile with LOCALSTACK_HOST. the URL should be reachable from the host (the idea is
         #  that users get a log message they can click on from the terminal)
-        url = f"http://{self.hostname_prefix}.{constants.LOCALHOST_HOSTNAME}:{config.get_edge_port_http()}"
+        hostname_edge_url = f"{constants.LOCALHOST_HOSTNAME}:{config.get_edge_port_http()}"
+        url = f"http://{self.hostname_prefix}{hostname_edge_url}"
         LOG.info("serving mailhog extension on host: %s", url)
 
         # trailing slash is important (see update_gateway_routes comment)

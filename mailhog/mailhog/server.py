@@ -31,6 +31,9 @@ class MailHogServer(Server):
     default_web_path = "mailhog"
     """WebPath under which the UI is served (without leading or trailing slashes)"""
 
+    default_smtp_port = 25
+    """Default port used to expose the SMTP server, unless MH_SMTP_BIND_ADDR is set."""
+
     def __init__(self, host: str = "0.0.0.0") -> None:
         super().__init__(self._get_configured_or_random_api_port(), host)
 
@@ -55,19 +58,28 @@ class MailHogServer(Server):
     def _log_listener(self, line, **_kwargs):
         LOG.debug(line.rstrip())
 
-    def get_ui_port(self) -> int:
+    @property
+    def ui_port(self) -> int:
         if addr := os.getenv("MH_UI_BIND_ADDR"):
             return int(addr.split(":")[-1])
         return self.port
 
-    def get_smtp_port(self) -> int:
+    @property
+    def smtp_port(self) -> int:
         if addr := os.getenv("MH_SMTP_BIND_ADDR"):
             return int(addr.split(":")[-1])
 
-        # TODO: use random port by default?
-        return 25
+        return self.default_smtp_port
+
+    @property
+    def web_path(self):
+        """Returns the configured path under which the web UI will be available when using path-based
+        routing. This should be without trailing or prefixed slashes. by default, it results in
+        http://localhost:4566/mailhog."""
+        return os.getenv("MH_UI_WEB_PATH") or self.default_web_path
 
     def _create_env_vars(self) -> dict:
+        """All configuration of mailhog"""
         # pre-populate the relevant variables
         env = {k: v for k, v in os.environ.items() if k.startswith("MH_")}
 
@@ -86,20 +98,16 @@ class MailHogServer(Server):
             env["MH_API_BIND_ADDR"] = f"{self.host}:{self.port}"
 
         if not os.getenv("MH_UI_BIND_ADDR"):
-            env["MH_UI_BIND_ADDR"] = f"{self.host}:{self.get_ui_port()}"
+            env["MH_UI_BIND_ADDR"] = f"{self.host}:{self.ui_port}"
 
         if not os.getenv("MH_SMTP_BIND_ADDR"):
-            env["MH_SMTP_BIND_ADDR"] = f"{self.host}:{self.get_smtp_port()}"
+            env["MH_SMTP_BIND_ADDR"] = f"{self.host}:{self.smtp_port}"
 
         if not os.getenv("MH_HOSTNAME"):
-            # TODO: reconcile with LOCALSTACK_HOST
+            # TODO: reconcile with LOCALSTACK_HOST (although this may only be cosmetics for the EHLO command)
             env["MH_HOSTNAME"] = "mailhog.localhost.localstack.cloud"
 
         return env
-
-    @property
-    def web_path(self):
-        return os.getenv("MH_UI_WEB_PATH") or self.default_web_path
 
     def _create_command(self) -> list[str]:
         cmd = [mailhog_package.get_installer().get_executable_path()]

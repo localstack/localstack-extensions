@@ -4,15 +4,43 @@ LocalStack Mailhog Extension
 Web and API based STMP testing directly in LocalStack using [MailHog](https://github.com/mailhog/MailHog).
 
 If the standard configuration is used, LocalStack will serve the UI through http://mailhog.localhost.localstack.cloud:4566 or http://localhost:4566/mailhog/.
-It will also configure `SMTP_HOST` automatically, which points all services using SMTP, including [SES](https://docs.localstack.cloud/user-guide/aws/ses/), to mailhog.
+It will also configure `SMTP_HOST` automatically, which points all services using SMTP, including [SES](https://docs.localstack.cloud/user-guide/aws/ses/), to MailHog.
 
 ## Install from GitHub repository
 
-To distribute your extension, simply upload it to your GitHub account. Your extension can then be installed via:
+Install the extension directly from the GitHub repository by running:
 
 ```bash
 localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-mailhog-extension&subdirectory=mailhog"
 ```
+
+After starting LocalStack, you should see these lines in the log:
+
+```
+2023-07-26T10:00:08.072  INFO --- [  MainThread] mailhog.extension          : serving mailhog extension on host: http://mailhog.localhost.localstack.cloud:4566
+2023-07-26T10:00:08.072  INFO --- [  MainThread] mailhog.extension          : serving mailhog extension on path: http://localhost:4566/mailhog/
+```
+
+## Integration with LocalStack
+
+When using this extension, LocalStack is automatically configured to use the MailHog SMTP server when sending emails.
+For example, if you run the following SES commands:
+
+```console
+$ awslocal ses verify-email-identity --email-address user1@yourdomain.com
+```
+```
+$ awslocal ses send-email \                                              
+    --from user1@yourdomain.com \
+    --message 'Body={Text={Data="Hello from LocalStack to MailHog"}},Subject={Data=Test Email}' \
+    --destination 'ToAddresses=recipient1@example.com'
+{
+    "MessageId": "ktrmpmhohorxfbjd-dzebwdgu-odnm-wyvz-pezg-mijejwlvaxtr-psfctr"
+}
+```
+
+You should see the mail arriving in MailHog.
+
 
 ## Configure
 
@@ -20,7 +48,9 @@ You can use the [MailHog configuration environment variables](https://github.com
 When using the CLI, you can add them by using `DOCKER_FLAGS='-e MH_<var>=<val> -e ...'`.
 If you are using docker compose, simply add them as environment variables to the container.
 
-## Install local development version
+## Development
+
+### Install local development version
 
 To install the extension into localstack in developer mode, you will need Python 3.10, and create a virtual environment in the extensions project.
 
@@ -41,10 +71,6 @@ You can then start LocalStack with `EXTENSION_DEV_MODE=1` to load all enabled ex
 ```bash
 EXTENSION_DEV_MODE=1 localstack start
 ```
-
-## Licensing
-
-* MailHog is licensed under MIT license: https://github.com/mailhog/MailHog/blob/master/LICENSE.md
 
 ## Known Limitations
 
@@ -74,3 +100,8 @@ return await self.wsgi(scope, receive, send)
 File "/opt/code/localstack/.venv/lib/python3.10/site-packages/localstack/http/asgi.py", line 324, in __call__
 raise NotImplementedError("Unhandled protocol %s" % scope["type"])
 ```
+
+## Licensing
+
+* No modifications were made to MailHog, which is licensed under MIT license: https://github.com/mailhog/MailHog/blob/master/LICENSE.md
+* The extension code is licensed under Apache License Version 2.0

@@ -37,7 +37,8 @@ class MailHogPackageInstaller(GitHubReleaseInstaller):
         else:
             raise NotImplementedError(f"unknown architecture {arch}")
 
-        # should only be used in the container, but there are windows binaries, so might as well add them
+        # the extension would typically only be used in the container, so windows support is not needed,
+        # but since there are windows binaries might as well add them
         if operating_system == "windows":
             bin_file += ".exe"
 
