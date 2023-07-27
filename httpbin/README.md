@@ -18,8 +18,10 @@ localstack extensions install "git+https://github.com/localstack/localstack-http
 ## Usage
 
 Opening http://httpbin.localhost.localstack.cloud:4566 in the browser will show you the flasgger UI:
+![Screenshot at 2023-07-27 14-33-03](https://github.com/localstack/localstack-extensions/assets/3996682/68442f91-13b8-4308-8f04-966340cff082)
 
 And you can call the API endpoints just as you would httpbin.org.
+![Screenshot at 2023-07-27 14-34-15](https://github.com/localstack/localstack-extensions/assets/3996682/bebe444a-d6f9-4953-87ef-cca79daa00e8)
 
 ## Development
 
