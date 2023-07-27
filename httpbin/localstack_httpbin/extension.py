@@ -2,65 +2,55 @@ import logging
 from typing import Optional
 
 from localstack import config
-from localstack.extensions.api import Extension, http, aws
-from localstack.utils.run import ShellCommandThread
+from localstack import constants
+from localstack.config import get_edge_url
+from localstack.extensions.api import Extension, http
+from localstack.utils.net import get_free_tcp_port
+
+from localstack_httpbin.server import HttpbinServer
 
 LOG = logging.getLogger(__name__)
 
 
 class HttpbinExtension(Extension):
     name = "localstack-httpbin-extension"
-    process: Optional[ShellCommandThread]
-    port: Optional[int]
+
+    hostname_prefix = "httpbin."
+
+    server: Optional[HttpbinServer]
 
     def __init__(self):
-        self.process = None
-        self.port = None
+        self.server = None
 
     def on_extension_load(self):
-        if config.DEBUG:
-            level = logging.DEBUG
-        else:
-            level = logging.INFO
+        level = logging.DEBUG if config.DEBUG else logging.INFO
         logging.getLogger("localstack_httpbin").setLevel(level=level)
         logging.getLogger("httpbin").setLevel(level=level)
 
     def on_platform_start(self):
-        LOG.info("starting")
-        self.port = 5000
-
-        self.process = ShellCommandThread(
-            ["/opt/code/localstack/.venv/bin/python", "-m", "httpbin.core"],
-            log_listener=self._log_listener
-        )
-        self.process.start()
-
-    def _log_listener(self, line, **_kwargs):
-        LOG.debug(line.rstrip())
+        self.server = HttpbinServer(get_free_tcp_port())
+        LOG.debug("starting httpbin on %s", self.server.url)
+        self.server.start()
 
     def on_platform_ready(self):
-        print("MyExtension: localstack is running")
+        # FIXME: reconcile with LOCALSTACK_HOST, but this should be accessible via the host
+        hostname = f"{self.hostname_prefix}{constants.LOCALHOST_HOSTNAME}"
+        LOG.info("Serving httpbin on %s", get_edge_url(localstack_hostname=hostname))
 
     def on_platform_shutdown(self):
-        if self.process:
-            self.process.stop()
+        if self.server:
+            self.server.shutdown()
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
-        endpoint = http.ProxyHandler(f"http://localhost:{self.port}")
+        endpoint = http.ProxyHandler(forward_base_url=self.server.url)
 
         router.add(
             "/",
-            host="httpbin.<host>",
+            host=f"{self.hostname_prefix}<host>",
             endpoint=endpoint
         )
         router.add(
             "/<path:path>",
-            host="httpbin.<host>",
+            host=f"{self.hostname_prefix}<host>",
             endpoint=endpoint
         )
-
-    def update_request_handlers(self, handlers: aws.CompositeHandler):
-        pass
-
-    def update_response_handlers(self, handlers: aws.CompositeResponseHandler):
-        pass

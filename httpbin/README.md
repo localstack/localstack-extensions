@@ -32,3 +32,11 @@ To distribute your extension, simply upload it to your github account. Your exte
 ```bash
 localstack extensions install "git+https://github.com/localstack/localstack-httpbin-extension/#egg=localstack-httpbin-extension"
 ```
+
+
+## Licensing
+
+* httpbin is licensed under the ISC license: https://github.com/postmanlabs/httpbin/blob/master/LICENSE
+* The httpbin source code is vendored with this extension, slight modifications were made to make it compatible with the latest Python and Werkzeug version.
+  The modifications retain the ISC license
+* The extension code is licensed under the Apache 2.0 License
