@@ -7,7 +7,7 @@ A LocalStack extension that provides a mocked version of [Stripe](https://stripe
 
 
 ```bash
-localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extensions-stripe&subdirectory=stripe"
+localstack extensions install localstack-extension-stripe
 ```
 
 ## Using

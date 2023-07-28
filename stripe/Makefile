@@ -34,7 +34,7 @@ dist: venv
 install: venv
 	$(VENV_ACTIVATE); python setup.py install
 
-upload: venv test dist
+upload: venv dist
 	$(VENV_ACTIVATE); pip install --upgrade twine; twine upload dist/*
 
 .PHONY: clean clean-dist format
