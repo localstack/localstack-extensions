@@ -32,7 +32,7 @@ class MailHogExtension(Extension):
     automatically delivered to mailhog. Neato burrito.
     """
 
-    name = "localstack-mailhog-extension"
+    name = "localstack-mailhog"
 
     hostname_prefix = "mailhog."
     """Used for serving through a host rule."""
