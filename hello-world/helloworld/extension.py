@@ -1,5 +1,6 @@
 from localstack.extensions.api import Extension
 
+
 class HelloWorldExtension(Extension):
     name = "hello-world"
 
