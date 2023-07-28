@@ -7,7 +7,7 @@ venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): setup.py setup.cfg
 	test -d .venv || $(VENV_BIN) .venv
-	$(VENV_RUN); pip install --upgrade pip setuptools plux
+	$(VENV_RUN); pip install --upgrade pip setuptools plux wheel
 	$(VENV_RUN); pip install -e .
 	touch $(VENV_DIR)/bin/activate
 
