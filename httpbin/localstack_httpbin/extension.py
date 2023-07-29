@@ -1,8 +1,7 @@
 import logging
 from typing import Optional
 
-from localstack import config
-from localstack import constants
+from localstack import config, constants
 from localstack.config import get_edge_url
 from localstack.extensions.api import Extension, http
 from localstack.utils.net import get_free_tcp_port
@@ -13,7 +12,7 @@ LOG = logging.getLogger(__name__)
 
 
 class HttpbinExtension(Extension):
-    name = "localstack-httpbin-extension"
+    name = "httpbin"
 
     hostname_prefix = "httpbin."
 
@@ -44,13 +43,5 @@ class HttpbinExtension(Extension):
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
         endpoint = http.ProxyHandler(forward_base_url=self.server.url)
 
-        router.add(
-            "/",
-            host=f"{self.hostname_prefix}<host>",
-            endpoint=endpoint
-        )
-        router.add(
-            "/<path:path>",
-            host=f"{self.hostname_prefix}<host>",
-            endpoint=endpoint
-        )
+        router.add("/", host=f"{self.hostname_prefix}<host>", endpoint=endpoint)
+        router.add("/<path:path>", host=f"{self.hostname_prefix}<host>", endpoint=endpoint)

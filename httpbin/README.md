@@ -7,12 +7,12 @@ Get the full httpbin experience directly in LocalStack without connecting to htt
 
 The httpbin API is served through the hostname `http://httpbin.localhost.localstack.cloud:4566`.
 
-## Install from GitHub repository
+## Install
 
-Install the extension directly from the GitHub repository by running:
+Install the extension by running:
 
 ```bash
-localstack extensions install "git+https://github.com/localstack/localstack-httpbin-extension/#egg=localstack-httpbin-extension&subdirectory=httpbin"
+localstack extensions install localstack-extension-httpbin
 ```
 
 ## Usage
