@@ -27,14 +27,19 @@ class HttpbinExtension(Extension):
         logging.getLogger("httpbin").setLevel(level=level)
 
     def on_platform_start(self):
+        from localstack_httpbin.vendor.httpbin import core
+        core.template['host'] = f"{self.get_public_hostname()}:{config.get_edge_port_http()}"
+
         self.server = HttpbinServer(get_free_tcp_port())
         LOG.debug("starting httpbin on %s", self.server.url)
         self.server.start()
 
-    def on_platform_ready(self):
+    def get_public_hostname(self) -> str:
         # FIXME: reconcile with LOCALSTACK_HOST, but this should be accessible via the host
-        hostname = f"{self.hostname_prefix}{constants.LOCALHOST_HOSTNAME}"
-        LOG.info("Serving httpbin on %s", get_edge_url(localstack_hostname=hostname))
+        return  f"{self.hostname_prefix}{constants.LOCALHOST_HOSTNAME}"
+
+    def on_platform_ready(self):
+        LOG.info("Serving httpbin on %s", get_edge_url(localstack_hostname=self.get_public_hostname()))
 
     def on_platform_shutdown(self):
         if self.server:

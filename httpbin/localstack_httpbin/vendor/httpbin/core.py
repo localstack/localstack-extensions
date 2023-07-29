@@ -47,11 +47,8 @@ from .helpers import (
 )
 from .utils import weighted_choice
 from .structures import CaseInsensitiveDict
+from .version import version
 
-with open(
-    os.path.join(os.path.realpath(os.path.dirname(__file__)), "VERSION")
-) as version_file:
-    version = version_file.read().strip()
 
 ENV_COOKIES = (
     "_gauges_unique",
