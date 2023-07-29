@@ -1,5 +1,9 @@
 import pytest
-from localstack.testing.aws.util import primary_testing_aws_client, base_aws_client_factory, base_aws_session
+from localstack.testing.aws.util import (
+    base_aws_client_factory,
+    base_aws_session,
+    primary_testing_aws_client,
+)
 
 pytest_plugins = [
     "localstack.testing.pytest.fixtures",
