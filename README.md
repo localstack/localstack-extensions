@@ -24,15 +24,26 @@ $ localstack extensions --help
 
 Usage: localstack extensions [OPTIONS] COMMAND [ARGS]...
 
-  Manage LocalStack extensions (beta)
+  (Beta) Manage LocalStack extensions.
+
+  LocalStack Extensions allow developers to extend and customize LocalStack.
+  The feature and the API are currently experimental and may be subject to
+  change.
+
+  Visit https://docs.localstack.cloud/references/localstack-extensions/
+  for more information on LocalStack Extensions.
 
 Options:
-  --help  Show this message and exit.
+  -v, --verbose  Print more output
+  -h, --help     Show this message and exit.
 
 Commands:
-  init       Initialize the LocalStack extensions environment
-  install    Install a LocalStack extension
-  uninstall  Remove a LocalStack extension
+  dev        Developer tools for developing LocalStack extensions.
+  init       Initialize the LocalStack extensions environment.
+  install    Install a LocalStack extension.
+  list       List installed extension.
+  uninstall  Remove a LocalStack extension.
+
 ```
 
 To install an extension, specify the name of the pip dependency that contains
@@ -40,16 +51,34 @@ the extension. For example, for the official Stripe extension, you can either
 use the package distributed on pypi:
 
 ```console
-$ localstack extensions install localstack-extensions-stripe
+$ localstack extensions install localstack-extension-httpbin
 ```
 
-or you can install it directly from this git repository
+or you can install the latest version directly from this Git repository
 
 ```console
-$ localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extensions-stripe&subdirectory=stripe"
+$ localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-httpbin&subdirectory=httpbin"
 ```
 
+## Official LocalStack Extensions
+
+Here is the current list of extensions developed by the LocalStack team and their support status.
+You can install the respective extension by calling `localstack install <Install name>`.
+
+| Extension | Install name | Version | Support status |
+| --------- | ------------ | ------- | -------------- |
+| [AWS replicator](https://github.com/localstack/localstack-extensions/tree/main/aws-replicator) | localstack-extension-aws-replicator | 0.1.0 | Experimental |
+| [Diagnosis Viewer](https://github.com/localstack/localstack-extensions/tree/main/diagnosis-viewer) | localstack-extension-diagnosis-viewer | 0.1.0 | Stable |
+| [Hello World](https://github.com/localstack/localstack-extensions/tree/main/hello-world) | localstack-extension-hello-world | 0.1.0 | Stable |
+| [httpbin](https://github.com/localstack/localstack-extensions/tree/main/httpbin) | localstack-extension-httpbin | 0.1.0 | Stable |
+| [MailHog](https://github.com/localstack/localstack-extensions/tree/main/mailhog) | localstack-extension-mailhog | 0.1.0 | Stable |
+| [Miniflare](https://github.com/localstack/localstack-extensions/tree/main/miniflare) | localstack-extension-miniflare | 0.1.0 | Experimental |
+| [Stripe](https://github.com/localstack/localstack-extensions/tree/main/stripe) | localstack-extension-stripe | 0.1.0 | Stable |
+
+
 ## Developing Extensions
+
+This section provides a brief overview of how to develop your own extensions.
 
 ### The extensions API
 
