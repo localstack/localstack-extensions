@@ -163,8 +163,8 @@ from localstack.extensions.api import Extension
 
 LOG = logging.getLogger(__name__)
 
-class ReadyAnnoucerExtension(Extension):
-    name = "my_ready_annoucer"
+class ReadyAnnouncerExtension(Extension):
+    name = "my_ready_announcer"
 
     def on_platform_ready(self):
     	LOG.info("my plugin is loaded and localstack is ready to roll!")
@@ -198,7 +198,7 @@ install_requires =
 
 [options.entry_points]
 localstack.extensions =
-    my_ready_annoucer = localstack_annoucer.extension:ReadyAnnoucerExtension
+    my_ready_announcer = localstack_announcer.extension:ReadyAnnouncerExtension
 ```
 
 The entry point group is the Plux namespace `locastack.extensions`, and the
