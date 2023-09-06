@@ -1,5 +1,6 @@
 Stripe LocalStack extensions
 ============================
+[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-stripe&subdirectory=stripe)
 
 A LocalStack extension that provides a mocked version of [Stripe](https://stripe.com) as a service.
 
