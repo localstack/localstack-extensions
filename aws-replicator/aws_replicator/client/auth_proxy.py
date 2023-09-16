@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import sys
+from functools import cache
 from typing import Dict, Optional, Tuple
 from urllib.parse import urlparse, urlunparse
 
@@ -89,7 +90,7 @@ class AuthProxyAWS(Server):
         )
 
         # adjust request dict and fix certain edge cases in the request
-        self._adjust_request_dict(request_dict)
+        self._adjust_request_dict(service_name, request_dict)
 
         headers_truncated = {k: truncate(to_str(v)) for k, v in dict(aws_request.headers).items()}
         LOG.debug(
@@ -186,10 +187,11 @@ class AuthProxyAWS(Server):
 
         return operation_model, aws_request, request_dict
 
-    def _adjust_request_dict(self, request_dict: Dict):
+    def _adjust_request_dict(self, service_name: str, request_dict: Dict):
         """Apply minor fixes to the request dict, which seem to be required in the current setup."""
 
-        body_str = run_safe(lambda: to_str(request_dict["body"])) or ""
+        req_body = request_dict.get("body")
+        body_str = run_safe(lambda: to_str(req_body)) or ""
 
         # TODO: this custom fix should not be required - investigate and remove!
         if "<CreateBucketConfiguration" in body_str and "LocationConstraint" not in body_str:
@@ -201,6 +203,13 @@ class AuthProxyAWS(Server):
                     '<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
                     f"<LocationConstraint>{region}</LocationConstraint></CreateBucketConfiguration>"
                 )
+        if service_name == "sqs" and isinstance(req_body, dict):
+            account_id = self._query_account_id_from_aws()
+            if "QueueUrl" in req_body:
+                queue_name = req_body["QueueUrl"].split("/")[-1]
+                req_body["QueueUrl"] = f"https://queue.amazonaws.com/{account_id}/{queue_name}"
+            if "QueueOwnerAWSAccountId" in req_body:
+                req_body["QueueOwnerAWSAccountId"] = account_id
 
     def _fix_headers(self, request: HttpRequest, service_name: str):
         if service_name == "s3":
@@ -212,6 +221,8 @@ class AuthProxyAWS(Server):
         request.headers.pop("Content-Length", None)
         request.headers.pop("x-localstack-request-url", None)
         request.headers.pop("X-Forwarded-For", None)
+        request.headers.pop("X-Localstack-Tgt-Api", None)
+        request.headers.pop("X-Moto-Account-Id", None)
         request.headers.pop("Remote-Addr", None)
 
     def _extract_region_and_service(self, headers) -> Optional[Tuple[str, str]]:
@@ -223,6 +234,13 @@ class AuthProxyAWS(Server):
         if len(parts) < 5:
             return
         return parts[2], parts[3]
+
+    @cache
+    def _query_account_id_from_aws(self) -> str:
+        session = boto3.Session()
+        sts_client = session.client("sts")
+        result = sts_client.get_caller_identity()
+        return result["Account"]
 
 
 def start_aws_auth_proxy(config: ProxyConfig, port: int = None) -> AuthProxyAWS:

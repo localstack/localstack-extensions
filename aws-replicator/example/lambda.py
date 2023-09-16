@@ -7,6 +7,4 @@ def handler(event, context):
     print("event:", event)
     print("buckets:", buckets)
     bucket_names = [b["Name"] for b in buckets]
-    return {
-        "buckets": bucket_names
-    }
+    return {"buckets": bucket_names}
