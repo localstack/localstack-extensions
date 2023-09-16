@@ -4,7 +4,6 @@ import re
 from typing import Dict, Optional
 
 import requests
-from localstack import config
 from localstack.aws.api import RequestContext
 from localstack.aws.chain import Handler, HandlerChain
 from localstack.constants import APPLICATION_JSON, LOCALHOST, LOCALHOST_HOSTNAME
@@ -13,6 +12,7 @@ from localstack.utils.aws import arns
 from localstack.utils.aws.arns import sqs_queue_arn
 from localstack.utils.aws.aws_stack import get_valid_regions, mock_aws_request_headers
 from localstack.utils.collections import ensure_list
+from localstack.utils.net import get_addressable_container_host
 from localstack.utils.strings import to_str, truncate
 from requests.structures import CaseInsensitiveDict
 
@@ -111,7 +111,7 @@ class AwsProxyHandler(Handler):
         """Forward the given request to the proxy instance, and return the response."""
         port = proxy["port"]
         request = context.request
-        target_host = config.DOCKER_HOST_FROM_CONTAINER if config.is_in_docker else LOCALHOST
+        target_host = get_addressable_container_host(default_local_hostname=LOCALHOST)
         url = f"http://{target_host}:{port}{request.path}?{to_str(request.query_string)}"
 
         # inject Auth header, to ensure we're passing the right region to the proxy (e.g., for Cognito InitiateAuth)
