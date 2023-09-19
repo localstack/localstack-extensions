@@ -1,5 +1,6 @@
 Miniflare LocalStack extension (experimental)
 =============================================
+[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-miniflare&subdirectory=miniflare)
 
 This extension makes [Miniflare](https://miniflare.dev) (dev environment for Cloudflare workers) available directly in LocalStack!
 

@@ -1,5 +1,6 @@
 LocalStack Mailhog Extension
 ===============================
+[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-mailhog&subdirectory=mailhog)
 
 Web and API based SMTP testing directly in LocalStack using [MailHog](https://github.com/mailhog/MailHog).
 

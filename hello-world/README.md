@@ -1,5 +1,6 @@
 Hello World LocalStack extension
 ================================
+[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-hello-world&subdirectory=hello-world)
 
 A minimal LocalStack extension.
 

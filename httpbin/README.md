@@ -1,5 +1,6 @@
 LocalStack httpbin extension
 ===============================
+[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-httpbin&subdirectory=httpbin)
 
 A simple HTTP Request & Response Service directly in LocalStack
 using [httpbin](https://github.com/postmanlabs/httpbin).
