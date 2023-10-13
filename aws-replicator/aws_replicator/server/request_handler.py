@@ -7,7 +7,11 @@ from typing import Dict, List
 
 import yaml
 from flask import redirect
-from localstack.constants import APPLICATION_OCTET_STREAM, LOCALHOST_HOSTNAME
+from localstack.constants import (
+    APPLICATION_OCTET_STREAM,
+    INTERNAL_RESOURCE_PATH,
+    LOCALHOST_HOSTNAME,
+)
 from localstack.http import Request, Response, route
 from localstack.utils.docker_utils import DOCKER_CLIENT, reserve_available_container_port
 from localstack.utils.files import load_file, new_tmp_file, rm_rf
@@ -45,6 +49,7 @@ class RequestHandler:
 
     @route(HANDLER_PATH_PROXIES, methods=["POST"])
     def add_proxy(self, request: Request, **kwargs):
+        print("!!request headers", request.headers)
         req = AddProxyRequest(**request.json)
         result = handle_proxies_request(req)
         return result or {}
@@ -74,10 +79,18 @@ class RequestHandler:
         return {}
 
     @route("/", methods=["GET"], host=ROUTE_HOST)
-    def get_index_html(self, request: Request, **kwargs):
-        return redirect("/ui/index.html")
+    def forward_from_root(self, request: Request, **kwargs):
+        return redirect(f"{INTERNAL_RESOURCE_PATH}/aws-replicator/index.html")
 
-    @route("/ui/<path:path>", methods=["GET"], host=ROUTE_HOST)
+    @route(f"{INTERNAL_RESOURCE_PATH}/aws-replicator", methods=["GET"])
+    def forward_from_extension_root(self, request: Request, **kwargs):
+        return redirect(f"{INTERNAL_RESOURCE_PATH}/aws-replicator/index.html")
+
+    @route("/favicon.png", methods=["GET"], host=ROUTE_HOST)
+    def serve_favicon(self, request: Request, **kwargs):
+        return self.serve_static_file("/favicon.png")
+
+    @route(f"{INTERNAL_RESOURCE_PATH}/aws-replicator/<path:path>", methods=["GET"])
     def get_web_asset(self, request: Request, path: str, **kwargs):
         return self.serve_static_file(path)
 
