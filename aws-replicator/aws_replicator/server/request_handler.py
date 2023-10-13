@@ -40,8 +40,9 @@ class RequestHandler:
     @route(HANDLER_PATH_REPLICATE, methods=["POST"])
     def handle_replicate(self, request: Request, **kwargs):
         replicator = _get_replicator()
-        if request.json:
-            req = ReplicateStateRequest(**request.json)
+        payload = _get_json(request)
+        if payload:
+            req = ReplicateStateRequest(**payload)
             result = replicator.create(req)
         else:
             result = replicator.create_all()
@@ -49,8 +50,9 @@ class RequestHandler:
 
     @route(HANDLER_PATH_PROXIES, methods=["POST"])
     def add_proxy(self, request: Request, **kwargs):
-        print("!!request headers", request.headers)
-        req = AddProxyRequest(**request.json)
+        payload = _get_json(request)
+        print("!!request headers", request.headers, payload)
+        req = AddProxyRequest(**payload)
         result = handle_proxies_request(req)
         return result or {}
 
@@ -73,8 +75,8 @@ class RequestHandler:
 
     @route(f"{HANDLER_PATH_PROXIES}/status", methods=["POST"])
     def set_status(self, request: Request, **kwargs):
-        req = request.json or {}
-        if req.get("status") == "disabled":
+        payload = _get_json(request) or {}
+        if payload.get("status") == "disabled":
             stop_proxy_containers()
         return {}
 
@@ -147,3 +149,10 @@ def stop_proxy_containers():
             DOCKER_CLIENT.remove_container(container["name"], force=True)
         except Exception as e:
             LOG.debug("Unable to remove container %s: %s", container["name"], e)
+
+
+def _get_json(request: Request) -> dict:
+    try:
+        return request.json
+    except Exception:
+        return json.loads(to_str(request.data))

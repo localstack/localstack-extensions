@@ -325,29 +325,32 @@ def start_aws_auth_proxy_in_container(
     env_vars["LOCALSTACK_HOSTNAME"] = "host.docker.internal"
 
     try:
-        env_vars_list = []
-        for key, value in env_vars.items():
-            env_vars_list += ["-e", f"{key}={value}"]
-        # note: using docker command directly, as our Docker client doesn't fully support log piping yet
-        command = [
-            "docker",
-            "exec",
-            *([] if quiet else ["-it"]),
-            *env_vars_list,
-            container_name,
-            "bash",
-            "-c",
-            f"{venv_activate}; localstack aws proxy -c {CONTAINER_CONFIG_FILE} -p {port} > {CONTAINER_LOG_FILE} 2>&1",
-        ]
         print("Proxy container is ready.")
+        command = f"{venv_activate}; localstack aws proxy -c {CONTAINER_CONFIG_FILE} -p {port} > {CONTAINER_LOG_FILE} 2>&1"
         if quiet:
-            subprocess.check_output(command, stderr=subprocess.STDOUT)
+            DOCKER_CLIENT.exec_in_container(
+                container_name, command=["bash", "-c", command], env_vars=env_vars, interactive=True
+            )
         else:
+            env_vars_list = []
+            for key, value in env_vars.items():
+                env_vars_list += ["-e", f"{key}={value}"]
+            # note: using docker command directly, as our Docker client doesn't fully support log piping yet
+            command = [
+                "docker",
+                "exec",
+                "-it",
+                *env_vars_list,
+                container_name,
+                "bash",
+                "-c",
+                command,
+            ]
             subprocess.run(command, stdout=sys.stdout, stderr=sys.stderr)
     except KeyboardInterrupt:
         pass
     except Exception as e:
-        LOG.info("Error:", e)
+        LOG.info("Error: %s", e)
         if isinstance(e, subprocess.CalledProcessError):
             LOG.info("Error in called process - output: %s\n%s", e.stdout, e.stderr)
     finally:
