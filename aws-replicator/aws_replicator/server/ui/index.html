@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>AWS Replicator - LocalStack Extension</title>
+    <link rel="shortcut icon" href="/favicon.png" />
+    <script src="https://unpkg.com/react/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.18.0/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/@mui/material@5.14.13/umd/material-ui.development.js"></script>
+    <style type="text/css">
+      body {padding: 20px;}
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>AWS Replicator - LocalStack Extension</h1>
+      <p>
+        This extension allows you to <b>mirror resources from real AWS accounts into your LocalStack instance</b>, thereby "bridging the gap" between local and remote cloud resources.
+      </p><p>
+        Some <b>common use cases are</b>: developing a local Lambda function that accesses a remote DynamoDB table; running a local Athena SQL query in LocalStack accessing files in a real S3 bucket in AWS; seeding a local Terraform script with SSM parameters from a real AWS account
+      </p><p>
+        The extension currently offers <b>two modes of operation</b>:
+        <ol>
+          <li>AWS Connection Proxy</li>
+          <li>AWS Resource Replicator</li>
+        </ol>
+      </p>
+      <div id="root"></div>
+    </div>
+    <script src="./app.js" type="text/babel" data-type="module"></script>
+  </body>
+</html>

@@ -66,6 +66,10 @@ class ResourceReplicator(ABC):
     def create(self, resource: Dict):
         """Create the resource specified via the given resource dict."""
 
+    @abstractmethod
+    def create_all(self):
+        """Scrape and replicate all resources from the source AWS account into LocalStack."""
+
 
 class ProxyServiceConfig(TypedDict, total=False):
     # list of regexes identifying resources to be proxied requests to
@@ -94,3 +98,5 @@ class AddProxyRequest(ProxyInstance):
     """
     Represents a request to register a new local proxy instance with the extension inside LocalStack.
     """
+
+    env_vars: dict

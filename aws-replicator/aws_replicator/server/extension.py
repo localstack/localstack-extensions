@@ -11,13 +11,10 @@ class AwsReplicatorExtension(Extension):
     name = "aws-replicator"
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
-        from aws_replicator.config import HANDLER_PATH_PROXIES, HANDLER_PATH_REPLICATE
         from aws_replicator.server.request_handler import RequestHandler
 
         LOG.info("AWS resource replicator: adding routes to activate extension")
-        endpoint = RequestHandler()
-        get_internal_apis().add(HANDLER_PATH_REPLICATE, endpoint, methods=["POST"])
-        get_internal_apis().add(HANDLER_PATH_PROXIES, endpoint, methods=["POST"])
+        get_internal_apis().add(RequestHandler())
 
     def update_request_handlers(self, handlers: CompositeHandler):
         from aws_replicator.server.aws_request_forwarder import AwsProxyHandler

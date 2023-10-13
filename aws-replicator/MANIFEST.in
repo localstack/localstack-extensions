@@ -1,0 +1,3 @@
+recursive-include aws_replicator *.html
+recursive-include aws_replicator *.js
+recursive-include aws_replicator *.png
