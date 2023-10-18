@@ -39,7 +39,7 @@ class AwsProxyHandler(Handler):
         # set response details, then stop handler chain to return response
         chain.response.data = response.raw_content
         chain.response.status_code = response.status_code
-        chain.response.headers.update(response.headers)
+        chain.response.headers.update(dict(response.headers))
         chain.stop()
 
     def select_proxy(self, context: RequestContext) -> Optional[ProxyInstance]:
