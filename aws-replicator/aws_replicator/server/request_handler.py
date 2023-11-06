@@ -51,7 +51,6 @@ class RequestHandler:
     @route(HANDLER_PATH_PROXIES, methods=["POST"])
     def add_proxy(self, request: Request, **kwargs):
         payload = _get_json(request)
-        print("!!request headers", request.headers, payload)
         req = AddProxyRequest(**payload)
         result = handle_proxies_request(req)
         return result or {}
