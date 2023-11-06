@@ -6,7 +6,12 @@ from typing import Dict, Optional
 import requests
 from localstack.aws.api import RequestContext
 from localstack.aws.chain import Handler, HandlerChain
-from localstack.constants import APPLICATION_JSON, LOCALHOST, LOCALHOST_HOSTNAME
+from localstack.constants import (
+    APPLICATION_JSON,
+    LOCALHOST,
+    LOCALHOST_HOSTNAME,
+    TEST_AWS_ACCESS_KEY_ID,
+)
 from localstack.http import Response
 from localstack.utils.aws import arns
 from localstack.utils.aws.arns import sqs_queue_arn
@@ -93,13 +98,19 @@ class AwsProxyHandler(Handler):
     ) -> bool:
         if context.service.service_name == "s3":
             bucket_name = context.service_request.get("Bucket") or ""
-            s3_bucket_arn = arns.s3_bucket_arn(bucket_name, account_id=context.account_id)
+            s3_bucket_arn = arns.s3_bucket_arn(bucket_name)
             return bool(re.match(resource_name_pattern, s3_bucket_arn))
         if context.service.service_name == "sqs":
             queue_name = context.service_request.get("QueueName") or ""
             queue_url = context.service_request.get("QueueUrl") or ""
             queue_name = queue_name or queue_url.split("/")[-1]
-            candidates = (queue_name, queue_url, sqs_queue_arn(queue_name))
+            candidates = (
+                queue_name,
+                queue_url,
+                sqs_queue_arn(
+                    queue_name, account_id=context.account_id, region_name=context.region
+                ),
+            )
             for candidate in candidates:
                 if re.match(resource_name_pattern, candidate):
                     return True
@@ -176,7 +187,9 @@ class AwsProxyHandler(Handler):
         for part in parts:
             if part in valid_regions:
                 context.request.headers["Authorization"] = mock_aws_request_headers(
-                    context.service.service_name, region_name=part
+                    context.service.service_name,
+                    region_name=part,
+                    aws_access_key_id=TEST_AWS_ACCESS_KEY_ID,
                 )
                 return
 
