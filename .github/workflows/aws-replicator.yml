@@ -55,8 +55,8 @@ jobs:
           pip install awscli-local[ver1]
           pip install terraform-local
 
-          find  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.10/site-packages/aws*
-          ls -la  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.10/site-packages/aws*
+          find  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.11/site-packages/aws*
+          ls -la  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.11/site-packages/aws*
           DEBUG=1 localstack start -d
           localstack wait
 

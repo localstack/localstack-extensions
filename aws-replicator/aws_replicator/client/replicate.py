@@ -6,7 +6,6 @@ from copy import deepcopy
 from typing import Dict, List
 
 import boto3
-from localstack.services.cloudformation.engine import template_deployer
 from localstack.utils.collections import select_attributes
 from localstack.utils.files import load_file, save_file
 from localstack.utils.json import extract_jsonpath
@@ -167,6 +166,8 @@ class AwsAccountScraper:
         if not details:
             return []
 
+        from localstack.services.cloudformation.engine import template_deployer
+
         service_name = template_deployer.get_service_name({"Type": resource_type})
         from_client = boto3.client(service_name)
 
@@ -222,8 +223,12 @@ class ResourceReplicatorClient(ResourceReplicator):
         if model_instance:
             model_instance.add_extended_state_external()
 
+    def create_all(self):
+        # request creation
+        post_request_to_instance()
 
-def replicate_state(
+
+def replicate_state_with_scraper_on_host(
     scraper: AwsAccountScraper, creator: ResourceReplicator, services: List[str] = None
 ):
     """Replicate the state from a source AWS account into a target account (or LocalStack)"""
@@ -243,7 +248,18 @@ def replicate_state(
             creator.create(resource)
 
 
+def replicate_state_with_scraper_in_container(
+    creator: ResourceReplicator, services: List[str] = None
+):
+    """Replicate the state from a source AWS account into a target account (or LocalStack)"""
+    creator.create_all()
+
+
 def replicate_state_into_local(services: List[str]):
-    scraper = AwsAccountScraper(boto3.Session())
     creator = ResourceReplicatorClient()
-    return replicate_state(scraper, creator, services=services)
+
+    # deprecated
+    # scraper = AwsAccountScraper(boto3.Session())
+    # return replicate_state_with_scraper_on_host(scraper, creator, services=services)
+
+    return replicate_state_with_scraper_in_container(creator, services=services)

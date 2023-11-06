@@ -6,7 +6,8 @@ import boto3
 import pytest
 from botocore.exceptions import ClientError
 from localstack.aws.connect import connect_to
-from localstack.utils.aws.arns import get_sqs_queue_url, sqs_queue_arn
+from localstack.constants import TEST_AWS_ACCOUNT_ID
+from localstack.utils.aws.arns import sqs_queue_arn, sqs_queue_url_for_arn
 from localstack.utils.net import wait_for_port_open
 from localstack.utils.sync import retry
 
@@ -43,13 +44,13 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
     # list buckets to assert that proxy is up and running
     buckets_proxied = s3_client.list_buckets()["Buckets"]
     bucket_aws = s3_client_aws.list_buckets()["Buckets"]
-    assert buckets_proxied and buckets_proxied == bucket_aws
+    assert buckets_proxied == bucket_aws
 
     # create bucket
     bucket = s3_create_bucket()
     buckets_proxied = s3_client.list_buckets()["Buckets"]
     bucket_aws = s3_client_aws.list_buckets()["Buckets"]
-    assert buckets_proxied == bucket_aws
+    assert buckets_proxied and buckets_proxied == bucket_aws
 
     # put object
     key = "test-key-with-urlencoded-chars-:+"
@@ -102,7 +103,7 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
     retry(_assert_deleted, retries=5, sleep=5)
 
 
-def test_sqs_requests(start_aws_proxy, s3_create_bucket, cleanups):
+def test_sqs_requests(start_aws_proxy, cleanups):
     queue_name_aws = "test-queue-aws"
     queue_name_local = "test-queue-local"
 
@@ -147,8 +148,10 @@ def test_sqs_requests(start_aws_proxy, s3_create_bucket, cleanups):
     assert received[0]["Body"] == "message 2"
 
     # assert that using a local queue URL also works for proxying
-    queue_arn = sqs_queue_arn(queue_name_aws)
-    queue_url = get_sqs_queue_url(queue_arn=queue_arn)
+    queue_arn = sqs_queue_arn(
+        queue_name_aws, account_id=TEST_AWS_ACCOUNT_ID, region_name=sqs_client.meta.region_name
+    )
+    queue_url = sqs_queue_url_for_arn(queue_arn=queue_arn)
     result = sqs_client.get_queue_attributes(QueueUrl=queue_url, AttributeNames=["QueueArn"])[
         "Attributes"
     ]["QueueArn"]

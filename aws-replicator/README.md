@@ -30,6 +30,8 @@ $ localstack aws proxy -s dynamodb,s3,cognito-idp
 
 **Warning:** Be careful when using the proxy - make sure to _never_ give access to production accounts or any critical/sensitive data!
 
+**Note:** The replicator CLI currently works only when installing the `localstack` CLI via `pip`. If you're downloading the `localstack` CLI as a [binary release](https://docs.localstack.cloud/getting-started/installation/#localstack-cli), then please use the proxy configuration UI described below.
+
 ### Resource-specific proxying
 
 As an alternative to forwarding _all_ requests for a particular service, you can also proxy only requests for _specific_ resources to AWS.
@@ -70,6 +72,14 @@ make_bucket: test123
 
 A more comprehensive sample, involving local Lambda functions combined with remote SQS queues and S3 buckets, can be found in the `example` folder of this repo.
 
+### Proxy Configuration UI
+
+Once the extension is installed, it will expose a small configuration endpoint in your LocalStack container under the following endpoint: http://localhost:4566/_localstack/aws-replicator/index.html . 
+
+Please use this Web UI to define the proxy configuration (in YAML syntax), as well as the AWS credentials (AWS access key ID, secret access key, and optionally session token).
+
+![configuration settings](etc/proxy-settings.png)
+
 ## Resource Replicator CLI
 
 The figure below illustrates how the extension can be used to replicate the state, e.g., an SQS queue and the messages contained in it, from AWS into your LocalStack instance.
@@ -102,6 +112,11 @@ To install the extension itself (server component running inside LocalStack), us
 ```bash
 localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
 ```
+
+## Change Log
+
+* `0.1.1`: Add simple configuration Web UI
+* `0.1.0`: Initial version of extension
 
 ## License
 

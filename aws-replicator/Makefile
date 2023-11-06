@@ -2,6 +2,7 @@ VENV_BIN = python3 -m venv
 VENV_DIR ?= .venv
 VENV_ACTIVATE = $(VENV_DIR)/bin/activate
 VENV_RUN = . $(VENV_ACTIVATE)
+TEST_PATH ?= tests
 PIP_CMD ?= pip
 
 venv: $(VENV_ACTIVATE)
@@ -29,7 +30,7 @@ install: venv
 	$(VENV_RUN); $(PIP_CMD) install -e ".[test]"
 
 test: venv
-	$(VENV_RUN); python -m pytest tests
+	$(VENV_RUN); python -m pytest $(TEST_PATH)
 
 dist: venv
 	$(VENV_RUN); python setup.py sdist bdist_wheel

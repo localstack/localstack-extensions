@@ -12,6 +12,7 @@ import boto3
 import requests
 from botocore.awsrequest import AWSPreparedRequest
 from botocore.model import OperationModel
+from localstack import config
 from localstack import config as localstack_config
 from localstack.aws.api import HttpRequest
 from localstack.aws.protocol.parser import create_parser
@@ -35,9 +36,16 @@ from aws_replicator.config import HANDLER_PATH_PROXIES
 from aws_replicator.shared.models import AddProxyRequest, ProxyConfig
 
 LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.INFO)
+if config.DEBUG:
+    LOG.setLevel(logging.DEBUG)
 
 # TODO make configurable
 CLI_PIP_PACKAGE = "git+https://github.com/localstack/localstack-extensions/@main#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
+
+CONTAINER_NAME_PREFIX = "ls-aws-proxy-"
+CONTAINER_CONFIG_FILE = "/tmp/ls.aws.proxy.yml"
+CONTAINER_LOG_FILE = "/tmp/ls-aws-proxy.log"
 
 
 class AuthProxyAWS(Server):
@@ -250,7 +258,9 @@ def start_aws_auth_proxy(config: ProxyConfig, port: int = None) -> AuthProxyAWS:
     return proxy
 
 
-def start_aws_auth_proxy_in_container(config: ProxyConfig):
+def start_aws_auth_proxy_in_container(
+    config: ProxyConfig, env_vars: dict = None, port: int = None, quiet: bool = False
+):
     """
     Run the auth proxy in a separate local container. This can help in cases where users
     are running into version/dependency issues on their host machines.
@@ -267,23 +277,23 @@ def start_aws_auth_proxy_in_container(config: ProxyConfig):
 
     # determine port mapping
     localstack_config.PORTS_CHECK_DOCKER_IMAGE = DOCKER_IMAGE_NAME_PRO
-    port = reserve_available_container_port()
+    port = port or reserve_available_container_port()
     ports = PortMappings()
     ports.add(port, port)
 
     # create container
-    container_name = f"ls-aws-proxy-{short_uid()}"
+    container_name = f"{CONTAINER_NAME_PREFIX}{short_uid()}"
     image_name = DOCKER_IMAGE_NAME_PRO
     DOCKER_CLIENT.create_container(
         image_name,
         name=container_name,
         entrypoint="",
-        command=["bash", "-c", "while true; do sleep 1; done"],
+        command=["bash", "-c", f"touch {CONTAINER_LOG_FILE}; tail -f {CONTAINER_LOG_FILE}"],
         ports=ports,
     )
 
     # start container in detached mode
-    DOCKER_CLIENT.start_container(container_name)
+    DOCKER_CLIENT.start_container(container_name, attach=False)
 
     # install extension CLI package
     venv_activate = ". .venv/bin/activate"
@@ -297,9 +307,8 @@ def start_aws_auth_proxy_in_container(config: ProxyConfig):
     # create config file in container
     config_file_host = new_tmp_file()
     save_file(config_file_host, json.dumps(config))
-    config_file_cnt = "/tmp/ls.aws.proxy.yml"
     DOCKER_CLIENT.copy_into_container(
-        container_name, config_file_host, container_path=config_file_cnt
+        container_name, config_file_host, container_path=CONTAINER_CONFIG_FILE
     )
 
     # prepare environment variables
@@ -311,29 +320,42 @@ def start_aws_auth_proxy_in_container(config: ProxyConfig):
         "AWS_DEFAULT_REGION",
         ENV_LOCALSTACK_API_KEY,
     ]
-    env_vars = select_attributes(dict(os.environ), env_var_names)
+    env_vars = env_vars or os.environ
+    env_vars = select_attributes(dict(env_vars), env_var_names)
     env_vars["LOCALSTACK_HOSTNAME"] = "host.docker.internal"
 
     try:
-        env_vars_list = []
-        for key, value in env_vars.items():
-            env_vars_list += ["-e", f"{key}={value}"]
-        # note: using docker command directly, as our Docker client doesn't fully support log piping yet
-        command = [
-            "docker",
-            "exec",
-            "-it",
-            *env_vars_list,
-            container_name,
-            "bash",
-            "-c",
-            f"{venv_activate}; localstack aws proxy -c {config_file_cnt} -p {port}",
-        ]
         print("Proxy container is ready.")
-        subprocess.run(command, stdout=sys.stdout, stderr=sys.stderr)
+        command = f"{venv_activate}; localstack aws proxy -c {CONTAINER_CONFIG_FILE} -p {port} > {CONTAINER_LOG_FILE} 2>&1"
+        if quiet:
+            DOCKER_CLIENT.exec_in_container(
+                container_name, command=["bash", "-c", command], env_vars=env_vars, interactive=True
+            )
+        else:
+            env_vars_list = []
+            for key, value in env_vars.items():
+                env_vars_list += ["-e", f"{key}={value}"]
+            # note: using docker command directly, as our Docker client doesn't fully support log piping yet
+            command = [
+                "docker",
+                "exec",
+                "-it",
+                *env_vars_list,
+                container_name,
+                "bash",
+                "-c",
+                command,
+            ]
+            subprocess.run(command, stdout=sys.stdout, stderr=sys.stderr)
     except KeyboardInterrupt:
         pass
     except Exception as e:
-        print("Error:", e)
+        LOG.info("Error: %s", e)
+        if isinstance(e, subprocess.CalledProcessError):
+            LOG.info("Error in called process - output: %s\n%s", e.stdout, e.stderr)
     finally:
-        DOCKER_CLIENT.remove_container(container_name, force=True)
+        try:
+            DOCKER_CLIENT.remove_container(container_name, force=True)
+        except Exception as e:
+            if "already in progress" not in str(e):
+                raise
