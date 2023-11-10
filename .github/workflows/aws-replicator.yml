@@ -40,16 +40,16 @@ jobs:
           # TODO remove
           mkdir ~/.localstack; echo '{"token":"test"}' > ~/.localstack/auth.json
 
-          branchName=${GITHUB_HEAD_REF##*/}
-          if [ "$branchName" = "" ]; then branchName=main; fi
-          echo "Installing from branch name $branchName"
-          localstack extensions init
-          localstack extensions install "git+https://github.com/localstack/localstack-extensions.git@"$branchName"#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
-
           # install dependencies
           sudo apt-get update
           sudo apt-get install -y libsasl2-dev
-          (cd aws-replicator; pip install -e .)
+
+          # build and install extension
+          localstack extensions init
+          (
+            cd aws-replicator
+            make install && make build && make enable
+          )
 
           # install awslocal/tflocal command lines
           pip install awscli-local[ver1]
@@ -63,7 +63,6 @@ jobs:
       - name: Run linter
         run: |
           cd aws-replicator
-          make install
           (. .venv/bin/activate; pip install --upgrade --pre localstack localstack-ext)
           make lint
 
@@ -81,7 +80,10 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
           AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          LOCALSTACK_API_KEY: ${{ secrets.LOCALSTACK_API_KEY }}
         run: |
+          # TODO tmp fix for https://github.com/localstack/localstack/issues/8267:
+          pip install --upgrade 'botocore<1.31.81'
           cd aws-replicator/example
           make test
 

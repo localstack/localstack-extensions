@@ -19,7 +19,8 @@ from localstack.aws.protocol.parser import create_parser
 from localstack.aws.spec import load_service
 from localstack.config import get_edge_url
 from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO
-from localstack.services.generic_proxy import ProxyListener, start_proxy_server
+from localstack.http import Request
+from localstack.utils.aws.aws_responses import requests_response
 from localstack.utils.bootstrap import setup_logging
 from localstack.utils.collections import select_attributes
 from localstack.utils.container_utils.container_client import PortMappings
@@ -27,9 +28,11 @@ from localstack.utils.docker_utils import DOCKER_CLIENT, reserve_available_conta
 from localstack.utils.files import new_tmp_file, save_file
 from localstack.utils.functions import run_safe
 from localstack.utils.net import get_free_tcp_port
+from localstack.utils.server.http2_server import run_server
 from localstack.utils.serving import Server
 from localstack.utils.strings import short_uid, to_str, truncate
 from localstack_ext.bootstrap.licensing import ENV_LOCALSTACK_API_KEY
+from requests import Response
 
 from aws_replicator.client.utils import truncate_content
 from aws_replicator.config import HANDLER_PATH_PROXIES
@@ -47,6 +50,9 @@ CONTAINER_NAME_PREFIX = "ls-aws-proxy-"
 CONTAINER_CONFIG_FILE = "/tmp/ls.aws.proxy.yml"
 CONTAINER_LOG_FILE = "/tmp/ls-aws-proxy.log"
 
+# default bind host if `bind_host` is not specified for the proxy
+DEFAULT_BIND_HOST = "127.0.0.1"
+
 
 class AuthProxyAWS(Server):
     def __init__(self, config: ProxyConfig, port: int = None):
@@ -55,34 +61,30 @@ class AuthProxyAWS(Server):
         super().__init__(port=port)
 
     def do_run(self):
-        class Handler(ProxyListener):
-            def forward_request(_self, method, path, data, headers):
-                return self.proxy_request(method, path, data, headers)
-
         self.register_in_instance()
-        # TODO: change to using Gateway!
-        proxy = start_proxy_server(self.port, update_listener=Handler())
+        bind_host = self.config.get("bind_host") or DEFAULT_BIND_HOST
+        proxy = run_server(port=self.port, bind_addresses=[bind_host], handler=self.proxy_request)
         proxy.join()
 
-    def proxy_request(self, method, path, data, headers):
-        parsed = self._extract_region_and_service(headers)
+    def proxy_request(self, request: Request, data: bytes) -> Response:
+        parsed = self._extract_region_and_service(request.headers)
         if not parsed:
-            return 400
+            return requests_response("", status_code=400)
         region_name, service_name = parsed
 
         LOG.debug(
             "Proxying request to %s (%s): %s %s",
             service_name,
             region_name,
-            method,
-            path,
+            request.method,
+            request.path,
         )
 
-        path, _, query_string = path.partition("?")
+        path, _, query_string = request.path.partition("?")
         request = HttpRequest(
             body=data,
-            method=method,
-            headers=headers,
+            method=request.method,
+            headers=request.headers,
             path=path,
             query_string=query_string,
         )
@@ -104,7 +106,7 @@ class AuthProxyAWS(Server):
         LOG.debug(
             "Sending request for service %s to AWS: %s %s - %s - %s",
             service_name,
-            method,
+            request.method,
             aws_request.url,
             truncate_content(request_dict.get("body"), max_length=500),
             headers_truncated,
@@ -113,11 +115,12 @@ class AuthProxyAWS(Server):
             # send request to upstream AWS
             result = client._endpoint.make_request(operation_model, request_dict)
 
-            # create response object
-            response = requests.Response()
-            response.status_code = result[0].status_code
-            response._content = result[0].content
-            response.headers = dict(result[0].headers)
+            # create response object - TODO: to be replaced with localstack.http.Response over time
+            response = requests_response(
+                result[0].content,
+                status_code=result[0].status_code,
+                headers=dict(result[0].headers),
+            )
 
             LOG.debug(
                 "Received response for service %s from AWS: %s - %s",
@@ -129,7 +132,7 @@ class AuthProxyAWS(Server):
         except Exception as e:
             if LOG.isEnabledFor(logging.DEBUG):
                 LOG.exception("Error when making request to AWS service %s: %s", service_name, e)
-            return 400
+            return requests_response("", status_code=400)
 
     def register_in_instance(self):
         port = getattr(self, "port", None)

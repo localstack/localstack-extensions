@@ -40,6 +40,11 @@ class AwsReplicatorPlugin(LocalstackCliPlugin):
     required=False,
 )
 @click.option(
+    "--host",
+    help="Network bind host to expose the proxy process on (default: 127.0.0.1)",
+    required=False,
+)
+@click.option(
     "--container",
     help="Run the proxy in a container and not on the host",
     required=False,
@@ -51,13 +56,13 @@ class AwsReplicatorPlugin(LocalstackCliPlugin):
     help="Custom port to run the proxy on (by default a random port is used)",
     required=False,
 )
-def cmd_aws_proxy(services: str, config: str, container: bool, port: int):
+def cmd_aws_proxy(services: str, config: str, container: bool, port: int, host: str):
     from aws_replicator.client.auth_proxy import (
         start_aws_auth_proxy,
         start_aws_auth_proxy_in_container,
     )
 
-    config_json: ProxyConfig = {"services": {}}
+    config_json: ProxyConfig = {"services": {}, "bind_host": host}
     if config:
         config_json = yaml.load(load_file(config), Loader=yaml.SafeLoader)
     if services:

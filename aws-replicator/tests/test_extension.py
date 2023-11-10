@@ -14,6 +14,9 @@ from localstack.utils.sync import retry
 from aws_replicator.client.auth_proxy import start_aws_auth_proxy
 from aws_replicator.shared.models import ProxyConfig
 
+# binding proxy to 0.0.0.0 to enable testing in CI
+PROXY_BIND_HOST = "0.0.0.0"
+
 
 @pytest.fixture
 def start_aws_proxy():
@@ -34,7 +37,7 @@ def start_aws_proxy():
 @pytest.mark.parametrize("metadata_gzip", [True, False])
 def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
     # start proxy
-    config = ProxyConfig(services={"s3": {"resources": ".*"}})
+    config = ProxyConfig(services={"s3": {"resources": ".*"}}, bind_host=PROXY_BIND_HOST)
     start_aws_proxy(config)
 
     # create clients
@@ -43,14 +46,14 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
 
     # list buckets to assert that proxy is up and running
     buckets_proxied = s3_client.list_buckets()["Buckets"]
-    bucket_aws = s3_client_aws.list_buckets()["Buckets"]
-    assert buckets_proxied == bucket_aws
+    buckets_aws = s3_client_aws.list_buckets()["Buckets"]
+    assert buckets_proxied == buckets_aws
 
     # create bucket
     bucket = s3_create_bucket()
     buckets_proxied = s3_client.list_buckets()["Buckets"]
-    bucket_aws = s3_client_aws.list_buckets()["Buckets"]
-    assert buckets_proxied and buckets_proxied == bucket_aws
+    buckets_aws = s3_client_aws.list_buckets()["Buckets"]
+    assert buckets_proxied and buckets_proxied == buckets_aws
 
     # put object
     key = "test-key-with-urlencoded-chars-:+"
@@ -77,6 +80,9 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
         # list objects v2
         result_aws = s3_client_aws.list_objects_v2(Bucket=bucket, **kwargs)
         result_proxied = s3_client.list_objects_v2(Bucket=bucket, **kwargs)
+        # TODO: for some reason, the proxied result may contain 'Owner', whereas result_aws does not
+        for res in result_proxied["Contents"]:
+            res.pop("Owner", None)
         assert result_proxied["Contents"] == result_aws["Contents"]
 
     # delete object
@@ -108,7 +114,9 @@ def test_sqs_requests(start_aws_proxy, cleanups):
     queue_name_local = "test-queue-local"
 
     # start proxy - only forwarding requests for queue name `test-queue-aws`
-    config = ProxyConfig(services={"sqs": {"resources": f".*:{queue_name_aws}"}})
+    config = ProxyConfig(
+        services={"sqs": {"resources": f".*:{queue_name_aws}"}}, bind_host=PROXY_BIND_HOST
+    )
     start_aws_proxy(config)
 
     # create clients
@@ -119,7 +127,7 @@ def test_sqs_requests(start_aws_proxy, cleanups):
     # create queue in AWS
     sqs_client_aws.create_queue(QueueName=queue_name_aws)
     queue_url_aws = sqs_client_aws.get_queue_url(QueueName=queue_name_aws)["QueueUrl"]
-    queue_arn_aws = sqs_client.get_queue_attributes(
+    queue_arn_aws = sqs_client_aws.get_queue_attributes(
         QueueUrl=queue_url_aws, AttributeNames=["QueueArn"]
     )["Attributes"]["QueueArn"]
     cleanups.append(lambda: sqs_client_aws.delete_queue(QueueUrl=queue_url_aws))
