@@ -40,16 +40,16 @@ jobs:
           # TODO remove
           mkdir ~/.localstack; echo '{"token":"test"}' > ~/.localstack/auth.json
 
-          branchName=${GITHUB_HEAD_REF##*/}
-          if [ "$branchName" = "" ]; then branchName=main; fi
-          echo "Installing from branch name $branchName"
-          localstack extensions init
-          localstack extensions install "git+https://github.com/localstack/localstack-extensions.git@"$branchName"#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
-
           # install dependencies
           sudo apt-get update
           sudo apt-get install -y libsasl2-dev
-          (cd aws-replicator; pip install -e .)
+
+          # build and install extension
+          localstack extensions init
+          (
+            cd aws-replicator
+            make install && make build && make enable
+          )
 
           # install awslocal/tflocal command lines
           pip install awscli-local[ver1]

@@ -35,10 +35,20 @@ test: venv
 dist: venv
 	$(VENV_RUN); python setup.py sdist bdist_wheel
 
+build:   ## Build the extension
+	mkdir -p build
+	cp -r setup.py setup.cfg README.md aws_replicator build/
+	(cd build && python setup.py sdist)
+
+enable: $(wildcard ./build/dist/localstack-extension-aws-replicator-*.tar.gz)  ## Enable the extension in LocalStack
+	$(VENV_RUN); \
+		pip uninstall --yes localstack-extension-aws-replicator; \
+		localstack extensions -v install file://./$?
+
 publish: clean-dist venv dist
 	$(VENV_RUN); pip install --upgrade twine; twine upload dist/*
 
 clean-dist: clean
 	rm -rf dist/
 
-.PHONY: clean clean-dist dist install publish test
+.PHONY: build clean clean-dist dist install publish test
