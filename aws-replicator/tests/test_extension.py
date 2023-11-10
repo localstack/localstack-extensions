@@ -122,7 +122,7 @@ def test_sqs_requests(start_aws_proxy, cleanups):
     # create queue in AWS
     sqs_client_aws.create_queue(QueueName=queue_name_aws)
     queue_url_aws = sqs_client_aws.get_queue_url(QueueName=queue_name_aws)["QueueUrl"]
-    queue_arn_aws = sqs_client.get_queue_attributes(
+    queue_arn_aws = sqs_client_aws.get_queue_attributes(
         QueueUrl=queue_url_aws, AttributeNames=["QueueArn"]
     )["Attributes"]["QueueArn"]
     cleanups.append(lambda: sqs_client_aws.delete_queue(QueueUrl=queue_url_aws))

@@ -63,7 +63,6 @@ jobs:
       - name: Run linter
         run: |
           cd aws-replicator
-          make install
           (. .venv/bin/activate; pip install --upgrade --pre localstack localstack-ext)
           make lint
 

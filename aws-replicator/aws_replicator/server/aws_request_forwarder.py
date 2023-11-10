@@ -32,12 +32,15 @@ class AwsProxyHandler(Handler):
 
     def __call__(self, chain: HandlerChain, context: RequestContext, response: Response):
         proxy = self.select_proxy(context)
+        # TODO tmp CI debugging
+        print("!proxy", context, proxy)
         if not proxy:
             return
 
         # forward request to proxy
         response = self.forward_request(context, proxy)
 
+        print("!proxy response", context, response)
         if response is None:
             return
 
@@ -142,6 +145,8 @@ class AwsProxyHandler(Handler):
             elif request.data:
                 data = request.data
             LOG.debug("Forward request: %s %s - %s - %s", request.method, url, dict(headers), data)
+            # TODO: tmp CI debugging
+            print("Forward request:", request.method, url, dict(headers), data)
             result = requests.request(
                 method=request.method, url=url, data=data, headers=dict(headers), stream=True
             )
@@ -153,7 +158,9 @@ class AwsProxyHandler(Handler):
                 dict(result.headers),
                 truncate(result.raw_content, max_length=500),
             )
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as e:
+            # TODO: tmp CI debugging
+            print("ConnectionError:", port, e)
             # remove unreachable proxy
             LOG.info("Removing unreachable AWS forward proxy due to connection issue: %s", url)
             self.PROXY_INSTANCES.pop(port, None)
