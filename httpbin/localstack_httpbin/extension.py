@@ -1,10 +1,11 @@
 import logging
 from typing import Optional
 
-from localstack import config, constants
+from localstack import config
 from localstack.config import get_edge_url
 from localstack.extensions.api import Extension, http
 from localstack.utils.net import get_free_tcp_port
+from localstack.utils.urls import localstack_host
 
 from localstack_httpbin.server import HttpbinServer
 
@@ -28,15 +29,13 @@ class HttpbinExtension(Extension):
 
     def on_platform_start(self):
         from localstack_httpbin.vendor.httpbin import core
-        core.template['host'] = f"{self.get_public_hostname()}:{config.get_edge_port_http()}"
-
+        core.template['host'] = f"{self.get_public_hostname()}:{localstack_host().port}"
         self.server = HttpbinServer(get_free_tcp_port())
         LOG.debug("starting httpbin on %s", self.server.url)
         self.server.start()
 
     def get_public_hostname(self) -> str:
-        # FIXME: reconcile with LOCALSTACK_HOST, but this should be accessible via the host
-        return  f"{self.hostname_prefix}{constants.LOCALHOST_HOSTNAME}"
+        return f"{self.hostname_prefix}{localstack_host().host}"
 
     def on_platform_ready(self):
         LOG.info("Serving httpbin on %s", get_edge_url(localstack_hostname=self.get_public_hostname()))
