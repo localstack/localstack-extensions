@@ -14,6 +14,9 @@ from localstack.utils.sync import retry
 from aws_replicator.client.auth_proxy import start_aws_auth_proxy
 from aws_replicator.shared.models import ProxyConfig
 
+# binding proxy to 0.0.0.0 to enable testing in CI
+PROXY_BIND_HOST = "0.0.0.0"
+
 
 @pytest.fixture
 def start_aws_proxy():
@@ -34,7 +37,7 @@ def start_aws_proxy():
 @pytest.mark.parametrize("metadata_gzip", [True, False])
 def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
     # start proxy
-    config = ProxyConfig(services={"s3": {"resources": ".*"}})
+    config = ProxyConfig(services={"s3": {"resources": ".*"}}, bind_host=PROXY_BIND_HOST)
     start_aws_proxy(config)
 
     # create clients
@@ -111,7 +114,9 @@ def test_sqs_requests(start_aws_proxy, cleanups):
     queue_name_local = "test-queue-local"
 
     # start proxy - only forwarding requests for queue name `test-queue-aws`
-    config = ProxyConfig(services={"sqs": {"resources": f".*:{queue_name_aws}"}})
+    config = ProxyConfig(
+        services={"sqs": {"resources": f".*:{queue_name_aws}"}}, bind_host=PROXY_BIND_HOST
+    )
     start_aws_proxy(config)
 
     # create clients

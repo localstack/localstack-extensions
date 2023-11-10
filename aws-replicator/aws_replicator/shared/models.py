@@ -83,6 +83,8 @@ class ProxyServiceConfig(TypedDict, total=False):
 class ProxyConfig(TypedDict, total=False):
     # maps service name to service proxy configs
     services: Dict[str, ProxyServiceConfig]
+    # bind host for the proxy (defaults to 127.0.0.1)
+    bind_host: str
 
 
 class ProxyInstance(TypedDict):

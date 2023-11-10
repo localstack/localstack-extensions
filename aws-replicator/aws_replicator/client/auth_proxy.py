@@ -50,6 +50,9 @@ CONTAINER_NAME_PREFIX = "ls-aws-proxy-"
 CONTAINER_CONFIG_FILE = "/tmp/ls.aws.proxy.yml"
 CONTAINER_LOG_FILE = "/tmp/ls-aws-proxy.log"
 
+# default bind host if `bind_host` is not specified for the proxy
+DEFAULT_BIND_HOST = "127.0.0.1"
+
 
 class AuthProxyAWS(Server):
     def __init__(self, config: ProxyConfig, port: int = None):
@@ -59,15 +62,12 @@ class AuthProxyAWS(Server):
 
     def do_run(self):
         self.register_in_instance()
-        # TODO tmp CI debugging
-        print("!start proxy", self.port)
-        proxy = run_server(port=self.port, bind_addresses=["127.0.0.1"], handler=self.proxy_request)
+        bind_host = self.config.get("bind_host") or DEFAULT_BIND_HOST
+        proxy = run_server(port=self.port, bind_addresses=[bind_host], handler=self.proxy_request)
         proxy.join()
 
     def proxy_request(self, request: Request, data: bytes) -> Response:
         parsed = self._extract_region_and_service(request.headers)
-        # TODO tmp CI debugging
-        print("!proxy_request", request, parsed)
         if not parsed:
             return requests_response("", status_code=400)
         region_name, service_name = parsed
