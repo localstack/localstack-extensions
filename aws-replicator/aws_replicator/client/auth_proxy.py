@@ -19,7 +19,7 @@ from localstack.aws.protocol.parser import create_parser
 from localstack.aws.spec import load_service
 from localstack.config import get_edge_url
 from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO
-from localstack.services.generic_proxy import ProxyListener, start_proxy_server
+from localstack.http import Request
 from localstack.utils.bootstrap import setup_logging
 from localstack.utils.collections import select_attributes
 from localstack.utils.container_utils.container_client import PortMappings
@@ -27,6 +27,7 @@ from localstack.utils.docker_utils import DOCKER_CLIENT, reserve_available_conta
 from localstack.utils.files import new_tmp_file, save_file
 from localstack.utils.functions import run_safe
 from localstack.utils.net import get_free_tcp_port
+from localstack.utils.server.http2_server import run_server
 from localstack.utils.serving import Server
 from localstack.utils.strings import short_uid, to_str, truncate
 from localstack_ext.bootstrap.licensing import ENV_LOCALSTACK_API_KEY
@@ -55,17 +56,12 @@ class AuthProxyAWS(Server):
         super().__init__(port=port)
 
     def do_run(self):
-        class Handler(ProxyListener):
-            def forward_request(_self, method, path, data, headers):
-                return self.proxy_request(method, path, data, headers)
-
         self.register_in_instance()
-        # TODO: change to using Gateway!
-        proxy = start_proxy_server(self.port, update_listener=Handler())
+        proxy = run_server(port=self.port, bind_addresses=["127.0.0.1"], handler=self.proxy_request)
         proxy.join()
 
-    def proxy_request(self, method, path, data, headers):
-        parsed = self._extract_region_and_service(headers)
+    def proxy_request(self, request: Request, data: bytes):
+        parsed = self._extract_region_and_service(request.headers)
         if not parsed:
             return 400
         region_name, service_name = parsed
@@ -74,15 +70,15 @@ class AuthProxyAWS(Server):
             "Proxying request to %s (%s): %s %s",
             service_name,
             region_name,
-            method,
-            path,
+            request.method,
+            request.path,
         )
 
-        path, _, query_string = path.partition("?")
+        path, _, query_string = request.path.partition("?")
         request = HttpRequest(
             body=data,
-            method=method,
-            headers=headers,
+            method=request.method,
+            headers=request.headers,
             path=path,
             query_string=query_string,
         )
@@ -104,7 +100,7 @@ class AuthProxyAWS(Server):
         LOG.debug(
             "Sending request for service %s to AWS: %s %s - %s - %s",
             service_name,
-            method,
+            request.method,
             aws_request.url,
             truncate_content(request_dict.get("body"), max_length=500),
             headers_truncated,

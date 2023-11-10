@@ -115,6 +115,7 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 ## Change Log
 
+* `0.1.2`: Remove deprecated ProxyListener for starting local aws-replicator proxy server
 * `0.1.1`: Add simple configuration Web UI
 * `0.1.0`: Initial version of extension
 
