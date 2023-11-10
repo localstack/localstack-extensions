@@ -7,11 +7,11 @@ test:            ## Run the end-to-end test with a simple sample app
 		aws sqs create-queue --queue-name test-queue1; \
 		queueUrl=$$(aws sqs get-queue-url --queue-name test-queue1 | jq -r .QueueUrl); \
 		echo "Starting AWS replicator proxy"; \
-		(DEBUG=1 localstack aws proxy -s s3,sqs & ); \
+		(DEBUG=1 localstack aws proxy -s s3,sqs --host 0.0.0.0 & ); \
 		echo "Deploying Terraform template locally"; \
 		tflocal init; \
 		tflocal apply -auto-approve; \
-		echo "Puting a message to the queue in real AWS"; \
+		echo "Putting a message to the queue in real AWS"; \
 		aws sqs send-message --queue-url $$queueUrl --message-body '{"test":"foobar 123"}'; \
 		echo "Waiting a bit for Lambda to be triggered by SQS message ..."; \
 		sleep 7 # ; \

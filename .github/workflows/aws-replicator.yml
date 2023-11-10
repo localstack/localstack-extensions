@@ -80,7 +80,10 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
           AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          LOCALSTACK_API_KEY: ${{ secrets.LOCALSTACK_API_KEY }}
         run: |
+          # TODO tmp fix for https://github.com/localstack/localstack/issues/8267:
+          pip install --upgrade 'botocore<1.31.81'
           cd aws-replicator/example
           make test
 
