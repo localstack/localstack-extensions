@@ -20,6 +20,7 @@ from localstack.aws.spec import load_service
 from localstack.config import get_edge_url
 from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO
 from localstack.http import Request
+from localstack.utils.aws.aws_responses import requests_response
 from localstack.utils.bootstrap import setup_logging
 from localstack.utils.collections import select_attributes
 from localstack.utils.container_utils.container_client import PortMappings
@@ -31,6 +32,7 @@ from localstack.utils.server.http2_server import run_server
 from localstack.utils.serving import Server
 from localstack.utils.strings import short_uid, to_str, truncate
 from localstack_ext.bootstrap.licensing import ENV_LOCALSTACK_API_KEY
+from requests import Response
 
 from aws_replicator.client.utils import truncate_content
 from aws_replicator.config import HANDLER_PATH_PROXIES
@@ -60,10 +62,10 @@ class AuthProxyAWS(Server):
         proxy = run_server(port=self.port, bind_addresses=["127.0.0.1"], handler=self.proxy_request)
         proxy.join()
 
-    def proxy_request(self, request: Request, data: bytes):
+    def proxy_request(self, request: Request, data: bytes) -> Response:
         parsed = self._extract_region_and_service(request.headers)
         if not parsed:
-            return 400
+            return requests_response("", status_code=400)
         region_name, service_name = parsed
 
         LOG.debug(
@@ -109,11 +111,12 @@ class AuthProxyAWS(Server):
             # send request to upstream AWS
             result = client._endpoint.make_request(operation_model, request_dict)
 
-            # create response object
-            response = requests.Response()
-            response.status_code = result[0].status_code
-            response._content = result[0].content
-            response.headers = dict(result[0].headers)
+            # create response object - TODO: to be replaced with localstack.http.Response over time
+            response = requests_response(
+                result[0].content,
+                status_code=result[0].status_code,
+                headers=dict(result[0].headers),
+            )
 
             LOG.debug(
                 "Received response for service %s from AWS: %s - %s",
@@ -125,7 +128,7 @@ class AuthProxyAWS(Server):
         except Exception as e:
             if LOG.isEnabledFor(logging.DEBUG):
                 LOG.exception("Error when making request to AWS service %s: %s", service_name, e)
-            return 400
+            return requests_response("", status_code=400)
 
     def register_in_instance(self):
         port = getattr(self, "port", None)
