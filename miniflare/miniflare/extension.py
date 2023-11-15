@@ -19,6 +19,7 @@ from miniflare.cloudflare_api import (
     handle_scripts,
     handle_secrets,
     handle_services,
+    handle_standard,
     handle_subdomain,
     handle_user,
 )
@@ -54,6 +55,7 @@ class MiniflareExtension(Extension):
             "/accounts/<account_id>/workers/services/<service_name>", handle_services
         )
         _add_route("/accounts/<account_id>/workers/subdomain", handle_subdomain)
+        _add_route("/accounts/<account_id>/workers/standard", handle_standard)
         _add_route(
             "/accounts/<account_id>/workers/scripts/<script_name>/subdomain",
             handle_script_subdomain,
@@ -125,7 +127,7 @@ class MiniflareInstaller(ExecutableInstaller):
         # note: latest version of miniflare/workerd requires libc++ dev libs
         if config.is_in_docker:
             sources_list_file = "/etc/apt/sources.list"
-            sources_list = load_file(sources_list_file)
+            sources_list = load_file(sources_list_file) or ""
             sources_list += "\ndeb https://deb.debian.org/debian testing main contrib"
             save_file(sources_list_file, sources_list)
             run(["apt", "update"])
