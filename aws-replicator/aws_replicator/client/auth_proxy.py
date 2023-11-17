@@ -31,7 +31,7 @@ from localstack.utils.net import get_free_tcp_port
 from localstack.utils.server.http2_server import run_server
 from localstack.utils.serving import Server
 from localstack.utils.strings import short_uid, to_str, truncate
-from localstack_ext.bootstrap.licensing import ENV_LOCALSTACK_API_KEY
+from localstack_ext.bootstrap.licensingv2 import ENV_LOCALSTACK_API_KEY
 from requests import Response
 
 from aws_replicator.client.utils import truncate_content
