@@ -61,7 +61,8 @@ class AwsProxyHandler(Handler):
             proxy = self.PROXY_INSTANCES[port]
             proxy_config = proxy.get("config") or {}
             services = proxy_config.get("services") or {}
-            service_config = services.get(context.service.service_name)
+            service_name = self._get_canonical_service_name(context.service.service_name)
+            service_config = services.get(service_name)
             if not service_config:
                 continue
 
@@ -96,11 +97,12 @@ class AwsProxyHandler(Handler):
     def _request_matches_resource(
         self, context: RequestContext, resource_name_pattern: str
     ) -> bool:
-        if context.service.service_name == "s3":
+        service_name = self._get_canonical_service_name(context.service.service_name)
+        if service_name == "s3":
             bucket_name = context.service_request.get("Bucket") or ""
             s3_bucket_arn = arns.s3_bucket_arn(bucket_name)
             return bool(re.match(resource_name_pattern, s3_bucket_arn))
-        if context.service.service_name == "sqs":
+        if service_name == "sqs":
             queue_name = context.service_request.get("QueueName") or ""
             queue_url = context.service_request.get("QueueUrl") or ""
             queue_name = queue_name or queue_url.split("/")[-1]
@@ -200,3 +202,9 @@ class AwsProxyHandler(Handler):
         default_names = [".*"]
         result = service_config.get("resources") or default_names
         return ensure_list(result)
+
+    @classmethod
+    def _get_canonical_service_name(cls, service_name: str) -> str:
+        if service_name == "sqs-query":
+            return "sqs"
+        return service_name

@@ -17,7 +17,7 @@ from localstack import config as localstack_config
 from localstack.aws.api import HttpRequest
 from localstack.aws.protocol.parser import create_parser
 from localstack.aws.spec import load_service
-from localstack.config import get_edge_url
+from localstack.config import internal_service_url
 from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO
 from localstack.http import Request
 from localstack.utils.aws.aws_responses import requests_response
@@ -30,8 +30,8 @@ from localstack.utils.functions import run_safe
 from localstack.utils.net import get_free_tcp_port
 from localstack.utils.server.http2_server import run_server
 from localstack.utils.serving import Server
-from localstack.utils.strings import short_uid, to_str, truncate
-from localstack_ext.bootstrap.licensing import ENV_LOCALSTACK_API_KEY
+from localstack.utils.strings import short_uid, to_bytes, to_str, truncate
+from localstack_ext.bootstrap.licensingv2 import ENV_LOCALSTACK_API_KEY
 from requests import Response
 
 from aws_replicator.client.utils import truncate_content
@@ -138,7 +138,7 @@ class AuthProxyAWS(Server):
         port = getattr(self, "port", None)
         if not port:
             raise Exception("Proxy currently not running")
-        url = f"{get_edge_url()}{HANDLER_PATH_PROXIES}"
+        url = f"{internal_service_url()}{HANDLER_PATH_PROXIES}"
         data = AddProxyRequest(port=port, config=self.config)
         try:
             response = requests.post(url, json=data)
@@ -214,6 +214,7 @@ class AuthProxyAWS(Server):
                     '<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
                     f"<LocationConstraint>{region}</LocationConstraint></CreateBucketConfiguration>"
                 )
+
         if service_name == "sqs" and isinstance(req_body, dict):
             account_id = self._query_account_id_from_aws()
             if "QueueUrl" in req_body:
@@ -221,6 +222,14 @@ class AuthProxyAWS(Server):
                 req_body["QueueUrl"] = f"https://queue.amazonaws.com/{account_id}/{queue_name}"
             if "QueueOwnerAWSAccountId" in req_body:
                 req_body["QueueOwnerAWSAccountId"] = account_id
+        if service_name == "sqs" and request_dict.get("url"):
+            req_json = run_safe(lambda: json.loads(body_str)) or {}
+            account_id = self._query_account_id_from_aws()
+            queue_name = req_json.get("QueueName")
+            if account_id and queue_name:
+                request_dict["url"] = f"https://queue.amazonaws.com/{account_id}/{queue_name}"
+                req_json["QueueOwnerAWSAccountId"] = account_id
+                request_dict["body"] = to_bytes(json.dumps(req_json))
 
     def _fix_headers(self, request: HttpRequest, service_name: str):
         if service_name == "s3":
