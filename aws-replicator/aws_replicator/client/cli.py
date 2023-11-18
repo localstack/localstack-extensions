@@ -6,8 +6,9 @@ import yaml
 from localstack.cli import LocalstackCli, LocalstackCliPlugin, console
 from localstack.logging.setup import setup_logging
 from localstack.utils.files import load_file
-from localstack_ext.bootstrap.licensing import api_key_configured, is_logged_in
+from localstack_ext.bootstrap.auth import get_auth_headers
 from localstack_ext.cli.aws import aws
+from localstack_ext.config import is_api_key_configured
 
 from aws_replicator.shared.models import ProxyConfig, ProxyServiceConfig
 
@@ -16,7 +17,7 @@ class AwsReplicatorPlugin(LocalstackCliPlugin):
     name = "aws-replicator"
 
     def should_load(self) -> bool:
-        return is_logged_in() or api_key_configured()
+        return _is_logged_in() or is_api_key_configured()
 
     def attach(self, cli: LocalstackCli) -> None:
         group: click.Group = cli.group
@@ -24,6 +25,15 @@ class AwsReplicatorPlugin(LocalstackCliPlugin):
             group.add_command(aws)
         aws.add_command(cmd_aws_proxy)
         aws.add_command(cmd_aws_replicate)
+
+
+# TODO: remove over time as we're phasing out the `login` command
+def _is_logged_in() -> bool:
+    try:
+        get_auth_headers()
+        return True
+    except Exception:
+        return False
 
 
 @click.command(name="proxy", help="Start up an authentication proxy against real AWS")
@@ -62,9 +72,11 @@ def cmd_aws_proxy(services: str, config: str, container: bool, port: int, host: 
         start_aws_auth_proxy_in_container,
     )
 
-    config_json: ProxyConfig = {"services": {}, "bind_host": host}
+    config_json: ProxyConfig = {"services": {}}
     if config:
         config_json = yaml.load(load_file(config), Loader=yaml.SafeLoader)
+    if host:
+        config_json["bind_host"] = host
     if services:
         services = _split_string(services)
         for service in services:

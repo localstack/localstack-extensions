@@ -17,7 +17,7 @@ from localstack import config as localstack_config
 from localstack.aws.api import HttpRequest
 from localstack.aws.protocol.parser import create_parser
 from localstack.aws.spec import load_service
-from localstack.config import internal_service_url
+from localstack.config import external_service_url
 from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO
 from localstack.http import Request
 from localstack.utils.aws.aws_responses import requests_response
@@ -44,7 +44,9 @@ if config.DEBUG:
     LOG.setLevel(logging.DEBUG)
 
 # TODO make configurable
-CLI_PIP_PACKAGE = "git+https://github.com/localstack/localstack-extensions/@main#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
+CLI_PIP_PACKAGE = "localstack-extension-aws-replicator"
+# note: enable the line below temporarily for testing:
+# CLI_PIP_PACKAGE = "git+https://github.com/localstack/localstack-extensions/@branch#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
 
 CONTAINER_NAME_PREFIX = "ls-aws-proxy-"
 CONTAINER_CONFIG_FILE = "/tmp/ls.aws.proxy.yml"
@@ -138,7 +140,7 @@ class AuthProxyAWS(Server):
         port = getattr(self, "port", None)
         if not port:
             raise Exception("Proxy currently not running")
-        url = f"{internal_service_url()}{HANDLER_PATH_PROXIES}"
+        url = f"{external_service_url()}{HANDLER_PATH_PROXIES}"
         data = AddProxyRequest(port=port, config=self.config)
         try:
             response = requests.post(url, json=data)
@@ -334,11 +336,11 @@ def start_aws_auth_proxy_in_container(
     ]
     env_vars = env_vars or os.environ
     env_vars = select_attributes(dict(env_vars), env_var_names)
-    env_vars["LOCALSTACK_HOSTNAME"] = "host.docker.internal"
+    env_vars["LOCALSTACK_HOST"] = "host.docker.internal"
 
     try:
         print("Proxy container is ready.")
-        command = f"{venv_activate}; localstack aws proxy -c {CONTAINER_CONFIG_FILE} -p {port} > {CONTAINER_LOG_FILE} 2>&1"
+        command = f"{venv_activate}; localstack aws proxy -c {CONTAINER_CONFIG_FILE} -p {port} --host 0.0.0.0 > {CONTAINER_LOG_FILE} 2>&1"
         if quiet:
             DOCKER_CLIENT.exec_in_container(
                 container_name, command=["bash", "-c", command], env_vars=env_vars, interactive=True
