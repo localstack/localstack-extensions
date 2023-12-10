@@ -165,9 +165,18 @@ class AuthProxyAWS(Server):
         }
         parsed_request = {} if parsed_request is None else parsed_request
         parsed_request = {k: v for k, v in parsed_request.items() if v is not None}
-        endpoint_url, additional_headers = client._resolve_endpoint_ruleset(
+
+        # get endpoint info
+        endpoint_info = client._resolve_endpoint_ruleset(
             operation_model, parsed_request, request_context
         )
+        # switch for https://github.com/boto/botocore/commit/826b78c54dd87b9da368e9ab6017d8c4823b28c1
+        if len(endpoint_info) == 3:
+            endpoint_url, additional_headers, properties = endpoint_info
+            if properties:
+                request_context["endpoint_properties"] = properties
+        else:
+            endpoint_url, additional_headers = endpoint_info
 
         # create request dict
         request_dict = client._convert_to_request_dict(

@@ -115,6 +115,7 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 ## Change Log
 
+* `0.1.5`: Minor fix to accommodate recent upstream changes
 * `0.1.4`: Fix imports of `bootstrap.auth` modules for v3.0 compatibility
 * `0.1.3`: Adjust code imports for recent LocalStack v3.0 module changes
 * `0.1.2`: Remove deprecated ProxyListener for starting local aws-replicator proxy server
