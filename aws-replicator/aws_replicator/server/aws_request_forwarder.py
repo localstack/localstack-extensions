@@ -15,7 +15,8 @@ from localstack.constants import (
 from localstack.http import Response
 from localstack.utils.aws import arns
 from localstack.utils.aws.arns import sqs_queue_arn
-from localstack.utils.aws.aws_stack import get_valid_regions, mock_aws_request_headers
+from localstack.utils.aws.aws_stack import get_valid_regions
+from localstack.utils.aws.request_context import mock_aws_request_headers
 from localstack.utils.collections import ensure_list
 from localstack.utils.net import get_addressable_container_host
 from localstack.utils.strings import to_str, truncate
