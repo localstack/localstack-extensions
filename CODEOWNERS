@@ -1,0 +1,21 @@
+######################
+###  CODE OWNERS   ###
+######################
+
+# CODEOWNERS
+/CODEOWNERS @lukqw @thrau @alexrashed
+
+# Template for new extensions
+/template/ @lukqw @thrau
+
+######################
+###   Extensions   ###
+######################
+
+/aws-replicator/ @whummer
+/diagnosis-viewer/ @lukqw @thrau @silv-io
+/hello-world/ @lukqw @thrau
+/http-bin/ @lukqw @thrau @dominikschubert
+/mailhog/ @lukqw @thrau
+/miniflare/ @whummer @HarshCasper
+/stripe/ @lukqw @thrau
