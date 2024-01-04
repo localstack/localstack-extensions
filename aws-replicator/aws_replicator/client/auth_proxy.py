@@ -31,7 +31,7 @@ from localstack.utils.net import get_free_tcp_port
 from localstack.utils.server.http2_server import run_server
 from localstack.utils.serving import Server
 from localstack.utils.strings import short_uid, to_bytes, to_str, truncate
-from localstack_ext.bootstrap.licensingv2 import ENV_LOCALSTACK_API_KEY
+from localstack_ext.bootstrap.licensingv2 import ENV_LOCALSTACK_API_KEY, ENV_LOCALSTACK_AUTH_TOKEN
 from requests import Response
 
 from aws_replicator.client.utils import truncate_content
@@ -342,6 +342,7 @@ def start_aws_auth_proxy_in_container(
         "AWS_SESSION_TOKEN",
         "AWS_DEFAULT_REGION",
         ENV_LOCALSTACK_API_KEY,
+        ENV_LOCALSTACK_AUTH_TOKEN,
     ]
     env_vars = env_vars or os.environ
     env_vars = select_attributes(dict(env_vars), env_var_names)
