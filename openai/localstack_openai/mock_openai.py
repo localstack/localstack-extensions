@@ -219,7 +219,6 @@ class Api:
                     "owned_by": "openai",
                 },
             ],
-            "object": "list",
         }
 
 
