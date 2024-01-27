@@ -1,7 +1,9 @@
-import atexit
 import logging
 
-from localstack.extensions.api import Extension, http, services
+from localstack import config
+from localstack.extensions.api import Extension, http
+from rolo.router import RuleAdapter, WithHost
+from werkzeug.routing import Submount
 
 LOG = logging.getLogger(__name__)
 
@@ -9,25 +11,28 @@ LOG = logging.getLogger(__name__)
 class LocalstackOpenAIExtension(Extension):
     name = "openai"
 
-    backend_url: str
+    submount = "/_extension/openai"
+    subdomain = "openai"
 
-    def on_platform_start(self):
-        # start localstripe when localstack starts
-        from . import mock_openai
-
-        port = services.external_service_ports.reserve_port()
-        self.backend_url = f"http://localhost:{port}"
-
-        print(f"Starting mock OpenAI service on {self.backend_url}")
-        mock_openai.run(port)
-        atexit.register(mock_openai.stop)
+    def on_extension_load(self):
+        logging.getLogger("localstack_openai").setLevel(
+            logging.DEBUG if config.DEBUG else logging.INFO
+        )
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
-        # a ProxyHandler forwards all incoming requests to the backend URL
-        endpoint = http.ProxyHandler(self.backend_url)
+        from localstack_openai.mock_openai import Api
+
+        api = RuleAdapter(Api())
 
         # add path routes for localhost:4566/v1/chat/completion
         router.add(
-            "/v1/chat/completion",
-            endpoint=endpoint,
+            [
+                Submount(self.submount, [api]),
+                WithHost(f"{self.subdomain}.{config.LOCALSTACK_HOST.host}<__host__>", [api]),
+            ]
         )
+
+        LOG.info(
+            "OpenAI mock available at %s%s", str(config.LOCALSTACK_HOST).rstrip("/"), self.submount
+        )
+        LOG.info("OpenAI mock available at %s", f"{self.subdomain}.{config.LOCALSTACK_HOST}")
