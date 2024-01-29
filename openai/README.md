@@ -54,4 +54,8 @@ print(completion.choices)
 ## Authors
 **Cristopher Pinzon** cristopher.pinzon@localstack.cloud
 
+
+## Licensing
+* The extension code is licensed under the Apache 2.0 License
+
 ### Thank you for using the LocalStack OpenAI Extension!
