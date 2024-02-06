@@ -66,6 +66,8 @@ EXTRA_CORS_ALLOWED_ORIGINS=https://aws-replicator.localhost.localstack.cloud:456
 
 5. Now we can communicate with the real resources via Localstack.
 
+To clean up the running proxy container simply click disable on the Replicator UI.
+
 ### Resource-specific proxying
 
 As an alternative to forwarding _all_ requests for a particular service, you can also proxy only requests for _specific_ resources to AWS.
