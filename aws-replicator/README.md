@@ -29,11 +29,11 @@ The AWS connection proxy can be used to forward certain API calls in LocalStack 
 #### CLI
 For example, in order to forward all API calls for DynamoDB/S3/Cognito to real AWS, the proxy can be started via the CLI as follows:
 
-1. Start Localstack via CLI
+1. Start LocalStack via CLI
 ```
 $ localstack start -d
 ```
-2. Enable Localstack AWS replicator from the Web Application Extension Library
+2. Enable LocalStack AWS replicator from the Web Application Extension Library
 3. After installation restart Localstack
 4. Install the AWS replicator CLI package
 ```
@@ -47,7 +47,7 @@ $ export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
 ```
 $ localstack aws proxy -s dynamodb,s3,cognito-idp
 ```
-7. Now for example awslocal or aws-cli with Localstack's endpoint URL should communicate with the real account.
+7. Now, when issuing an API call against LocalStack (e.g., via `awslocal`), the invocation gets forwarded to real AWS and should return data from your real cloud resources.
 
 #### Proxy Configuration UI
 
@@ -64,9 +64,9 @@ EXTRA_CORS_ALLOWED_ORIGINS=https://aws-replicator.localhost.localstack.cloud:456
 
 ![configuration settings](etc/proxy-settings.png)
 
-5. Now we can communicate with the real resources via Localstack.
+5. Now we can communicate with the real AWS cloud resources, directly via LocalStack.
 
-To clean up the running proxy container simply click disable on the Replicator UI.
+To clean up the running proxy container simply click "disable" on the Replicator UI.
 
 ### Resource-specific proxying
 
