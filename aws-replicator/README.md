@@ -24,13 +24,6 @@ The AWS connection proxy can be used to forward certain API calls in LocalStack 
 
 **Note:** The replicator CLI currently works only when installing the `localstack` CLI via `pip`. If you're downloading the `localstack` CLI as a [binary release](https://docs.localstack.cloud/getting-started/installation/#localstack-cli), then please use the proxy configuration UI described below.
 
-### Configuration
-
-In addition to the proxy services configuration (see YAML file further below), the following configurations can be used to customize the behavior of the extension itself (simply pass them as environment variables to the main LocalStack container):
-* `REPLICATOR_CLEANUP_PROXY_CONTAINERS`: whether to clean up (remove) the proxy Docker containers once they shut down (default `1`). Can be set to `0` to help debug issues, e.g., if a proxy container starts up and exits immediately.
-* `REPLICATOR_LOCALSTACK_HOST`: the target host to use when the proxy container connects to the LocalStack main container (automatically determined by default)
-* `REPLICATOR_PROXY_DOCKER_FLAGS`: additional flags that should be passed when creating the proxy Docker containers
-
 ### Usage
 
 #### CLI
@@ -114,6 +107,13 @@ make_bucket: test123
 ```
 
 A more comprehensive sample, involving local Lambda functions combined with remote SQS queues and S3 buckets, can be found in the `example` folder of this repo.
+
+### Configuration
+
+In addition to the proxy services configuration shown above, the following configs can be used to customize the behavior of the extension itself (simply pass them as environment variables to the main LocalStack container):
+* `REPLICATOR_CLEANUP_PROXY_CONTAINERS`: whether to clean up (remove) the proxy Docker containers once they shut down (default `1`). Can be set to `0` to help debug issues, e.g., if a proxy container starts up and exits immediately.
+* `REPLICATOR_LOCALSTACK_HOST`: the target host to use when the proxy container connects to the LocalStack main container (automatically determined by default)
+* `REPLICATOR_PROXY_DOCKER_FLAGS`: additional flags that should be passed when creating the proxy Docker containers
 
 ## Resource Replicator CLI
 

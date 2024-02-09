@@ -27,7 +27,7 @@ from localstack.utils.container_utils.container_client import PortMappings
 from localstack.utils.docker_utils import DOCKER_CLIENT, reserve_available_container_port
 from localstack.utils.files import new_tmp_file, save_file
 from localstack.utils.functions import run_safe
-from localstack.utils.net import get_free_tcp_port, resolve_hostname, get_docker_host_from_container
+from localstack.utils.net import get_docker_host_from_container, get_free_tcp_port
 from localstack.utils.server.http2_server import run_server
 from localstack.utils.serving import Server
 from localstack.utils.strings import short_uid, to_bytes, to_str, truncate
@@ -315,7 +315,7 @@ def start_aws_auth_proxy_in_container(
         entrypoint="",
         command=["bash", "-c", f"touch {CONTAINER_LOG_FILE}; tail -f {CONTAINER_LOG_FILE}"],
         ports=ports,
-        additional_flags=repl_config.PROXY_DOCKER_FLAGS
+        additional_flags=repl_config.PROXY_DOCKER_FLAGS,
     )
 
     # start container in detached mode
