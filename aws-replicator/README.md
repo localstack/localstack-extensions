@@ -20,17 +20,53 @@ This extension currently offers two modes of operation: (1) the AWS connection p
 
 The AWS connection proxy can be used to forward certain API calls in LocalStack to real AWS, in order to enable seamless transition between local and remote resources.
 
-For example, in order to forward all API calls for DynamoDB/S3/Cognito to real AWS, the proxy can be started via the CLI as follows:
-```
-# configure terminal session to allow access to a real cloud account
-$ export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
-# start proxy via the CLI
-$ localstack aws proxy -s dynamodb,s3,cognito-idp
-```
-
 **Warning:** Be careful when using the proxy - make sure to _never_ give access to production accounts or any critical/sensitive data!
 
 **Note:** The replicator CLI currently works only when installing the `localstack` CLI via `pip`. If you're downloading the `localstack` CLI as a [binary release](https://docs.localstack.cloud/getting-started/installation/#localstack-cli), then please use the proxy configuration UI described below.
+
+### Usage
+
+#### CLI
+For example, in order to forward all API calls for DynamoDB/S3/Cognito to real AWS, the proxy can be started via the CLI as follows:
+
+1. Start LocalStack via CLI
+```
+$ localstack start -d
+```
+2. Enable LocalStack AWS replicator from the Web Application Extension Library
+3. After installation restart Localstack
+4. Install the AWS replicator CLI package
+```
+$ pip install localstack-extension-aws-replicator
+```
+5. Configure real cloud account credentials in a new terminal session to allow access
+```
+$ export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
+```
+6. Start proxy in aforementioned terminal session via the CLI
+```
+$ localstack aws proxy -s dynamodb,s3,cognito-idp
+```
+7. Now, when issuing an API call against LocalStack (e.g., via `awslocal`), the invocation gets forwarded to real AWS and should return data from your real cloud resources.
+
+#### Proxy Configuration UI
+
+1. Start Localstack with extra CORS
+```
+EXTRA_CORS_ALLOWED_ORIGINS=https://aws-replicator.localhost.localstack.cloud:4566 localstack start -d
+```
+
+2. Enable Localstack AWS replicator from the Web Application Extension Library
+
+3. Once the extension is installed, it will expose a small configuration endpoint in your LocalStack container under the following endpoint: http://localhost:4566/_localstack/aws-replicator/index.html . 
+
+4. Use this Web UI to define the proxy configuration (in YAML syntax), as well as the AWS credentials (AWS access key ID, secret access key, and optionally session token) and save configuration. The proxy should report enabled state and on the host a proxy container should spawn.
+
+![configuration settings](etc/proxy-settings.png)
+
+5. Now we can communicate with the real AWS cloud resources, directly via LocalStack.
+
+To clean up the running proxy container simply click "disable" on the Replicator UI.
 
 ### Resource-specific proxying
 
@@ -71,14 +107,6 @@ make_bucket: test123
 ```
 
 A more comprehensive sample, involving local Lambda functions combined with remote SQS queues and S3 buckets, can be found in the `example` folder of this repo.
-
-### Proxy Configuration UI
-
-Once the extension is installed, it will expose a small configuration endpoint in your LocalStack container under the following endpoint: http://localhost:4566/_localstack/aws-replicator/index.html . 
-
-Please use this Web UI to define the proxy configuration (in YAML syntax), as well as the AWS credentials (AWS access key ID, secret access key, and optionally session token).
-
-![configuration settings](etc/proxy-settings.png)
 
 ## Resource Replicator CLI
 
