@@ -109,6 +109,48 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
     retry(_assert_deleted, retries=5, sleep=5)
 
 
+def test_s3_list_objects_in_different_folders(start_aws_proxy, s3_create_bucket):
+    # start proxy
+    config = ProxyConfig(services={"s3": {"resources": ".*"}}, bind_host=PROXY_BIND_HOST)
+    start_aws_proxy(config)
+
+    # create clients
+    s3_client = connect_to().s3
+    s3_client_aws = boto3.client("s3")
+
+    # create bucket
+    bucket = s3_create_bucket()
+    buckets_proxied = s3_client.list_buckets()["Buckets"]
+    buckets_aws = s3_client_aws.list_buckets()["Buckets"]
+    assert buckets_proxied and buckets_proxied == buckets_aws
+
+    # create a couple of objects under different paths/folders
+    s3_client.put_object(Bucket=bucket, Key="test/foo/bar", Body=b"test")
+    s3_client.put_object(Bucket=bucket, Key="test/foo/baz", Body=b"test")
+    s3_client.put_object(Bucket=bucket, Key="test/foobar", Body=b"test")
+
+    # list objects for prefix test/
+    objects = s3_client_aws.list_objects_v2(Bucket=bucket, Prefix="test/")
+    keys_aws = [obj["Key"] for obj in objects["Contents"]]
+    objects = s3_client.list_objects_v2(Bucket=bucket, Prefix="test/")
+    keys_proxied = [obj["Key"] for obj in objects["Contents"]]
+    assert set(keys_proxied) == set(keys_aws)
+
+    # list objects for prefix test/foo/
+    objects = s3_client_aws.list_objects_v2(Bucket=bucket, Prefix="test/foo/")
+    keys_aws = [obj["Key"] for obj in objects["Contents"]]
+    objects = s3_client.list_objects_v2(Bucket=bucket, Prefix="test/foo/")
+    keys_proxied = [obj["Key"] for obj in objects["Contents"]]
+    assert set(keys_proxied) == set(keys_aws)
+
+    # list objects for prefix test/foo (without trailing slash)
+    objects = s3_client_aws.list_objects_v2(Bucket=bucket, Prefix="test/foo")
+    keys_aws = [obj["Key"] for obj in objects["Contents"]]
+    objects = s3_client.list_objects_v2(Bucket=bucket, Prefix="test/foo")
+    keys_proxied = [obj["Key"] for obj in objects["Contents"]]
+    assert set(keys_proxied) == set(keys_aws)
+
+
 def test_sqs_requests(start_aws_proxy, cleanups):
     queue_name_aws = "test-queue-aws"
     queue_name_local = "test-queue-local"
