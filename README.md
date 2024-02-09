@@ -67,7 +67,7 @@ You can install the respective extension by calling `localstack install <Install
 
 | Extension | Install name | Version | Support status |
 | --------- | ------------ | ------- | -------------- |
-| [AWS replicator](https://github.com/localstack/localstack-extensions/tree/main/aws-replicator) | localstack-extension-aws-replicator | 0.1.0 | Experimental |
+| [AWS replicator](https://github.com/localstack/localstack-extensions/tree/main/aws-replicator) | localstack-extension-aws-replicator | 0.1.7 | Experimental |
 | [Diagnosis Viewer](https://github.com/localstack/localstack-extensions/tree/main/diagnosis-viewer) | localstack-extension-diagnosis-viewer | 0.1.0 | Stable |
 | [Hello World](https://github.com/localstack/localstack-extensions/tree/main/hello-world) | localstack-extension-hello-world | 0.1.0 | Stable |
 | [httpbin](https://github.com/localstack/localstack-extensions/tree/main/httpbin) | localstack-extension-httpbin | 0.1.0 | Stable |
