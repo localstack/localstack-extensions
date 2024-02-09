@@ -19,6 +19,7 @@ from localstack.utils.json import parse_json_or_yaml
 from localstack.utils.strings import to_str
 from localstack.utils.threads import start_worker_thread
 
+from aws_replicator import config as repl_config
 from aws_replicator.client.auth_proxy import (
     CONTAINER_CONFIG_FILE,
     CONTAINER_NAME_PREFIX,
@@ -145,7 +146,9 @@ def get_proxy_containers() -> List[Dict]:
 def stop_proxy_containers():
     for container in get_proxy_containers():
         try:
-            DOCKER_CLIENT.remove_container(container["name"], force=True)
+            DOCKER_CLIENT.stop_container(container["name"])
+            if repl_config.CLEANUP_PROXY_CONTAINERS:
+                DOCKER_CLIENT.remove_container(container["name"], force=True)
         except Exception as e:
             LOG.debug("Unable to remove container %s: %s", container["name"], e)
 
