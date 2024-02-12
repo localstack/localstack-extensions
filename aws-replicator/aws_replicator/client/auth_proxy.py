@@ -74,21 +74,22 @@ class AuthProxyAWS(Server):
         if not parsed:
             return requests_response("", status_code=400)
         region_name, service_name = parsed
+        query_string = to_str(request.query_string or "")
 
         LOG.debug(
-            "Proxying request to %s (%s): %s %s",
+            "Proxying request to %s (%s): %s %s %s",
             service_name,
             region_name,
             request.method,
             request.path,
+            query_string,
         )
 
-        path, _, query_string = request.path.partition("?")
         request = HttpRequest(
             body=data,
             method=request.method,
             headers=request.headers,
-            path=path,
+            path=request.path,
             query_string=query_string,
         )
         session = boto3.Session()
