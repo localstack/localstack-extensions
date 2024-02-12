@@ -27,13 +27,14 @@ from localstack.utils.container_utils.container_client import PortMappings
 from localstack.utils.docker_utils import DOCKER_CLIENT, reserve_available_container_port
 from localstack.utils.files import new_tmp_file, save_file
 from localstack.utils.functions import run_safe
-from localstack.utils.net import get_free_tcp_port
+from localstack.utils.net import get_docker_host_from_container, get_free_tcp_port
 from localstack.utils.server.http2_server import run_server
 from localstack.utils.serving import Server
 from localstack.utils.strings import short_uid, to_bytes, to_str, truncate
 from localstack_ext.bootstrap.licensingv2 import ENV_LOCALSTACK_API_KEY, ENV_LOCALSTACK_AUTH_TOKEN
 from requests import Response
 
+from aws_replicator import config as repl_config
 from aws_replicator.client.utils import truncate_content
 from aws_replicator.config import HANDLER_PATH_PROXIES
 from aws_replicator.shared.models import AddProxyRequest, ProxyConfig
@@ -142,6 +143,7 @@ class AuthProxyAWS(Server):
             raise Exception("Proxy currently not running")
         url = f"{external_service_url()}{HANDLER_PATH_PROXIES}"
         data = AddProxyRequest(port=port, config=self.config)
+        LOG.debug("Registering new proxy in main container via: %s", url)
         try:
             response = requests.post(url, json=data)
             assert response.ok
@@ -313,6 +315,7 @@ def start_aws_auth_proxy_in_container(
         entrypoint="",
         command=["bash", "-c", f"touch {CONTAINER_LOG_FILE}; tail -f {CONTAINER_LOG_FILE}"],
         ports=ports,
+        additional_flags=repl_config.PROXY_DOCKER_FLAGS,
     )
 
     # start container in detached mode
@@ -346,7 +349,13 @@ def start_aws_auth_proxy_in_container(
     ]
     env_vars = env_vars or os.environ
     env_vars = select_attributes(dict(env_vars), env_var_names)
-    env_vars["LOCALSTACK_HOST"] = "host.docker.internal"
+
+    # Determine target hostname - we make the host configurable via PROXY_LOCALSTACK_HOST,
+    #  and if not configured then use get_docker_host_from_container() as a fallback.
+    target_host = repl_config.PROXY_LOCALSTACK_HOST
+    if not repl_config.PROXY_LOCALSTACK_HOST:
+        target_host = get_docker_host_from_container()
+    env_vars["LOCALSTACK_HOST"] = target_host
 
     try:
         print("Proxy container is ready.")
@@ -379,7 +388,8 @@ def start_aws_auth_proxy_in_container(
             LOG.info("Error in called process - output: %s\n%s", e.stdout, e.stderr)
     finally:
         try:
-            DOCKER_CLIENT.remove_container(container_name, force=True)
+            if repl_config.CLEANUP_PROXY_CONTAINERS:
+                DOCKER_CLIENT.remove_container(container_name, force=True)
         except Exception as e:
             if "already in progress" not in str(e):
                 raise

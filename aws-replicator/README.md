@@ -108,6 +108,13 @@ make_bucket: test123
 
 A more comprehensive sample, involving local Lambda functions combined with remote SQS queues and S3 buckets, can be found in the `example` folder of this repo.
 
+### Configuration
+
+In addition to the proxy services configuration shown above, the following configs can be used to customize the behavior of the extension itself (simply pass them as environment variables to the main LocalStack container):
+* `REPLICATOR_CLEANUP_PROXY_CONTAINERS`: whether to clean up (remove) the proxy Docker containers once they shut down (default `1`). Can be set to `0` to help debug issues, e.g., if a proxy container starts up and exits immediately.
+* `REPLICATOR_LOCALSTACK_HOST`: the target host to use when the proxy container connects to the LocalStack main container (automatically determined by default)
+* `REPLICATOR_PROXY_DOCKER_FLAGS`: additional flags that should be passed when creating the proxy Docker containers
+
 ## Resource Replicator CLI
 
 The figure below illustrates how the extension can be used to replicate the state, e.g., an SQS queue and the messages contained in it, from AWS into your LocalStack instance.
@@ -143,6 +150,9 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 ## Change Log
 
+* `0.1.10`: Add `REPLICATOR_PROXY_DOCKER_FLAGS` option to pass custom flags to proxy Docker containers
+* `0.1.9`: Enhance proxy networking and add `REPLICATOR_LOCALSTACK_HOST` config option
+* `0.1.8`: Add `REPLICATOR_CLEANUP_PROXY_CONTAINERS` option to skip removing proxy containers for debugging
 * `0.1.7`: Add rolo dependency to tests
 * `0.1.6`: Adjust config to support `LOCALSTACK_AUTH_TOKEN` in addition to legacy API keys
 * `0.1.5`: Minor fix to accommodate recent upstream changes
