@@ -1,8 +1,9 @@
 # LocalStack Extensions (beta)
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/3996682/184503940-c30bfcac-e049-4ee4-b905-207b340111d1.png" alt="LocalStack Extensions">
+  <img src="https://github.com/localstack/localstack-extensions/assets/3996682/bba99a4a-e479-4da9-ba3e-1ea9ce80f9b7" alt="LocalStack Extensions">
 </p>
+
 
 With LocalStack 1.0 we have introduced LocalStack Extensions that allow
 developers to extend and customize LocalStack. Both the feature and the API
