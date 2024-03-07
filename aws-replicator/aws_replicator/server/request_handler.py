@@ -28,7 +28,6 @@ from aws_replicator.client.auth_proxy import (
 from aws_replicator.config import HANDLER_PATH_PROXIES, HANDLER_PATH_REPLICATE
 from aws_replicator.server import ui as web_ui
 from aws_replicator.server.aws_request_forwarder import AwsProxyHandler
-from aws_replicator.server.resource_replicator import ResourceReplicatorFormer2
 from aws_replicator.shared.models import AddProxyRequest, ReplicateStateRequest, ResourceReplicator
 
 LOG = logging.getLogger(__name__)
@@ -111,7 +110,9 @@ def handle_replicate_request(request: ReplicateStateRequest):
 
 
 def _get_replicator() -> ResourceReplicator:
-    # TODO deprecated
+    from aws_replicator.server.resource_replicator import ResourceReplicatorFormer2
+
+    # TODO deprecated - fix the implementation of the replicator/copy logic!
     # return ResourceReplicatorInternal()
     return ResourceReplicatorFormer2()
 
