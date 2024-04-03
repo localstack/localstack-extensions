@@ -91,12 +91,12 @@ const App = () => {
                 </TableRow>
                 <TableRow sx={{'&:last-child td, &:last-child th': {border: 0}}}>
                   <TableCell component="th" scope="row">AWS Credentials:</TableCell>
-                  <TableCell sx={{width: "80%"}}>
-                    <TextField value={accessKey} onChange={(e) => setAccessKey(e.target.value)} size="small" style={{width: "32%"}} placeholder="AWS_ACCESS_KEY_ID" /> {" "}
-                    <TextField value={secretKey} onChange={(e) => setSecretKey(e.target.value)} size="small" style={{width: "32%"}} placeholder="AWS_SECRET_ACCESS_KEY" /> {" "}
-                    <TextField value={sessionToken} onChange={(e) => setSessionToken(e.target.value)} size="small" style={{width: "32%"}} placeholder="AWS_SESSION_TOKEN" />
-                    Please note: AWS credentials are only passed in-memory to the LocalStack container and will <b>not</b> be persisted on disk. For security reasons, please make sure to use scoped credentials with the least set of required permissions (ideally read-only).
-                  </TableCell>
+                  <TableCell sx={{ width: "80%" }}>
+                        <TextField type="password" value={accessKey} onChange={(e) => setAccessKey(e.target.value)} size="small" style={{ width: "32%" }} placeholder="AWS_ACCESS_KEY_ID" /> {" "}
+                        <TextField type="password" value={secretKey} onChange={(e) => setSecretKey(e.target.value)} size="small" style={{ width: "32%" }} placeholder="AWS_SECRET_ACCESS_KEY" /> {" "}
+                        <TextField type="password" value={sessionToken} onChange={(e) => setSessionToken(e.target.value)} size="small" style={{ width: "32%" }} placeholder="AWS_SESSION_TOKEN" />
+                        Please note: AWS credentials are only passed in-memory to the LocalStack container and will <b>not</b> be persisted on disk. For security reasons, please make sure to use scoped credentials with the least set of required permissions (ideally read-only).
+                    </TableCell>
                 </TableRow>
                 <TableRow sx={{'&:last-child td, &:last-child th': {border: 0}}}>
                   <TableCell component="th" scope="row">

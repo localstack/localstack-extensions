@@ -150,6 +150,7 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 ## Change Log
 
+* `0.1.12`: Modify aws credentials text field type to password  
 * `0.1.11`: Fix broken imports after recent upstream CloudFormation changes
 * `0.1.10`: Add `REPLICATOR_PROXY_DOCKER_FLAGS` option to pass custom flags to proxy Docker containers
 * `0.1.9`: Enhance proxy networking and add `REPLICATOR_LOCALSTACK_HOST` config option
