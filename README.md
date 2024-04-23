@@ -15,7 +15,7 @@ Extensions are a LocalStack Pro feature.
 To use and install extensions, use the CLI to first log in to your account
 
 ```console
-$ localstack login
+$ localstack auth login
 Please provide your login credentials below
 Username: ...
 ```
