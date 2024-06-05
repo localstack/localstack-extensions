@@ -16,6 +16,7 @@ from localstack.utils.collections import ensure_list
 from localstack.utils.net import get_addressable_container_host
 from localstack.utils.strings import to_str, truncate
 from requests.structures import CaseInsensitiveDict
+from rolo.proxy import forward
 
 try:
     from localstack.testing.config import TEST_AWS_ACCESS_KEY_ID
@@ -37,16 +38,20 @@ class AwsProxyHandler(Handler):
             return
 
         # forward request to proxy
-        response = self.forward_request(context, proxy)
+        response_ = self.forward_request(context, proxy)
 
-        if response is None:
+        if response_ is None:
             return
 
-        # set response details, then stop handler chain to return response
-        chain.response.data = response.raw_content
-        chain.response.status_code = response.status_code
-        chain.response.headers.update(dict(response.headers))
+        response.update_from(response_)
         chain.stop()
+
+        # set response details, then stop handler chain to return response
+        # chain.response.data = response.raw_content
+        # chain.response.status_code = response.status_code
+        # chain.response.headers.update(dict(response.headers))
+        # chain.stop()
+        # chain.respond(response.status_code, response.raw_content, dict(response.headers))
 
     def select_proxy(self, context: RequestContext) -> Optional[ProxyInstance]:
         """select a proxy responsible to forward a request to real AWS"""
@@ -126,6 +131,22 @@ class AwsProxyHandler(Handler):
         port = proxy["port"]
         request = context.request
         target_host = get_addressable_container_host(default_local_hostname=LOCALHOST)
+
+        try:
+            LOG.info("Forwarding request: %s", context)
+            response = forward(request, f"http://{target_host}:{port}")
+            LOG.info(
+                "Received response: status=%s headers=%s body=%s",
+                response.status_code,
+                response.headers,
+                response.data,
+            )
+        except Exception as e:
+            LOG.exception("Exception while forwarding request")
+            raise
+
+        return response
+
         url = f"http://{target_host}:{port}{request.path}?{to_str(request.query_string)}"
 
         # inject Auth header, to ensure we're passing the right region to the proxy (e.g., for Cognito InitiateAuth)
@@ -156,9 +177,9 @@ class AwsProxyHandler(Handler):
                 dict(result.headers),
                 truncate(result.raw_content, max_length=500),
             )
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as e:
             # remove unreachable proxy
-            LOG.info("Removing unreachable AWS forward proxy due to connection issue: %s", url)
+            LOG.exception("Removing unreachable AWS forward proxy due to connection issue: %s", url)
             self.PROXY_INSTANCES.pop(port, None)
         return result
 
