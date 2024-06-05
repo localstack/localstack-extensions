@@ -6,13 +6,18 @@ import boto3
 import pytest
 from botocore.exceptions import ClientError
 from localstack.aws.connect import connect_to
-from localstack.constants import TEST_AWS_ACCOUNT_ID
 from localstack.utils.aws.arns import sqs_queue_arn, sqs_queue_url_for_arn
 from localstack.utils.net import wait_for_port_open
 from localstack.utils.sync import retry
 
 from aws_replicator.client.auth_proxy import start_aws_auth_proxy
 from aws_replicator.shared.models import ProxyConfig
+
+try:
+    from localstack.testing.config import TEST_AWS_ACCOUNT_ID
+except ImportError:
+    # backwards compatibility
+    from localstack.constants import TEST_AWS_ACCOUNT_ID
 
 # binding proxy to 0.0.0.0 to enable testing in CI
 PROXY_BIND_HOST = "0.0.0.0"

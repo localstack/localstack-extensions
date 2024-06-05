@@ -57,7 +57,7 @@ jobs:
 
           find  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.11/site-packages/aws*
           ls -la  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.11/site-packages/aws*
-          DEBUG=1 localstack start -d
+          DEBUG=1 GATEWAY_SERVER=hypercorn localstack start -d
           localstack wait
 
       - name: Run linter

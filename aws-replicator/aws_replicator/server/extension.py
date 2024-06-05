@@ -1,5 +1,6 @@
 import logging
 
+from localstack import config
 from localstack.aws.chain import CompositeHandler
 from localstack.extensions.api import Extension, http
 from localstack.services.internal import get_internal_apis
@@ -9,6 +10,13 @@ LOG = logging.getLogger(__name__)
 
 class AwsReplicatorExtension(Extension):
     name = "aws-replicator"
+
+    def on_extension_load(self):
+        if config.GATEWAY_SERVER == "twisted":
+            LOG.warning(
+                "AWS resource replicator: The aws-replicator extension currently requires hypercorn as "
+                "gateway server. Please start localstack with GATEWAY_SERVER=hypercorn"
+            )
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
         from aws_replicator.server.request_handler import RequestHandler
