@@ -39,7 +39,7 @@ def start_aws_proxy():
         proxy.shutdown()
 
 
-@pytest.mark.parametrize("metadata_gzip", [False])
+@pytest.mark.parametrize("metadata_gzip", [True, False])
 def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
     # start proxy
     config = ProxyConfig(services={"s3": {"resources": ".*"}}, bind_host=PROXY_BIND_HOST)
