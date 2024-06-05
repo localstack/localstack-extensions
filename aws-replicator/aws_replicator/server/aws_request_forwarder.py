@@ -6,12 +6,7 @@ from typing import Dict, Optional
 import requests
 from localstack.aws.api import RequestContext
 from localstack.aws.chain import Handler, HandlerChain
-from localstack.constants import (
-    APPLICATION_JSON,
-    LOCALHOST,
-    LOCALHOST_HOSTNAME,
-    TEST_AWS_ACCESS_KEY_ID,
-)
+from localstack.constants import APPLICATION_JSON, LOCALHOST, LOCALHOST_HOSTNAME
 from localstack.http import Response
 from localstack.utils.aws import arns
 from localstack.utils.aws.arns import sqs_queue_arn
@@ -21,6 +16,11 @@ from localstack.utils.collections import ensure_list
 from localstack.utils.net import get_addressable_container_host
 from localstack.utils.strings import to_str, truncate
 from requests.structures import CaseInsensitiveDict
+
+try:
+    from localstack.testing.config import TEST_AWS_ACCESS_KEY_ID
+except ImportError:
+    from localstack.constants import TEST_AWS_ACCESS_KEY_ID
 
 from aws_replicator.shared.models import ProxyInstance, ProxyServiceConfig
 
