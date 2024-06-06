@@ -28,7 +28,6 @@ from localstack.utils.docker_utils import DOCKER_CLIENT, reserve_available_conta
 from localstack.utils.files import new_tmp_file, save_file
 from localstack.utils.functions import run_safe
 from localstack.utils.net import get_docker_host_from_container, get_free_tcp_port
-from localstack.utils.server.http2_server import run_server
 from localstack.utils.serving import Server
 from localstack.utils.strings import short_uid, to_bytes, to_str, truncate
 from localstack_ext.bootstrap.licensingv2 import ENV_LOCALSTACK_API_KEY, ENV_LOCALSTACK_AUTH_TOKEN
@@ -38,6 +37,8 @@ from aws_replicator import config as repl_config
 from aws_replicator.client.utils import truncate_content
 from aws_replicator.config import HANDLER_PATH_PROXIES
 from aws_replicator.shared.models import AddProxyRequest, ProxyConfig
+
+from .http2_server import run_server
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)
