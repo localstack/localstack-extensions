@@ -14,7 +14,6 @@ from botocore.awsrequest import AWSPreparedRequest
 from botocore.model import OperationModel
 from localstack import config
 from localstack import config as localstack_config
-from localstack.aws.api import HttpRequest
 from localstack.aws.protocol.parser import create_parser
 from localstack.aws.spec import load_service
 from localstack.config import external_service_url
@@ -86,7 +85,7 @@ class AuthProxyAWS(Server):
             query_string,
         )
 
-        request = HttpRequest(
+        request = Request(
             body=data,
             method=request.method,
             headers=request.headers,
@@ -157,7 +156,7 @@ class AuthProxyAWS(Server):
             raise
 
     def _parse_aws_request(
-        self, request: HttpRequest, service_name: str, region_name: str, client
+        self, request: Request, service_name: str, region_name: str, client
     ) -> Tuple[OperationModel, AWSPreparedRequest, Dict]:
         parser = create_parser(load_service(service_name))
         operation_model, parsed_request = parser.parse(request)
@@ -246,7 +245,7 @@ class AuthProxyAWS(Server):
                 req_json["QueueOwnerAWSAccountId"] = account_id
                 request_dict["body"] = to_bytes(json.dumps(req_json))
 
-    def _fix_headers(self, request: HttpRequest, service_name: str):
+    def _fix_headers(self, request: Request, service_name: str):
         if service_name == "s3":
             # fix the Host header, to avoid bucket addressing issues
             host = request.headers.get("Host") or ""
