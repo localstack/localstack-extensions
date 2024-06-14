@@ -150,6 +150,7 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 ## Change Log
 
+* `0.1.13`: Add compatibility with localstack >=3.4; add http2-server; migrate to localstack auth login
 * `0.1.12`: Modify aws credentials text field type to password  
 * `0.1.11`: Fix broken imports after recent upstream CloudFormation changes
 * `0.1.10`: Add `REPLICATOR_PROXY_DOCKER_FLAGS` option to pass custom flags to proxy Docker containers
