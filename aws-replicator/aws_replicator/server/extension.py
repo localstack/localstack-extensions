@@ -12,6 +12,10 @@ class AwsReplicatorExtension(Extension):
     name = "aws-replicator"
 
     def on_extension_load(self):
+        logging.getLogger("aws_replicator").setLevel(
+            logging.DEBUG if config.DEBUG else logging.INFO
+        )
+
         if config.GATEWAY_SERVER == "twisted":
             LOG.warning(
                 "AWS resource replicator: The aws-replicator extension currently requires hypercorn as "
