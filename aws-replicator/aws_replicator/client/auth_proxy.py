@@ -16,7 +16,6 @@ from botocore.httpchecksum import resolve_checksum_context
 from botocore.model import OperationModel
 from localstack import config
 from localstack import config as localstack_config
-from localstack.aws.api import HttpRequest
 from localstack.aws.chain import HandlerChain
 from localstack.aws.chain import RequestContext as AwsRequestContext
 from localstack.aws.gateway import Gateway
@@ -44,8 +43,6 @@ from aws_replicator import config as repl_config
 from aws_replicator.client.utils import truncate_content
 from aws_replicator.config import HANDLER_PATH_PROXIES
 from aws_replicator.shared.models import AddProxyRequest, ProxyConfig
-
-from .http2_server import run_server
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)
@@ -218,7 +215,7 @@ class AwsProxyHandler:
                 req_json["QueueOwnerAWSAccountId"] = account_id
                 request_dict["body"] = to_bytes(json.dumps(req_json))
 
-    def _fix_headers(self, request: HttpRequest, service_name: str):
+    def _fix_headers(self, request: Request, service_name: str):
         if service_name == "s3":
             # fix the Host header, to avoid bucket addressing issues
             host = request.headers.get("Host") or ""
@@ -543,8 +540,7 @@ def start_aws_auth_proxy_in_container(
     command = [
         "bash",
         "-c",
-        # TODO: manually installing quart/h11/hypercorn as a dirty quick fix for now. To be fixed!
-        f"{venv_activate}; pip install h11 hypercorn quart; pip install --upgrade --no-deps '{CLI_PIP_PACKAGE}'",
+        f"{venv_activate}; pip install --upgrade --no-deps '{CLI_PIP_PACKAGE}'",
     ]
     DOCKER_CLIENT.exec_in_container(container_name, command=command)
 

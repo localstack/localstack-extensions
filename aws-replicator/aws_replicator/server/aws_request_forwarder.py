@@ -43,15 +43,12 @@ class AwsProxyHandler(Handler):
         if response_ is None:
             return
 
-        response.update_from(response_)
-        chain.stop()
+        # Remove `Transfer-Encoding` header (which could be set to 'chunked'), to prevent client timeouts
+        response_.headers.pop("Transfer-Encoding", None)
 
         # set response details, then stop handler chain to return response
-        # chain.response.data = response.raw_content
-        # chain.response.status_code = response.status_code
-        # chain.response.headers.update(dict(response.headers))
-        # chain.stop()
-        # chain.respond(response.status_code, response.raw_content, dict(response.headers))
+        response.update_from(response_)
+        chain.stop()
 
     def select_proxy(self, context: RequestContext) -> Optional[ProxyInstance]:
         """select a proxy responsible to forward a request to real AWS"""
@@ -141,7 +138,7 @@ class AwsProxyHandler(Handler):
                 response.headers,
                 response.data,
             )
-        except Exception as e:
+        except Exception:
             LOG.exception("Exception while forwarding request")
             raise
 
@@ -177,7 +174,7 @@ class AwsProxyHandler(Handler):
                 dict(result.headers),
                 truncate(result.raw_content, max_length=500),
             )
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.ConnectionError:
             # remove unreachable proxy
             LOG.exception("Removing unreachable AWS forward proxy due to connection issue: %s", url)
             self.PROXY_INSTANCES.pop(port, None)
