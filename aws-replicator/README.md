@@ -115,6 +115,8 @@ In addition to the proxy services configuration shown above, the following confi
 * `REPLICATOR_LOCALSTACK_HOST`: the target host to use when the proxy container connects to the LocalStack main container (automatically determined by default)
 * `REPLICATOR_PROXY_DOCKER_FLAGS`: additional flags that should be passed when creating the proxy Docker containers
 
+**Note:** Due to some recent changes in the core framework, make sure to start up your LocalStack container with the `GATEWAY_SERVER=hypercorn` configuration enabled, for backwards compatibility. This will be fixed in an upcoming release.
+
 ## Resource Replicator CLI
 
 The figure below illustrates how the extension can be used to replicate the state, e.g., an SQS queue and the messages contained in it, from AWS into your LocalStack instance.
@@ -150,6 +152,7 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 ## Change Log
 
+* `0.1.14`: Install missing dependencies into proxy container for localstack >=3.4 compatibility
 * `0.1.13`: Add compatibility with localstack >=3.4; add http2-server; migrate to localstack auth login
 * `0.1.12`: Modify aws credentials text field type to password  
 * `0.1.11`: Fix broken imports after recent upstream CloudFormation changes

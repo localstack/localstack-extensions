@@ -327,7 +327,8 @@ def start_aws_auth_proxy_in_container(
     command = [
         "bash",
         "-c",
-        f"{venv_activate}; pip install --upgrade --no-deps '{CLI_PIP_PACKAGE}'",
+        # TODO: manually installing quart/h11/hypercorn as a dirty quick fix for now. To be fixed!
+        f"{venv_activate}; pip install h11 hypercorn quart; pip install --upgrade --no-deps '{CLI_PIP_PACKAGE}'",
     ]
     DOCKER_CLIENT.exec_in_container(container_name, command=command)
 
