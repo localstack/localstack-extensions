@@ -2,7 +2,6 @@ VENV_BIN = python3 -m venv
 VENV_DIR ?= .venv
 VENV_ACTIVATE = $(VENV_DIR)/bin/activate
 VENV_RUN = . $(VENV_ACTIVATE)
-WEB_LOCATION_PREFIX = /_localstack/{{cookiecutter.module_name}}/
 
 venv: $(VENV_ACTIVATE)
 
@@ -25,7 +24,7 @@ install-frontend: venv
 	cd {{cookiecutter.module_name}}/frontend && yarn install
  
 build-frontend:
-	cd {{cookiecutter.module_name}}/frontend; rm -rf build && WEB_LOCATION_PREFIX=$(WEB_LOCATION_PREFIX) npm run build
+	cd {{cookiecutter.module_name}}/frontend; rm -rf build && npm run build
 
 install: venv install-backend install-frontend
 

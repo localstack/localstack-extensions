@@ -15,6 +15,7 @@ from {{cookiecutter.module_name}} import frontend as web_ui
 
 DOMAIN_NAME = f"{{cookiecutter.module_name}}.{LOCALHOST_HOSTNAME}"
 ROUTE_HOST = f"{DOMAIN_NAME}<port:port>"
+EXTENSION_SUB_ROUTE = f"{ROUTE_HOST}{INTERNAL_RESOURCE_PATH}/{{cookiecutter.module_name}}"
 
 
 class WebApp:
@@ -22,6 +23,10 @@ class WebApp:
     def forward_from_root(self, request: Request, **kwargs):
         return redirect(f"{INTERNAL_RESOURCE_PATH}/{{cookiecutter.module_name}}/dashboard")
 
+    @route("/<path:path>", methods=["GET"], host=ROUTE_HOST)
+    def forward_custom_from_root(self, request: Request, path: str, **kwargs):
+        return self.serve_static_file(path)
+    
     @route(f"{INTERNAL_RESOURCE_PATH}/{{cookiecutter.module_name}}", methods=["GET"])
     def forward_from_extension_root(self, request: Request, **kwargs):
         return redirect(f"{INTERNAL_RESOURCE_PATH}/{{cookiecutter.module_name}}/index.html")

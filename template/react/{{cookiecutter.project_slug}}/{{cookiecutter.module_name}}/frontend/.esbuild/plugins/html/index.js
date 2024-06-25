@@ -7,7 +7,6 @@ const crypto = require('crypto');
  * @param {string} config.filename - HTML file to process and override
  * @param {boolean} config.env - Whether to replace env vars or not (default - `false`)
  * @param {string} config.envPrefix - Limit env vars to pick (default - `REACT_APP_`)
- * @param {string} config.prefix - prefix to add to the links
  */
 const HtmlPlugin = (config) => ({
   name: 'html',
@@ -49,13 +48,6 @@ const HtmlPlugin = (config) => ({
         [],
       );
 
-      const preHeadersAppend = []
-      if (config.prefix) {
-        preHeadersAppend.push(
-          `<base href="${config.prefix}"/>`
-        )
-      }
-
       const bodyAppends = jsFiles.reduce(
         (memo, p) => {
           const filename = p.split(path.sep).slice(-1)[0];
@@ -80,7 +72,6 @@ const HtmlPlugin = (config) => ({
 
         // inject references to js and css files
         htmlContent = htmlContent
-          .replace('<head>', ['<head>', ...preHeadersAppend].join("\n"))
           .replace('</head>', [...headerAppends, '</head>'].join("\n"))
           .replace('</body>', [...bodyAppends, '</body>'].join("\n"));
 

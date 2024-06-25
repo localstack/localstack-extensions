@@ -13,7 +13,6 @@ const HtmlPlugin = require('./plugins/html');
 
 const CURRENT_ENV = process.env.NODE_ENV || 'development.local';
 const BUILD_PATH = path.join(__dirname, '..', 'build');
-const WEB_LOCATION_PREFIX = process.env.WEB_LOCATION_PREFIX;
 
 // Load .env.* file depending on the active environment
 require('dotenv').config({ path: `.env.${CURRENT_ENV}` });
@@ -60,7 +59,6 @@ const BUILD_CONFIG = {
     }),
     NodeModulesPolyfillPlugin(),
     HtmlPlugin({
-      prefix: WEB_LOCATION_PREFIX,
       filename: path.join(BUILD_PATH, 'index.html'),
       env: true,
     }),
