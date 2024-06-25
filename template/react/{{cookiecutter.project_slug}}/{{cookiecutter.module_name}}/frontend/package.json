@@ -1,0 +1,37 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/material": "^5.15.20",
+    "@testing-library/react": "^13.4.0",
+    "@types/node": "^16.18.99",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.24.0",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.5"
+  },
+  "devDependencies": {
+    "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
+    "esbuild": "^0.16.6",
+    "esbuild-envfile-plugin": "^1.0.2",
+    "esbuild-plugin-clean": "^1.0.1",
+    "esbuild-plugin-copy": "^0.3.0",
+    "esbuild-plugin-svgr": "^1.0.0"
+  },
+  "scripts": {
+    "start": "concurrently --restart-tries -1 --raw \"yarn serve\" \"yarn watch\"",
+    "watch": "node .esbuild --watch",
+    "build": "node .esbuild"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  }
+}
