@@ -5,7 +5,7 @@ from localstack.extensions.api import Extension, http, aws
 from localstack.services.internal import get_internal_apis
 from localstack import config
 
-from react_test.backend.web import WebApp
+from {{ cookiecutter.module_name }}.backend.web import WebApp
 
 from .util import Routes, Subdomain, Submount
 
