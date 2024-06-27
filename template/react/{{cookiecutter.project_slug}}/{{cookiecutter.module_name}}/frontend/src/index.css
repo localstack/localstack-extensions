@@ -1,13 +1,140 @@
-body {
+* {
+  box-sizing: border-box;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  padding: 0;
+}
+
+html {
+  font-size: 1rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+body {
+  background-color: #f9fafb;
+}
+
+a {
+  text-decoration: none;
+}
+
+a,
+a:hover {
+  cursor: pointer;
+}
+
+div.centeredPanel {
+  text-align: center;
+  padding: 20px;
+}
+
+table.compactTable td,
+table.compactTable th {
+  padding: 10px;
+}
+
+table.compactTable tr {
+  height: auto;
+}
+
+div.compactInput input {
+  padding: 7px;
+}
+
+table tr.disabled td {
+  color: grey;
+}
+
+a.tocAnchor {
+  position: relative;
+  top: -80px;
+  display: block;
+  height: 0;
+  width: 0;
+}
+
+#root {
+  overflow-x: hidden;
+}
+
+.plumb * {
+  word-wrap: break-word;
+}
+.layoutnode {
+  position: absolute;
+  border: 2px solid #bbbbbf;
+  border-radius: 5px;
+  padding: 6px;
+  max-width: 120px;
+  background: #fafbfe;
+}
+.layoutnode.selected,
+.shard.selected {
+  border: 2px solid #888888;
+  background: #dddddd;
+  z-index: 100;
+}
+.shard,
+.kinesis_shard {
+  position: static;
+  display: block;
+  border: 1px solid #aaaaaa;
+  border-radius: 5px;
+  padding: 3px;
+  white-space: nowrap;
+}
+.plumb .title {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+div.MuiCollapse-wrapperInner a.MuiListItem-root {
+  margin-top: 0px;
+}
+div.MuiCollapse-wrapperInner a.MuiListItem-root span {
+  margin-left: 8px;
+}
+th.MuiTableCell-head {
+  white-space: nowrap;
+}
+
+.dialogue {
+  line-height: 1.5;
+
+}
+.dialogue .closeButton {
+  position: absolute !important;
+  right: 0;
+  top: 0;
+}
+
+.MuiDropzoneArea-root {
+  padding: 20px;
+}
+
+.MuiSelect-icon {
+  color: inherit !important;
+}
+
+textarea {
+  width: 100%;
+}
+
+.statusDot {
+  height: 8px;
+  min-width: 8px;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-block;
+  margin-left: 0.5rem;
+}
+
+.grecaptcha-badge {
+  width: 70px !important;
+  overflow: hidden !important;
+  transition: all 0.2s ease !important;
+  left: 0 !important;
+}
+.grecaptcha-badge:hover {
+  width: 256px !important;
 }

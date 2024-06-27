@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "jsx": "react-jsx",
+    "target": "es5",
+
+    "baseUrl": "./",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+
+    "noEmit": true,
+    "allowJs": true,
+    "alwaysStrict": true,
+    "allowUnreachableCode": false,
+    "allowSyntheticDefaultImports": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "resolveJsonModule": true,
+    "preserveConstEnums": true,
+    "preserveSymlinks": true,
+
+    "skipLibCheck": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types",
+    ],
+
+    "paths": {
+      "@localstack/*": ["./node_modules/@localstack/*/src"],
+    },
+  },
+  "include": [
+    "src/**/*",
+  ]
+}

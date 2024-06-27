@@ -1,17 +1,18 @@
 {
-  "name": "frontend",
+  "name": "{{cookiecutter.module_name}}",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
+    "@localstack/theme": "git+ssh://git@github.com/localstack/localstack-web.git#commit=741276a31896cb498dc6207830842e6cbcca9611&workspace=@localstack/theme",
     "@mui/material": "^5.15.20",
     "@testing-library/react": "^13.4.0",
     "@types/node": "^16.18.99",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@types/react-dom": "^17.0.11",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "react-router-dom": "^6.24.0",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5"
@@ -29,9 +30,11 @@
     "watch": "node .esbuild --watch",
     "build": "node .esbuild"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
-  }
+  "resolutions": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "@types/react-dom": "^17.0.11",
+    "@mui/material": "^5.15.20"
+  },
+  "packageManager": "yarn@3.2.3"
 }
