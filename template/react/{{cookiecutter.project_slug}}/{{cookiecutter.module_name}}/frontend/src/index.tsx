@@ -5,7 +5,7 @@ import { CustomRoutes } from './CustomRoutes';
 import { BrowserRouter } from 'react-router-dom';
 import { LocalStackThemeProvider } from '@localstack/theme'
 
-const BASE_PATH = '/_localstack/{{cookiecutter.module_name}}';
+const BASE_PATH = '/_extension/{{cookiecutter.project_slug}}';
 
 ReactDOM.render(
   <LocalStackThemeProvider useExtensionLayout>
