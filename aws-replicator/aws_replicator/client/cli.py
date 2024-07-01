@@ -67,10 +67,7 @@ def _is_logged_in() -> bool:
     required=False,
 )
 def cmd_aws_proxy(services: str, config: str, container: bool, port: int, host: str):
-    from aws_replicator.client.auth_proxy import (
-        start_aws_auth_proxy,
-        start_aws_auth_proxy_in_container,
-    )
+    from aws_replicator.client.auth_proxy import start_aws_auth_proxy_in_container
 
     config_json: ProxyConfig = {"services": {}}
     if config:
@@ -84,6 +81,10 @@ def cmd_aws_proxy(services: str, config: str, container: bool, port: int, host: 
     try:
         if container:
             return start_aws_auth_proxy_in_container(config_json)
+
+        # note: deferring the import here, to avoid import errors in CLI context
+        from aws_replicator.client.auth_proxy import start_aws_auth_proxy
+
         proxy = start_aws_auth_proxy(config_json, port=port)
         proxy.join()
     except Exception as e:

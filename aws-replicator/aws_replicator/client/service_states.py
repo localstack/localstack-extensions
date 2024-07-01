@@ -1,14 +1,17 @@
 import logging
-from typing import Dict, Type
+from typing import Dict, Optional, Type
 
 import boto3
 from botocore.client import BaseClient
 from localstack.services.cloudformation.models.s3 import S3Bucket
+from localstack.services.cloudformation.service_models import GenericBaseModel
 from localstack.utils.aws import aws_stack
+from localstack.utils.objects import get_all_subclasses
 from localstack.utils.threads import parallelize
 
 from aws_replicator.client.utils import post_request_to_instance
-from aws_replicator.shared.models import ExtendedResourceStateReplicator, ReplicateStateRequest
+from aws_replicator.shared.models import ReplicateStateRequest
+from aws_replicator.shared.utils import get_resource_type
 
 LOG = logging.getLogger(__name__)
 
@@ -21,6 +24,37 @@ def mixin_for(wrapped_clazz: Type):
         wrapped_clazz.__bases__ = (wrapping_clazz,) + wrapped_clazz.__bases__
 
     return wrapper
+
+
+# TODO: remove / adjust to use latest upstream CFn models!
+class ExtendedResourceStateReplicator(GenericBaseModel):
+    """Extended resource models, used to replicate (inject) additional state into a resource instance"""
+
+    def add_extended_state_external(self, remote_client: BaseClient = None):
+        """Called in the context of external CLI execution to fetch/replicate resource details from a remote account"""
+
+    def add_extended_state_internal(self, state: Dict):
+        """Called in the context of the internal LocalStack instance to inject the state into a resource"""
+
+    @classmethod
+    def get_resource_instance(cls, resource: Dict) -> Optional["ExtendedResourceStateReplicator"]:
+        resource_type = get_resource_type(resource)
+        resource_class = cls.find_resource_classes().get(resource_type)
+        if resource_class:
+            return resource_class(resource)
+
+    @classmethod
+    def get_resource_class(
+        cls, resource_type: str
+    ) -> Optional[Type["ExtendedResourceStateReplicator"]]:
+        return cls.find_resource_classes().get(resource_type)
+
+    @classmethod
+    def find_resource_classes(cls) -> Dict[str, "ExtendedResourceStateReplicator"]:
+        return {
+            inst.cloudformation_type(): inst
+            for inst in get_all_subclasses(ExtendedResourceStateReplicator)
+        }
 
 
 # resource-specific replications
