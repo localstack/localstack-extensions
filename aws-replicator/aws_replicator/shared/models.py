@@ -1,44 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type, TypedDict, Union
-
-from botocore.client import BaseClient
-from localstack.services.cloudformation.service_models import GenericBaseModel
-from localstack.utils.objects import get_all_subclasses
-
-from aws_replicator.shared.utils import get_resource_type
+from typing import Any, Dict, List, Optional, TypedDict, Union
 
 LOG = logging.getLogger(__name__)
-
-
-class ExtendedResourceStateReplicator(GenericBaseModel):
-    """Extended resource models, used to replicate (inject) additional state into a resource instance"""
-
-    def add_extended_state_external(self, remote_client: BaseClient = None):
-        """Called in the context of external CLI execution to fetch/replicate resource details from a remote account"""
-
-    def add_extended_state_internal(self, state: Dict):
-        """Called in the context of the internal LocalStack instance to inject the state into a resource"""
-
-    @classmethod
-    def get_resource_instance(cls, resource: Dict) -> Optional["ExtendedResourceStateReplicator"]:
-        resource_type = get_resource_type(resource)
-        resource_class = cls.find_resource_classes().get(resource_type)
-        if resource_class:
-            return resource_class(resource)
-
-    @classmethod
-    def get_resource_class(
-        cls, resource_type: str
-    ) -> Optional[Type["ExtendedResourceStateReplicator"]]:
-        return cls.find_resource_classes().get(resource_type)
-
-    @classmethod
-    def find_resource_classes(cls) -> Dict[str, "ExtendedResourceStateReplicator"]:
-        return {
-            inst.cloudformation_type(): inst
-            for inst in get_all_subclasses(ExtendedResourceStateReplicator)
-        }
 
 
 class ReplicateStateRequest(TypedDict):

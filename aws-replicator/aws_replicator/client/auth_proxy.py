@@ -14,7 +14,6 @@ from botocore.awsrequest import AWSPreparedRequest
 from botocore.model import OperationModel
 from localstack import config
 from localstack import config as localstack_config
-from localstack.aws.protocol.parser import create_parser
 from localstack.aws.spec import load_service
 from localstack.config import external_service_url
 from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO
@@ -158,6 +157,8 @@ class AuthProxyAWS(Server):
     def _parse_aws_request(
         self, request: Request, service_name: str, region_name: str, client
     ) -> Tuple[OperationModel, AWSPreparedRequest, Dict]:
+        from localstack.aws.protocol.parser import create_parser
+
         parser = create_parser(load_service(service_name))
         operation_model, parsed_request = parser.parse(request)
         request_context = {
