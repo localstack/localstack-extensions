@@ -5,11 +5,19 @@ import { CustomRoutes } from './CustomRoutes';
 import { BrowserRouter } from 'react-router-dom';
 import { LocalStackThemeProvider } from '@localstack/theme'
 
-const BASE_PATH = '/_extension/{{cookiecutter.project_slug}}';
+const EXTENSION_NAME = '{{cookiecutter.project_slug}}';
+
+const getBaseName = () => {
+  if (!window.location.origin.includes(EXTENSION_NAME)) {
+    return `/_extension/${EXTENSION_NAME}`;
+  }
+  return '';
+};
+
 
 ReactDOM.render(
   <LocalStackThemeProvider useExtensionLayout>
-    <BrowserRouter basename={BASE_PATH}>
+    <BrowserRouter basename={getBaseName()}>
       <CustomRoutes />
     </BrowserRouter >
   </LocalStackThemeProvider>,
