@@ -118,6 +118,12 @@ class AwsProxyHandler(Handler):
                 if re.match(resource_name_pattern, candidate):
                     return True
             return False
+        LOG.debug("Checking resource match for service %s: %s", service_name, resource_name_pattern)
+        LOG.debug("Service request: %s", context.service_request.__dict__)
+        # if service_name == "secretsmanager":
+        #     print("aicicicicii", resource_name_pattern, context.service_request)
+        #     secret_id = context.service_request.get("SecretId") or ""
+        #     return bool(re.match(resource_name_pattern, secret_id))
         # TODO: add more resource patterns
         return True
 
