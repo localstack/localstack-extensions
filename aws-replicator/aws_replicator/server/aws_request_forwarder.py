@@ -121,7 +121,7 @@ class AwsProxyHandler(Handler):
         if service_name == "secretsmanager":
             secret_id = context.service_request.get("SecretId") or ""
             secret_arn = secretsmanager_secret_arn(secret_id, account_id=context.account_id, region_name=context.region)
-            return re.match(resource_name_pattern, secret_arn)
+            return bool(re.match(resource_name_pattern, secret_arn))
         # TODO: add more resource patterns
         return True
 
