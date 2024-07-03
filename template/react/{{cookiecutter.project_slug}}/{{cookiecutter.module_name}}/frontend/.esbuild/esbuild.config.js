@@ -10,6 +10,7 @@ const { NodeModulesPolyfillPlugin } = require('@esbuild-plugins/node-modules-pol
 
 const packageJson = require('../package.json');
 const HtmlPlugin = require('./plugins/html');
+const { writeFileSync } = require('fs');
 
 const CURRENT_ENV = process.env.NODE_ENV || 'development.local';
 const BUILD_PATH = path.join(__dirname, '..', 'build');
@@ -84,6 +85,7 @@ const BUILD_CONFIG = {
 const build = async (overrides = {}) => {
   try {
     await esbuild.build({ ...BUILD_CONFIG, ...overrides });
+    writeFileSync(path.join(BUILD_PATH, '__init__.py'),'')
     console.log('done building');
   } catch (e) {
     console.error(e);

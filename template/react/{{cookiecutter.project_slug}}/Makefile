@@ -27,7 +27,7 @@ install-frontend: venv  ## Install dependencies of the frontend
 	cd my_localstack_extension/frontend && yarn install
  
 build-frontend: # Build the react app
-	cd my_localstack_extension/frontend; rm -rf build && NODE_ENV=prod npm run build
+	cd my_localstack_extension/frontend; rm -rf build && REACT_APP_DEVELOPMENT_ENVIRONMENT=false NODE_ENV=prod npm run build
 
 start-frontend: ## Start the frontend in dev mode (hot reload)
 	cd my_localstack_extension/frontend; REACT_APP_DEVELOPMENT_ENVIRONMENT=true yarn start
