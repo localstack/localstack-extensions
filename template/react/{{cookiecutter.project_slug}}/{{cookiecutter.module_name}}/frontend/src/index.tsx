@@ -1,19 +1,19 @@
-import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import { CustomRoutes } from './CustomRoutes';
 import { BrowserRouter } from 'react-router-dom';
 import { LocalStackThemeProvider } from '@localstack/theme'
+import { DEVELOPMENT_ENVIRONMENT } from './constants';
 
-const EXTENSION_NAME = '{{cookiecutter.project_slug}}';
+const EXTENSION_NAME = 'my-localstack-extension'
 
 const getBaseName = () => {
-  if (!window.location.origin.includes(EXTENSION_NAME)) {
-    return `/_extension/${EXTENSION_NAME}`;
+  if (window.location.origin.includes(EXTENSION_NAME) || DEVELOPMENT_ENVIRONMENT) {
+    return '';
   }
-  return '';
-};
 
+  return `/_extension/${EXTENSION_NAME}`;
+};
 
 ReactDOM.render(
   <LocalStackThemeProvider useExtensionLayout>
@@ -23,4 +23,3 @@ ReactDOM.render(
   </LocalStackThemeProvider>,
   document.getElementById('root'),
 );
-

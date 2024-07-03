@@ -1,5 +1,5 @@
 {
-  "name": "{{cookiecutter.module_name}}",
+  "name": "my_localstack_extension",
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
@@ -19,14 +19,17 @@
   },
   "devDependencies": {
     "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
+    "concurrently": "^8.2.2",
     "esbuild": "^0.16.6",
     "esbuild-envfile-plugin": "^1.0.2",
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^0.3.0",
-    "esbuild-plugin-svgr": "^1.0.0"
+    "esbuild-plugin-svgr": "^1.0.0",
+    "live-server": "^1.2.2"
   },
   "scripts": {
     "start": "concurrently --restart-tries -1 --raw \"yarn serve\" \"yarn watch\"",
+    "serve": "live-server --port=3000 --host=0.0.0.0 --no-browser --watch=build/index.html --entry-file=index.html build",
     "watch": "node .esbuild --watch",
     "build": "node .esbuild"
   },

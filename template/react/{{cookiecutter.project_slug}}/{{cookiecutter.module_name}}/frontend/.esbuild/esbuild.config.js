@@ -14,9 +14,6 @@ const HtmlPlugin = require('./plugins/html');
 const CURRENT_ENV = process.env.NODE_ENV || 'development.local';
 const BUILD_PATH = path.join(__dirname, '..', 'build');
 
-// Load .env.* file depending on the active environment
-require('dotenv').config({ path: `.env.${CURRENT_ENV}` });
-
 const BUILD_CONFIG = {
   entryPoints: [
     path.join(__dirname, '..', 'src', 'index.tsx'),
@@ -73,9 +70,6 @@ const BUILD_CONFIG = {
       {},
     ),
     'process.cwd': 'dummyProcessCwd',
-    'process.env.PUBLIC_URL': '""', // empty for now to point to the root
-    'process.env.BASE_PATH': '"/"',
-    'process.env.NODE_ENV': JSON.stringify(CURRENT_ENV),
     global: 'window',
   },
   external: [
