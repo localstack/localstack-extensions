@@ -24,13 +24,13 @@ install-backend: venv  ## Install dependencies of the extension
 	$(VENV_RUN); python setup.py develop
 
 install-frontend: venv  ## Install dependencies of the frontend
-	cd my_localstack_extension/frontend && yarn install
+	cd {{cookiecutter.module_name}}/frontend && yarn install
  
 build-frontend: # Build the react app
-	cd my_localstack_extension/frontend; rm -rf build && REACT_APP_DEVELOPMENT_ENVIRONMENT=false NODE_ENV=prod npm run build
+	cd {{cookiecutter.module_name}}/frontend; rm -rf build && REACT_APP_DEVELOPMENT_ENVIRONMENT=false NODE_ENV=prod npm run build
 
 start-frontend: ## Start the frontend in dev mode (hot reload)
-	cd my_localstack_extension/frontend; REACT_APP_DEVELOPMENT_ENVIRONMENT=true yarn start
+	cd {{cookiecutter.module_name}}/frontend; REACT_APP_DEVELOPMENT_ENVIRONMENT=true yarn start
 
 install: venv install-backend install-frontend ## Install dependencies
 
