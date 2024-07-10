@@ -106,5 +106,5 @@ EXTENSION_DEV_MODE=1 localstack start
 To distribute your extension, simply upload it to your github account. Your extension can then be installed via:
 
 ```bash
-localstack extensions install "git+https://github.com/thrau/localstack-terraform-init/#egg=localstack-extension-terraform-init"
+localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-terraform-init&subdirectory=terraform-init"
 ```
