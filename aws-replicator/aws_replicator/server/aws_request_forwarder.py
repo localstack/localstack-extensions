@@ -9,7 +9,7 @@ from localstack.aws.chain import Handler, HandlerChain
 from localstack.constants import APPLICATION_JSON, LOCALHOST, LOCALHOST_HOSTNAME
 from localstack.http import Response
 from localstack.utils.aws import arns
-from localstack.utils.aws.arns import sqs_queue_arn, secretsmanager_secret_arn
+from localstack.utils.aws.arns import secretsmanager_secret_arn, sqs_queue_arn
 from localstack.utils.aws.aws_stack import get_valid_regions
 from localstack.utils.aws.request_context import mock_aws_request_headers
 from localstack.utils.collections import ensure_list
@@ -120,7 +120,9 @@ class AwsProxyHandler(Handler):
             return False
         if service_name == "secretsmanager":
             secret_id = context.service_request.get("SecretId") or ""
-            secret_arn = secretsmanager_secret_arn(secret_id, account_id=context.account_id, region_name=context.region)
+            secret_arn = secretsmanager_secret_arn(
+                secret_id, account_id=context.account_id, region_name=context.region
+            )
             return bool(re.match(resource_name_pattern, secret_arn))
         # TODO: add more resource patterns
         return True
