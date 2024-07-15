@@ -2,7 +2,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import { CustomRoutes } from './CustomRoutes';
 import { BrowserRouter } from 'react-router-dom';
-import { LocalStackThemeProvider } from '@localstack/theme'
+import { LocalStackThemeProvider } from '@localstack/integrations'
 import { DEVELOPMENT_ENVIRONMENT } from './constants';
 
 const EXTENSION_NAME = 'my-localstack-extension'

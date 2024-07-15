@@ -6,7 +6,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
-    "@localstack/theme": "git+ssh://git@github.com/localstack/localstack-web.git#commit=741276a31896cb498dc6207830842e6cbcca9611&workspace=@localstack/theme",
+    "@localstack/integrations": "^1.0.0",
     "@mui/material": "^5.15.20",
     "@testing-library/react": "^13.4.0",
     "@types/node": "^16.18.99",
