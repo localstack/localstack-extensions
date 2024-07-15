@@ -28,7 +28,6 @@ from localstack.utils.functions import run_safe
 from localstack.utils.net import get_docker_host_from_container, get_free_tcp_port
 from localstack.utils.serving import Server
 from localstack.utils.strings import short_uid, to_bytes, to_str, truncate
-from localstack_ext.bootstrap.licensingv2 import ENV_LOCALSTACK_API_KEY, ENV_LOCALSTACK_AUTH_TOKEN
 from requests import Response
 
 from aws_replicator import config as repl_config
@@ -37,6 +36,18 @@ from aws_replicator.config import HANDLER_PATH_PROXIES
 from aws_replicator.shared.models import AddProxyRequest, ProxyConfig
 
 from .http2_server import run_server
+
+try:
+    from localstack.pro.core.bootstrap.licensingv2 import (
+        ENV_LOCALSTACK_API_KEY,
+        ENV_LOCALSTACK_AUTH_TOKEN,
+    )
+except ImportError:
+    # TODO remove once we don't need compatibility with <3.6 anymore
+    from localstack_ext.bootstrap.licensingv2 import (
+        ENV_LOCALSTACK_API_KEY,
+        ENV_LOCALSTACK_AUTH_TOKEN,
+    )
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)

@@ -6,11 +6,18 @@ import yaml
 from localstack.cli import LocalstackCli, LocalstackCliPlugin, console
 from localstack.logging.setup import setup_logging
 from localstack.utils.files import load_file
-from localstack_ext.bootstrap.auth import get_auth_headers
-from localstack_ext.cli.aws import aws
-from localstack_ext.config import is_api_key_configured
 
 from aws_replicator.shared.models import ProxyConfig, ProxyServiceConfig
+
+try:
+    from localstack.pro.core.bootstrap.auth import get_auth_headers
+    from localstack.pro.core.cli.aws import aws
+    from localstack.pro.core.config import is_api_key_configured
+except ImportError:
+    # TODO remove once we don't need compatibility with <3.6 anymore
+    from localstack_ext.bootstrap.auth import get_auth_headers
+    from localstack_ext.cli.aws import aws
+    from localstack_ext.config import is_api_key_configured
 
 
 class AwsReplicatorPlugin(LocalstackCliPlugin):
