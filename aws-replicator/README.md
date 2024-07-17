@@ -152,6 +152,8 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 ## Change Log
 
+* `0.1.16`: Update imports for localstack >=3.6 compatibility
+* `0.1.15`: Move localstack dependency installation to extra since it's provided at runtime
 * `0.1.14`: Install missing dependencies into proxy container for localstack >=3.4 compatibility
 * `0.1.13`: Add compatibility with localstack >=3.4; add http2-server; migrate to localstack auth login
 * `0.1.12`: Modify aws credentials text field type to password  

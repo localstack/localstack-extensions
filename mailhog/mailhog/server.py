@@ -1,6 +1,7 @@
 """
 Tools to run the mailhog service.
 """
+
 import logging
 import os
 
