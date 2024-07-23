@@ -29,7 +29,7 @@
   },
   "scripts": {
     "start": "concurrently --restart-tries -1 --raw \"yarn serve\" \"yarn watch\"",
-    "serve": "live-server --port=3000 --host=0.0.0.0 --no-browser --watch=build/index.html --entry-file=index.html build",
+    "serve": "live-server --port=3000 --host=0.0.0.0 --no-browser --watch=backend/{{cookiecutter.module_name}}/static/index.html --entry-file=index.html ../backend/{{cookiecutter.module_name}}/static",
     "watch": "node .esbuild --watch",
     "build": "node .esbuild"
   },

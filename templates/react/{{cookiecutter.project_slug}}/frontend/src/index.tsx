@@ -5,7 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { LocalStackThemeProvider } from '@localstack/integrations'
 import { DEVELOPMENT_ENVIRONMENT } from './constants';
 
-const EXTENSION_NAME = 'my-localstack-extension'
+const EXTENSION_NAME = '{{cookiecutter.project_slug}}'
 
 const getBaseName = () => {
   if (window.location.origin.includes(EXTENSION_NAME) || DEVELOPMENT_ENVIRONMENT) {

@@ -2,6 +2,7 @@ VENV_BIN = python3 -m venv
 VENV_DIR ?= .venv
 VENV_ACTIVATE = $(VENV_DIR)/bin/activate
 VENV_RUN = . $(VENV_ACTIVATE)
+FRONTEND_FOLDER = frontend
 
 INFO_COLOR = \033[0;36m
 NO_COLOR   = \033[m
@@ -24,13 +25,13 @@ install-backend: venv  ## Install dependencies of the extension
 	$(VENV_RUN); python setup.py develop
 
 install-frontend: venv  ## Install dependencies of the frontend
-	cd {{cookiecutter.module_name}}/frontend && yarn install
+	cd $(FRONTEND_FOLDER) && yarn install
  
 build-frontend: # Build the react app
-	cd {{cookiecutter.module_name}}/frontend; rm -rf build && REACT_APP_DEVELOPMENT_ENVIRONMENT=false NODE_ENV=prod npm run build
+	cd $(FRONTEND_FOLDER); rm -rf build && REACT_APP_DEVELOPMENT_ENVIRONMENT=false NODE_ENV=prod npm run build
 
 start-frontend: ## Start the frontend in dev mode (hot reload)
-	cd {{cookiecutter.module_name}}/frontend; REACT_APP_DEVELOPMENT_ENVIRONMENT=true yarn start
+	cd $(FRONTEND_FOLDER); REACT_APP_DEVELOPMENT_ENVIRONMENT=true yarn start
 
 install: venv install-backend install-frontend ## Install dependencies
 

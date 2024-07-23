@@ -13,7 +13,7 @@ const HtmlPlugin = require('./plugins/html');
 const { writeFileSync } = require('fs');
 
 const CURRENT_ENV = process.env.NODE_ENV || 'development.local';
-const BUILD_PATH = path.join(__dirname, '..', 'build');
+const BUILD_PATH = path.join(__dirname, '..', '..', 'backend', '{{cookiecutter.module_name}}', 'static');
 
 const BUILD_CONFIG = {
   entryPoints: [
@@ -34,7 +34,10 @@ const BUILD_CONFIG = {
     CleanPlugin({
       patterns: [`${BUILD_PATH}/*`, `!${BUILD_PATH}/index.html`],
       sync: true,
-      verbose: false
+      verbose: false,
+      options: {
+        force: true
+      }
     }),
     SvgrPlugin({
       prettier: false,

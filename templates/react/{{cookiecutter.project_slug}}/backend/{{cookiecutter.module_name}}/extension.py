@@ -3,7 +3,7 @@ import typing as t
 
 from localstack.extensions.patterns.webapp import WebAppExtension
 
-from .backend.web import WebApp
+from .api.web import WebApp
 
 LOG = logging.getLogger(__name__)
 
