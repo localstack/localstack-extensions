@@ -12,7 +12,6 @@ import boto3
 import requests
 from botocore.awsrequest import AWSPreparedRequest
 from botocore.model import OperationModel
-from localstack import config
 from localstack import config as localstack_config
 from localstack.aws.spec import load_service
 from localstack.config import external_service_url
@@ -51,7 +50,7 @@ except ImportError:
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)
-if config.DEBUG:
+if localstack_config.DEBUG:
     LOG.setLevel(logging.DEBUG)
 
 # TODO make configurable
@@ -371,10 +370,14 @@ def start_aws_auth_proxy_in_container(
         target_host = get_docker_host_from_container()
     env_vars["LOCALSTACK_HOST"] = target_host
 
+    # Use the Docker SDK command either if quiet mode is enabled, or if we're executing
+    # in Docker itself (e.g., within the LocalStack main container, as part of an init script)
+    use_docker_sdk_command = quiet or localstack_config.is_in_docker
+
     try:
         print("Proxy container is ready.")
         command = f"{venv_activate}; localstack aws proxy -c {CONTAINER_CONFIG_FILE} -p {port} --host 0.0.0.0 > {CONTAINER_LOG_FILE} 2>&1"
-        if quiet:
+        if use_docker_sdk_command:
             DOCKER_CLIENT.exec_in_container(
                 container_name, command=["bash", "-c", command], env_vars=env_vars, interactive=True
             )
