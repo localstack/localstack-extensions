@@ -32,8 +32,10 @@ jobs:
         env:
           LOCALSTACK_API_KEY: ${{ secrets.LOCALSTACK_API_KEY }}
         run: |
+          set -e
           docker pull localstack/localstack-pro &
           docker pull public.ecr.aws/lambda/python:3.8 &
+
           # install latest CLI packages (dev releases)
           pip install --upgrade --pre localstack localstack-ext
 
@@ -48,7 +50,12 @@ jobs:
           localstack extensions init
           (
             cd aws-replicator
-            make install && make build && make enable
+            make install
+            . .venv/bin/activate
+            pip install --upgrade --pre localstack localstack-ext
+            make build
+            find .
+            make enable
           )
 
           # install awslocal/tflocal command lines
