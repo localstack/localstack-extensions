@@ -54,7 +54,6 @@ jobs:
             . .venv/bin/activate
             pip install --upgrade --pre localstack localstack-ext
             make build
-            find .
             make enable
           )
 
