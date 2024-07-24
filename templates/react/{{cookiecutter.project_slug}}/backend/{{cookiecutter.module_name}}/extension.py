@@ -8,7 +8,7 @@ from .api.web import WebApp
 LOG = logging.getLogger(__name__)
 
 
-class MyExtension(WebAppExtension):
+class {{ cookiecutter.class_name }}(WebAppExtension):
     name = "{{ cookiecutter.project_slug }}"
     
     def __init__(self):

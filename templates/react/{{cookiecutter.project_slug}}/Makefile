@@ -29,11 +29,11 @@ install-backend: venv  ## Install dependencies of the extension
 install-frontend: venv  ## Install dependencies of the frontend
 	cd $(FRONTEND_FOLDER) && yarn install
  
-build-frontend: # Build the react app
-	ifeq ($(wildcard $(FRONTEND_FOLDER)/node_modules),)
-		$(MAKE) install-frontend
-	endif
-		cd $(FRONTEND_FOLDER); rm -rf build && REACT_APP_DEVELOPMENT_ENVIRONMENT=false NODE_ENV=prod npm run build
+build-frontend: # Build the React app
+	@if [ ! -d "$(FRONTEND_FOLDER)/node_modules" ]; then \
+		$(MAKE) install-frontend; \
+	fi
+	cd $(FRONTEND_FOLDER); rm -rf build && REACT_APP_DEVELOPMENT_ENVIRONMENT=false NODE_ENV=prod npm run build
 
 start-frontend: ## Start the frontend in dev mode (hot reload)
 	cd $(FRONTEND_FOLDER); REACT_APP_DEVELOPMENT_ENVIRONMENT=true yarn start
