@@ -19,7 +19,9 @@ classifiers = []
 Homepage = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}"
 
 [project.optional-dependencies]
-test = ["localstack-core>=2.2"]
+dev = [
+    "localstack>=0.0.0.dev"
+]
 
 [project.scripts]
 {{ cookiecutter.module_name }} = "{{ cookiecutter.module_name }}.extension:{{ cookiecutter.class_name }}"

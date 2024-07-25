@@ -11,10 +11,10 @@ NO_COLOR   = \033[m
 
 venv: $(VENV_ACTIVATE)
 
-$(VENV_ACTIVATE): pyproject.toml
+$(VENV_ACTIVATE):
 	test -d .venv || $(VENV_BIN) .venv
-	$(VENV_RUN); pip install --upgrade pip setuptools plux build
-	$(VENV_RUN); pip install -e .
+	$(VENV_RUN); pip install --upgrade pip setuptools plux build wheel
+	$(VENV_RUN); pip install -e .[dev]
 	touch $(VENV_DIR)/bin/activate
 
 clean:  ## Clean the project
@@ -24,6 +24,7 @@ clean:  ## Clean the project
 	rm -rf $(BACKEND_FOLDER)/*.egg-info/
 
 install-backend: venv  ## Install dependencies of the extension
+	$(VENV_RUN); python -m plux entrypoints
 
 install-frontend: venv  ## Install dependencies of the frontend
 	cd $(FRONTEND_FOLDER) && yarn install
