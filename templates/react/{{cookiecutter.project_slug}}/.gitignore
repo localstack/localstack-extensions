@@ -5,3 +5,5 @@ dist
 build
 **/*.egg-info
 .eggs
+__pycache__
+*.pyc
