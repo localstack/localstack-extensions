@@ -152,6 +152,7 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 ## Change Log
 
+* `0.1.18`: Update environment check to use SDK Docker client and enable starting the proxy from within Docker (e.g., from the LS main container as part of an init script)
 * `0.1.17`: Add basic support for ARN-based pattern-matching for `secretsmanager` resources
 * `0.1.16`: Update imports for localstack >=3.6 compatibility
 * `0.1.15`: Move localstack dependency installation to extra since it's provided at runtime
