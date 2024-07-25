@@ -11,9 +11,9 @@ NO_COLOR   = \033[m
 
 venv: $(VENV_ACTIVATE)
 
-$(VENV_ACTIVATE): setup.py setup.cfg
+$(VENV_ACTIVATE): pyproject.toml
 	test -d .venv || $(VENV_BIN) .venv
-	$(VENV_RUN); pip install --upgrade pip setuptools plux
+	$(VENV_RUN); pip install --upgrade pip setuptools plux build
 	$(VENV_RUN); pip install -e .
 	touch $(VENV_DIR)/bin/activate
 
@@ -24,7 +24,6 @@ clean:  ## Clean the project
 	rm -rf $(BACKEND_FOLDER)/*.egg-info/
 
 install-backend: venv  ## Install dependencies of the extension
-	$(VENV_RUN); python setup.py develop
 
 install-frontend: venv  ## Install dependencies of the frontend
 	cd $(FRONTEND_FOLDER) && yarn install
@@ -41,7 +40,7 @@ start-frontend: ## Start the frontend in dev mode (hot reload)
 install: venv install-backend install-frontend ## Install dependencies
 
 dist: venv build-frontend ## Create distribution files
-	$(VENV_RUN); python setup.py sdist bdist_wheel
+	$(VENV_RUN); python -m build
 
 publish: clean-dist venv dist ## Build and upload package to pypi
 	$(VENV_RUN); pip install --upgrade twine; twine upload dist/*
@@ -53,4 +52,4 @@ help: ## Show this help
 	@echo Please specify a build target. The choices are:
 	@grep -E '^[0-9a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(INFO_COLOR)%-30s$(NO_COLOR) %s\n", $$1, $$2}'
 
-.PHONY: clean clean-dist dist install install-backend install-frontend build-frontend start-frontend publish
+.PHONY: clean clean-dist dist install install-backend install-frontend build-frontend start-frontend publish venv
