@@ -21,7 +21,7 @@ install: venv
 	$(VENV_RUN); python setup.py develop
 
 dist: venv
-	$(VENV_RUN); python setup.py sdist bdist_wheel
+	$(VENV_RUN); python -m build
 
 publish: clean-dist venv dist
 	$(VENV_RUN); pip install --upgrade twine; twine upload dist/*

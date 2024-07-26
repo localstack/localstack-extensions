@@ -1,6 +1,6 @@
 from localstack.extensions.api import Extension, http, aws
 
-class MyExtension(Extension):
+class {{ cookiecutter.class_name }}(Extension):
     name = "{{ cookiecutter.project_slug }}"
 
     def on_extension_load(self):

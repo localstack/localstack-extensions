@@ -3,6 +3,7 @@
   "project_short_description": "All the boilerplate you need to create a LocalStack extension.",
   "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-') }}",
   "module_name": "{{ cookiecutter.project_slug.replace('-', '_') }}",
+  "class_name": "{{ cookiecutter.project_name.replace('-', ' ').replace('_', ' ').title().replace(' ', '') }}",
   "full_name": "Jane Doe",
   "email": "jane@example.com",
   "github_username": "janedoe",
