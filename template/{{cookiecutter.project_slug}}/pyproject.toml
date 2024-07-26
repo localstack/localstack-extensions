@@ -23,5 +23,5 @@ dev = [
     "localstack>=0.0.0.dev"
 ]
 
-[project.scripts]
+[project.entry-points."localstack.extensions"]
 {{ cookiecutter.module_name }} = "{{ cookiecutter.module_name }}.extension:{{ cookiecutter.class_name }}"
