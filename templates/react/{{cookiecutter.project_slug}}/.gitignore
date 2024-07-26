@@ -1,0 +1,9 @@
+.venv
+frontend/node_modules
+frontend/.yarn
+dist
+build
+**/*.egg-info
+.eggs
+__pycache__
+*.pyc
