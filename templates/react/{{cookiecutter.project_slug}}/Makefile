@@ -4,6 +4,8 @@ VENV_ACTIVATE = $(VENV_DIR)/bin/activate
 VENV_RUN = . $(VENV_ACTIVATE)
 FRONTEND_FOLDER = frontend
 BACKEND_FOLDER = backend
+COREPACK_EXISTS := $(shell command -v corepack)
+YARN_EXISTS := $(shell command -v yarn)
 
 
 INFO_COLOR = \033[0;36m
@@ -17,6 +19,14 @@ $(VENV_ACTIVATE):
 	$(VENV_RUN); pip install -e .[dev]
 	touch $(VENV_DIR)/bin/activate
 
+check-frontend-deps:
+	@if [ -z "$(YARN_EXISTS)" ]; then \
+		npm install --global yarn; \
+	fi
+	@if [ -z "$(COREPACK_EXISTS)" ]; then \
+		npm install -g corepack; \
+	fi
+
 clean:  ## Clean the project
 	rm -rf .venv/
 	rm -rf build/
@@ -26,7 +36,7 @@ clean:  ## Clean the project
 install-backend: venv  ## Install dependencies of the extension
 	$(VENV_RUN); python -m plux entrypoints
 
-install-frontend: venv  ## Install dependencies of the frontend
+install-frontend: venv check-frontend-deps  ## Install dependencies of the frontend
 	cd $(FRONTEND_FOLDER) && yarn install
  
 build-frontend: # Build the React app
