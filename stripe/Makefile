@@ -32,7 +32,7 @@ dist: venv
 	$(VENV_ACTIVATE); python setup.py sdist bdist_wheel
 
 install: venv
-	$(VENV_ACTIVATE); python setup.py install
+	$(VENV_ACTIVATE); python -m pip install -e .[dev]
 
 upload: venv dist
 	$(VENV_ACTIVATE); pip install --upgrade twine; twine upload dist/*

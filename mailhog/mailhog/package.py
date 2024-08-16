@@ -1,6 +1,7 @@
 """
 Package for mailhog that downloads the mailhog binary from https://github.com/mailhog/MailHog.
 """
+
 import os
 from functools import lru_cache
 

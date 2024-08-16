@@ -20,10 +20,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Python 3.10
+      - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Set up Terraform CLI
         uses: hashicorp/setup-terraform@v2
@@ -32,8 +32,10 @@ jobs:
         env:
           LOCALSTACK_API_KEY: ${{ secrets.LOCALSTACK_API_KEY }}
         run: |
+          set -e
           docker pull localstack/localstack-pro &
           docker pull public.ecr.aws/lambda/python:3.8 &
+
           # install latest CLI packages (dev releases)
           pip install --upgrade --pre localstack localstack-ext
 
@@ -48,7 +50,11 @@ jobs:
           localstack extensions init
           (
             cd aws-replicator
-            make install && make build && make enable
+            make install
+            . .venv/bin/activate
+            pip install --upgrade --pre localstack localstack-ext
+            make build
+            make enable
           )
 
           # install awslocal/tflocal command lines

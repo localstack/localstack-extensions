@@ -5,10 +5,10 @@ VENV_RUN = . $(VENV_ACTIVATE)
 
 venv: $(VENV_ACTIVATE)
 
-$(VENV_ACTIVATE): setup.py setup.cfg
+$(VENV_ACTIVATE): pyproject.toml
 	test -d .venv || $(VENV_BIN) .venv
 	$(VENV_RUN); pip install --upgrade pip setuptools plux
-	$(VENV_RUN); pip install -e .
+	$(VENV_RUN); pip install -e .[dev]
 	touch $(VENV_DIR)/bin/activate
 
 clean:
@@ -18,7 +18,7 @@ clean:
 	rm -rf *.egg-info/
 
 install: venv
-	$(VENV_RUN); python setup.py develop
+	$(VENV_RUN); python -m plux entrypoints
 
 dist: venv
 	$(VENV_RUN); python -m build

@@ -66,9 +66,15 @@ class ResourceReplicatorInternal(ResourceReplicator):
 
     def _load_resource_models(self):
         if not hasattr(template_deployer, "_ls_patch_applied"):
-            from localstack_ext.services.cloudformation.cloudformation_extended import (
-                patch_cloudformation,
-            )
+            try:
+                from localstack.pro.core.services.cloudformation.cloudformation_extended import (
+                    patch_cloudformation,
+                )
+            except ImportError:
+                # TODO remove once we don't need compatibility with <3.6 anymore
+                from localstack_ext.services.cloudformation.cloudformation_extended import (
+                    patch_cloudformation,
+                )
 
             patch_cloudformation()
             template_deployer._ls_patch_applied = True

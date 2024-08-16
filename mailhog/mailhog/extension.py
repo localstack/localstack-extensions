@@ -4,7 +4,12 @@ from typing import TYPE_CHECKING, Optional
 
 from localstack import config, constants
 from localstack.extensions.api import Extension, http
-from localstack_ext import config as config_ext
+
+try:
+    from localstack.pro.core import config as config_pro
+except ImportError:
+    # TODO remove once we don't need compatibility with <3.6 anymore
+    from localstack_ext import config as config_pro
 
 if TYPE_CHECKING:
     # conditional import for type checking during development. the actual import is deferred to plugin loading
@@ -57,10 +62,10 @@ class MailHogExtension(Extension):
         LOG.info("starting mailhog server")
         self.server.start()
 
-        if not config_ext.SMTP_HOST:
-            config_ext.SMTP_HOST = f"localhost:{self.server.smtp_port}"
-            os.environ["SMTP_HOST"] = config_ext.SMTP_HOST
-            LOG.info("configuring SMTP host to internal mailhog smtp: %s", config_ext.SMTP_HOST)
+        if not config_pro.SMTP_HOST:
+            config_pro.SMTP_HOST = f"localhost:{self.server.smtp_port}"
+            os.environ["SMTP_HOST"] = config_pro.SMTP_HOST
+            LOG.info("configuring SMTP host to internal mailhog smtp: %s", config_pro.SMTP_HOST)
 
     def on_platform_ready(self):
         # FIXME: reconcile with LOCALSTACK_HOST. the URL should be reachable from the host (the idea is
