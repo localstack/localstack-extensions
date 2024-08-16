@@ -78,7 +78,11 @@ def cmd_aws_proxy(services: str, config: str, container: bool, port: int, host: 
 
     config_json: ProxyConfig = {"services": {}}
     if config:
-        config_json = yaml.load(load_file(config), Loader=yaml.SafeLoader)
+        loaded_file = load_file(config)
+        if not loaded_file:
+            console.print(f"Config file {config} does not exist")
+            sys.exit(1)
+        config_json = yaml.load(loaded_file, Loader=yaml.SafeLoader)
     if host:
         config_json["bind_host"] = host
     if services:
