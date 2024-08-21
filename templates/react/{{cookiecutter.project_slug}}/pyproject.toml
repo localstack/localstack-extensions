@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools", 'wheel', 'plux>=1.3.1']
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{ cookiecutter.project_slug }}"
+version = "{{ cookiecutter.version }}"
+description = "LocalStack Extension: {{ cookiecutter.project_name }}"
+readme = {file = "README.md", content-type = "text/markdown; charset=UTF-8"}
+requires-python = ">=3.8"
+license = {text = "UNLICENSED"}
+authors = [
+    { name = "{{ cookiecutter.full_name }}", email = "{{ cookiecutter.email }}" }
+]
+keywords = ["localstack", "localstack-extension", "extension"]
+classifiers = []
+
+[project.urls]
+Homepage = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}"
+
+[project.optional-dependencies]
+dev = [
+    "localstack>=0.0.0.dev"
+]
+
+[project.entry-points."localstack.extensions"]
+{{ cookiecutter.module_name }} = "{{ cookiecutter.module_name }}.extension:{{ cookiecutter.class_name }}"
+
+[tool.setuptools]
+package-dir = {"" = "backend"}
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+
+[tool.setuptools.package-data]
+"{{ cookiecutter.module_name }}" = ["static/*"]
