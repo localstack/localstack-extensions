@@ -29,7 +29,7 @@ class MailHogServer(Server):
     It supports snapshot persistence by pointing the MH_MAILDIR_PATH to the asset directory.
     """
 
-    default_web_path = "mailhog"
+    default_web_path = "_extension/mailhog"
     """WebPath under which the UI is served (without leading or trailing slashes)"""
 
     default_smtp_port = 25
@@ -76,7 +76,7 @@ class MailHogServer(Server):
     def web_path(self):
         """Returns the configured path under which the web UI will be available when using path-based
         routing. This should be without trailing or prefixed slashes. by default, it results in
-        http://localhost:4566/mailhog."""
+        http://localhost:4566/_extension/mailhog."""
         return os.getenv("MH_UI_WEB_PATH") or self.default_web_path
 
     def _create_env_vars(self) -> dict:
