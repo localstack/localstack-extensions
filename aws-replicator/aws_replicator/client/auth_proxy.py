@@ -274,7 +274,7 @@ class AuthProxyAWS(Server):
 
     def _fix_host_and_path(self, request: Request, service_name: str):
         if service_name == "s3":
-            # fix the path and Host header, to avoid bucket addressing issues
+            # fix the path and prepend the bucket name, to avoid bucket addressing issues
             host = request.headers.pop(HEADER_HOST_ORIGINAL, None)
             host = host or request.headers.get("Host") or ""
             match = re.match(rf"(.+)\.s3\.{LOCALHOST_HOSTNAME}", host)
