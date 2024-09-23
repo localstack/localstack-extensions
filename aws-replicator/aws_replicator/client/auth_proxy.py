@@ -15,7 +15,7 @@ from botocore.model import OperationModel
 from localstack import config as localstack_config
 from localstack.aws.spec import load_service
 from localstack.config import external_service_url
-from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO
+from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO, LOCALHOST_HOSTNAME
 from localstack.http import Request
 from localstack.utils.aws.aws_responses import requests_response
 from localstack.utils.bootstrap import setup_logging
@@ -32,6 +32,7 @@ from requests import Response
 from aws_replicator import config as repl_config
 from aws_replicator.client.utils import truncate_content
 from aws_replicator.config import HANDLER_PATH_PROXIES
+from aws_replicator.shared.constants import HEADER_HOST_ORIGINAL
 from aws_replicator.shared.models import AddProxyRequest, ProxyConfig
 
 from .http2_server import run_server
@@ -106,6 +107,7 @@ class AuthProxyAWS(Server):
 
         # fix headers (e.g., "Host") and create client
         self._fix_headers(request, service_name)
+        self._fix_host_and_path(request, service_name)
 
         # create request and request dict
         operation_model, aws_request, request_dict = self._parse_aws_request(
@@ -262,13 +264,23 @@ class AuthProxyAWS(Server):
             host = request.headers.get("Host") or ""
             regex = r"^(https?://)?([0-9.]+|localhost)(:[0-9]+)?"
             if re.match(regex, host):
-                request.headers["Host"] = re.sub(regex, r"\1s3.localhost.localstack.cloud", host)
+                request.headers["Host"] = re.sub(regex, rf"\1s3.{LOCALHOST_HOSTNAME}", host)
         request.headers.pop("Content-Length", None)
         request.headers.pop("x-localstack-request-url", None)
         request.headers.pop("X-Forwarded-For", None)
         request.headers.pop("X-Localstack-Tgt-Api", None)
         request.headers.pop("X-Moto-Account-Id", None)
         request.headers.pop("Remote-Addr", None)
+
+    def _fix_host_and_path(self, request: Request, service_name: str):
+        if service_name == "s3":
+            # fix the path and Host header, to avoid bucket addressing issues
+            host = request.headers.pop(HEADER_HOST_ORIGINAL, None)
+            host = host or request.headers.get("Host") or ""
+            match = re.match(rf"(.+)\.s3\.{LOCALHOST_HOSTNAME}", host)
+            if match:
+                # prepend the bucket name (extracted from the host) to the path of the request (path-based addressing)
+                request.path = f"/{match.group(1)}{request.path}"
 
     def _extract_region_and_service(self, headers) -> Optional[Tuple[str, str]]:
         auth_header = headers.pop("Authorization", "")

@@ -22,6 +22,7 @@ try:
 except ImportError:
     from localstack.constants import TEST_AWS_ACCESS_KEY_ID
 
+from aws_replicator.shared.constants import HEADER_HOST_ORIGINAL
 from aws_replicator.shared.models import ProxyInstance, ProxyServiceConfig
 
 LOG = logging.getLogger(__name__)
@@ -145,7 +146,7 @@ class AwsProxyHandler(Handler):
 
         result = None
         try:
-            headers.pop("Host", None)
+            headers[HEADER_HOST_ORIGINAL] = headers.pop("Host", None)
             headers.pop("Content-Length", None)
             ctype = headers.get("Content-Type")
             data = b""
