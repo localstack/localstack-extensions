@@ -22,6 +22,7 @@ try:
 except ImportError:
     from localstack.constants import TEST_AWS_ACCESS_KEY_ID
 
+from aws_replicator.shared.constants import HEADER_HOST_ORIGINAL
 from aws_replicator.shared.models import ProxyInstance, ProxyServiceConfig
 
 LOG = logging.getLogger(__name__)
@@ -98,33 +99,38 @@ class AwsProxyHandler(Handler):
     def _request_matches_resource(
         self, context: RequestContext, resource_name_pattern: str
     ) -> bool:
-        service_name = self._get_canonical_service_name(context.service.service_name)
-        if service_name == "s3":
-            bucket_name = context.service_request.get("Bucket") or ""
-            s3_bucket_arn = arns.s3_bucket_arn(bucket_name)
-            return bool(re.match(resource_name_pattern, s3_bucket_arn))
-        if service_name == "sqs":
-            queue_name = context.service_request.get("QueueName") or ""
-            queue_url = context.service_request.get("QueueUrl") or ""
-            queue_name = queue_name or queue_url.split("/")[-1]
-            candidates = (
-                queue_name,
-                queue_url,
-                sqs_queue_arn(
-                    queue_name, account_id=context.account_id, region_name=context.region
-                ),
-            )
-            for candidate in candidates:
-                if re.match(resource_name_pattern, candidate):
-                    return True
-            return False
-        if service_name == "secretsmanager":
-            secret_id = context.service_request.get("SecretId") or ""
-            secret_arn = secretsmanager_secret_arn(
-                secret_id, account_id=context.account_id, region_name=context.region
-            )
-            return bool(re.match(resource_name_pattern, secret_arn))
-        # TODO: add more resource patterns
+        try:
+            service_name = self._get_canonical_service_name(context.service.service_name)
+            if service_name == "s3":
+                bucket_name = context.service_request.get("Bucket") or ""
+                s3_bucket_arn = arns.s3_bucket_arn(bucket_name)
+                return bool(re.match(resource_name_pattern, s3_bucket_arn))
+            if service_name == "sqs":
+                queue_name = context.service_request.get("QueueName") or ""
+                queue_url = context.service_request.get("QueueUrl") or ""
+                queue_name = queue_name or queue_url.split("/")[-1]
+                candidates = (
+                    queue_name,
+                    queue_url,
+                    sqs_queue_arn(
+                        queue_name, account_id=context.account_id, region_name=context.region
+                    ),
+                )
+                for candidate in candidates:
+                    if re.match(resource_name_pattern, candidate):
+                        return True
+                return False
+            if service_name == "secretsmanager":
+                secret_id = context.service_request.get("SecretId") or ""
+                secret_arn = secretsmanager_secret_arn(
+                    secret_id, account_id=context.account_id, region_name=context.region
+                )
+                return bool(re.match(resource_name_pattern, secret_arn))
+            # TODO: add more resource patterns
+        except re.error as e:
+            raise Exception(
+                "Error evaluating regular expression - please verify proxy configuration"
+            ) from e
         return True
 
     def forward_request(self, context: RequestContext, proxy: ProxyInstance) -> requests.Response:
@@ -140,7 +146,7 @@ class AwsProxyHandler(Handler):
 
         result = None
         try:
-            headers.pop("Host", None)
+            headers[HEADER_HOST_ORIGINAL] = headers.pop("Host", None)
             headers.pop("Content-Length", None)
             ctype = headers.get("Content-Type")
             data = b""

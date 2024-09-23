@@ -49,7 +49,7 @@ enable: $(wildcard ./build/dist/localstack_extension_aws_replicator-*.tar.gz)  #
 		localstack extensions -v install file://$?
 
 publish: clean-dist venv dist
-	$(VENV_RUN); cd build; pip install --upgrade twine; twine upload dist/*
+	$(VENV_RUN); pip install --upgrade twine; twine upload dist/*
 
 clean-dist: clean
 	rm -rf dist/
