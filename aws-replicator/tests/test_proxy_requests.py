@@ -40,13 +40,17 @@ def start_aws_proxy():
 
 
 @pytest.mark.parametrize("metadata_gzip", [True, False])
-def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip):
+@pytest.mark.parametrize("host_addressing", [True, False])
+def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip, host_addressing):
     # start proxy
     config = ProxyConfig(services={"s3": {"resources": ".*"}}, bind_host=PROXY_BIND_HOST)
     start_aws_proxy(config)
 
     # create clients
-    s3_client = connect_to().s3
+    if host_addressing:
+        s3_client = connect_to(endpoint_url="http://s3.localhost.localstack.cloud:4566").s3
+    else:
+        s3_client = connect_to(endpoint_url="http://localhost:4566").s3
     s3_client_aws = boto3.client("s3")
 
     # list buckets to assert that proxy is up and running
