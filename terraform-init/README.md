@@ -13,6 +13,7 @@ LocalStack Extension for using Terraform files in [init hooks](https://docs.loca
 ## Usage
 
 * Start localstack with `EXTENSION_AUTO_INSTALL="localstack-extension-terraform-init"`
+* Optionally specify `TERRAFORM_VERSION=1.9.5` (currently defaults to 1.5.7) 
 * Mount a `main.tf` file into `/etc/localstack/init/ready.d`
 
 When LocalStack starts up, it will install the extension, which in turn install `terraform` and `tflocal` into the container.
