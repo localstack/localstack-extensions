@@ -112,8 +112,6 @@ const App = () => {
           </TableContainer>
         <Button onClick={saveConfig} variant="contained" disabled={isLoading}>{isLoading ? 'loading ...' : 'Save configuration'}</Button>
       </div>
-      <h2>AWS Resource Replicator</h2>
-      Configuration switches coming soon ...
     </div>);
 }
 
