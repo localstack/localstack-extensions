@@ -17,7 +17,7 @@ This enables one flavor of "hybrid" or "remocal" setups where you can easily bri
 
 ## AWS Cloud Proxy
 
-The AWS cloud proxy can be used to forward certain API calls in LocalStack to real AWS, in order to enable seamless transition between local and remote resources.
+The AWS Cloud Proxy can be used to forward certain API calls in LocalStack to real AWS, in order to enable seamless transition between local and remote resources.
 
 **Warning:** Be careful when using the proxy - make sure to _never_ give access to production accounts or any critical/sensitive data!
 
@@ -119,8 +119,10 @@ In addition to the proxy services configuration shown above, the following confi
 
 ## Resource Replicator CLI (deprecated)
 
-Note: Previous versions of this extension also offered a "replicate" mode to copy/clone (rather than proxy) resources from an AWS account into the local instance. 
+Note: Previous versions of this extension also offered a "replicate" mode to copy/clone (rather than proxy) resources from an AWS account into the local instance.
 This functionality has been removed from this extension, and is now being migrated to a new extension (more details following soon).
+
+If you wish to access the deprecated instructions, they can be found [here](https://github.com/localstack/localstack-extensions/blob/fe0c97e8a9d94f72c80358493e51ce6c1da535dc/aws-replicator/README.md#resource-replicator-cli).
 
 ## Change Log
 
