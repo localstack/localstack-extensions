@@ -1,6 +1,8 @@
 # Note: these tests depend on the extension being installed and actual AWS credentials being configured, such
 # that the proxy can be started within the tests. They are designed to be mostly run in CI at this point.
 import gzip
+import re
+from urllib.parse import urlparse
 
 import boto3
 import pytest
@@ -41,20 +43,33 @@ def start_aws_proxy():
 
 
 @pytest.mark.parametrize("metadata_gzip", [True, False])
-@pytest.mark.parametrize("host_addressing", [True, False])
-def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip, host_addressing):
+@pytest.mark.parametrize("target_endpoint", ["local_domain", "aws_domain", "default"])
+def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip, target_endpoint):
     # start proxy
     config = ProxyConfig(services={"s3": {"resources": ".*"}}, bind_host=PROXY_BIND_HOST)
     start_aws_proxy(config)
 
     # create clients
-    if host_addressing:
+    if target_endpoint == "default":
+        s3_client = connect_to().s3
+    else:
         s3_client = connect_to(
             endpoint_url="http://s3.localhost.localstack.cloud:4566",
             config=Config(s3={"addressing_style": "virtual"}),
         ).s3
-    else:
-        s3_client = connect_to().s3
+
+    if target_endpoint == "aws_domain":
+
+        def _add_header(request, **kwargs):
+            # instrument boto3 client to add custom `Host` header, mimicking a `*.s3.amazonaws.com` request
+            url = urlparse(request.url)
+            match = re.match(r"(.+)\.s3\.localhost\.localstack\.cloud", url.netloc)
+            if match:
+                request.headers.add_header("host", f"{match.group(1)}.s3.amazonaws.com")
+
+        s3_client.meta.events.register_first("before-sign.*.*", _add_header)
+
+    # define S3 client pointing to real AWS
     s3_client_aws = boto3.client("s3")
 
     # list buckets to assert that proxy is up and running
