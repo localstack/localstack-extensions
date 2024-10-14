@@ -126,6 +126,7 @@ If you wish to access the deprecated instructions, they can be found [here](http
 
 ## Change Log
 
+* `0.1.20`: Fix logic for proxying S3 requests with `*.s3.amazonaws.com` host header
 * `0.1.19`: Print human-readable message for invalid regexes in resource configs; fix logic for proxying S3 requests with host-based addressing
 * `0.1.18`: Update environment check to use SDK Docker client and enable starting the proxy from within Docker (e.g., from the LS main container as part of an init script)
 * `0.1.17`: Add basic support for ARN-based pattern-matching for `secretsmanager` resources
