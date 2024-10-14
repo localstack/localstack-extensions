@@ -33,7 +33,7 @@ install: venv
 	$(VENV_RUN); $(PIP_CMD) install -e ".[test]"
 
 test: venv
-	$(VENV_RUN); python -m pytest $(TEST_PATH)
+	$(VENV_RUN); python -m pytest $(PYTEST_ARGS) $(TEST_PATH)
 
 dist: venv
 	$(VENV_RUN); python setup.py sdist bdist_wheel
