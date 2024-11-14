@@ -55,9 +55,9 @@ if localstack_config.DEBUG:
     LOG.setLevel(logging.DEBUG)
 
 # TODO make configurable
-# CLI_PIP_PACKAGE = "localstack-extension-aws-replicator"
+CLI_PIP_PACKAGE = "localstack-extension-aws-replicator"
 # note: enable the line below temporarily for testing:
-CLI_PIP_PACKAGE = "git+https://github.com/localstack/localstack-extensions/@fix/aws-proxy-extension#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
+# CLI_PIP_PACKAGE = "git+https://github.com/localstack/localstack-extensions/@branch#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
 
 CONTAINER_NAME_PREFIX = "ls-aws-proxy-"
 CONTAINER_CONFIG_FILE = "/tmp/ls.aws.proxy.yml"
