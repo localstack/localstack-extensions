@@ -9,22 +9,22 @@ from localstack.utils.files import load_file
 
 from aws_replicator.shared.models import ProxyConfig, ProxyServiceConfig
 
-try:
-    from localstack.pro.core.bootstrap.auth import get_auth_headers
+try:    
+    from localstack.pro.core.bootstrap.auth import get_platform_auth_headers
     from localstack.pro.core.cli.aws import aws
-    from localstack.pro.core.config import is_api_key_configured
+    from localstack.pro.core.config import is_auth_token_configured
 except ImportError:
-    # TODO remove once we don't need compatibility with <3.6 anymore
-    from localstack_ext.bootstrap.auth import get_auth_headers
-    from localstack_ext.cli.aws import aws
-    from localstack_ext.config import is_api_key_configured
+    # Only support anything over version 3.6
+    from localstack.pro.core.bootstrap.auth import get_auth_headers as get_platform_auth_headers
+    from localstack.pro.core.cli.aws import aws
+    from localstack.pro.core.config import is_api_key_configured as is_auth_token_configured
 
 
 class AwsReplicatorPlugin(LocalstackCliPlugin):
     name = "aws-replicator"
 
     def should_load(self) -> bool:
-        return _is_logged_in() or is_api_key_configured()
+        return _is_logged_in() or is_auth_token_configured()
 
     def attach(self, cli: LocalstackCli) -> None:
         group: click.Group = cli.group
@@ -37,7 +37,7 @@ class AwsReplicatorPlugin(LocalstackCliPlugin):
 # TODO: remove over time as we're phasing out the `login` command
 def _is_logged_in() -> bool:
     try:
-        get_auth_headers()
+        get_platform_auth_headers()
         return True
     except Exception:
         return False
