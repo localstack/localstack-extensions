@@ -9,7 +9,7 @@ from localstack.utils.files import load_file
 
 from aws_replicator.shared.models import ProxyConfig, ProxyServiceConfig
 
-try:    
+try:
     from localstack.pro.core.bootstrap.auth import get_platform_auth_headers
     from localstack.pro.core.cli.aws import aws
     from localstack.pro.core.config import is_auth_token_configured
