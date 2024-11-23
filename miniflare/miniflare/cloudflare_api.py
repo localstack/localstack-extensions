@@ -154,8 +154,10 @@ def handle_services(request: Request, account_id: str, service_name: str) -> dic
         }
     )
 
+
 def handle_standard(request: Request, account_id: str) -> dict:
     return _wrap({})
+
 
 def handle_subdomain(request: Request, account_id: str) -> dict:
     return _wrap({})

@@ -65,7 +65,7 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip, target_en
             url = urlparse(request.url)
             match = re.match(r"(.+)\.s3\.localhost\.localstack\.cloud", url.netloc)
             if match:
-                request.headers.add_header("host", f"{match.group(1)}.s3.amazonaws.com")
+                request.headers.add_header("host", f"{match.group(1)}.s3.us-east-1.amazonaws.com")
 
         s3_client.meta.events.register_first("before-sign.*.*", _add_header)
 

@@ -26,8 +26,9 @@ from miniflare.cloudflare_api import (
 
 LOG = logging.getLogger(__name__)
 
-# identifier for default version installed by package installer
-DEFAULT_VERSION = "latest"
+# Identifier for default version of `wrangler` installed by package installer.
+# Note: Currently pinned to 3.1.0, as newer versions make the invocations hang in the LS container
+WRANGLER_VERSION = "3.1.0"
 
 
 class MiniflareExtension(Extension):
@@ -35,6 +36,10 @@ class MiniflareExtension(Extension):
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
         from miniflare.config import HANDLER_PATH_MINIFLARE
+
+        logging.getLogger("miniflare").setLevel(
+            logging.DEBUG if config.DEBUG else logging.INFO
+        )
 
         LOG.info("miniflare: adding routes to activate extension")
         all_methods = ["GET", "POST", "PUT", "DELETE"]
@@ -83,7 +88,7 @@ class MiniflareServer(Server):
         super().__init__(port)
 
     def do_run(self):
-        root_dir = os.path.join(config.dirs.var_libs, "miniflare", DEFAULT_VERSION)
+        root_dir = os.path.join(config.dirs.var_libs, "miniflare", WRANGLER_VERSION)
         wrangler_bin = os.path.join(root_dir, "node_modules", ".bin", "wrangler")
 
         # add global aliases, and variable bindings
@@ -102,7 +107,6 @@ class MiniflareServer(Server):
         cmd = [
             wrangler_bin,
             "dev",
-            "--experimental-local",
             "--port",
             str(self.port),
             script_path_final,
@@ -115,7 +119,7 @@ class MiniflareServer(Server):
 
 class MiniflareInstaller(ExecutableInstaller):
     def __init__(self):
-        super().__init__("miniflare", version=DEFAULT_VERSION)
+        super().__init__("miniflare", version=WRANGLER_VERSION)
 
     def _get_install_marker_path(self, install_dir: str) -> str:
         # force re-install on every start (requires npm package + system libs like libc++)
@@ -134,5 +138,4 @@ class MiniflareInstaller(ExecutableInstaller):
             run(["apt", "install", "-y", "libc++-dev"])
 
         # install npm package
-        run(["npm", "install", "--prefix", target_dir, "wrangler"])
-        run(["npm", "install", "--prefix", target_dir, "@miniflare/tre"])
+        run(["npm", "install", "--prefix", target_dir, f"wrangler@{WRANGLER_VERSION}"])
