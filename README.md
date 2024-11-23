@@ -73,7 +73,7 @@ You can install the respective extension by calling `localstack install <Install
 | [httpbin](https://github.com/localstack/localstack-extensions/tree/main/httpbin) | localstack-extension-httpbin | 0.1.0 | Stable |
 | [MailHog](https://github.com/localstack/localstack-extensions/tree/main/mailhog) | localstack-extension-mailhog | 0.1.0 | Stable |
 | [Miniflare](https://github.com/localstack/localstack-extensions/tree/main/miniflare) | localstack-extension-miniflare | 0.1.0 | Experimental |
-| [Stripe](https://github.com/localstack/localstack-extensions/tree/main/stripe) | localstack-extension-stripe | 0.1.0 | Stable |
+| [Stripe](https://github.com/localstack/localstack-extensions/tree/main/stripe) | localstack-extension-stripe | 0.2.0 | Stable |
 | [Terraform Init](https://github.com/localstack/localstack-extensions/tree/main/terraform-init) | localstack-extension-terraform-init | 0.2.0 | Experimental |
 
 
