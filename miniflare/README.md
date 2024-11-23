@@ -34,6 +34,7 @@ Hello World!
 
 ## Change Log
 
+* `0.1.2`: Pin wrangler version to fix hanging miniflare invocations; fix encoding headers for invocation responses
 * `0.1.1`: Adapt for LocalStack v3.0
 * `0.1.0`: Upgrade to Miniflare 3.0
 * `0.0.1`: Initial version.

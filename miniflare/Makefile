@@ -18,10 +18,10 @@ clean:
 	rm -rf *.egg-info/
 
 lint:              		  ## Run code linter to check code style
-	$(VENV_RUN); python -m pflake8 --show-source --ignore=E501
+	$(VENV_RUN); python -m pflake8 --show-source --ignore=E501 --exclude .venv,build
 
 format:            		  ## Run black and isort code formatter
-	$(VENV_RUN); python -m isort .; python -m black .
+	$(VENV_RUN); python -m isort .; python -m black miniflare
 
 install: venv
 	$(VENV_RUN); python -m pip install -e .[dev]

@@ -42,13 +42,19 @@ def handle_invocation(request: Request, path: str, script_name: str, port: str):
     port = SCRIPT_SERVERS[script_name].port
     response = requests.request(
         method=request.method,
-        url=f"http://localhost:{port}{request.path}",
+        url=f"http://localhost:{port}/{path}",
         data=request.get_data(),
     )
     result = Response()
     result.status_code = response.status_code
     result.set_data(response.content)
-    result.headers.update(dict(response.headers))
+    headers = dict(response.headers)
+    if headers.get('Transfer-Encoding') == 'chunked':
+        headers.pop('Transfer-Encoding')
+    if headers.get('Content-Encoding') == 'gzip':
+        headers.pop('Content-Encoding')
+    LOG.debug("Miniflare invocation response headers/body: %s / %s", headers, response.content)
+    result.headers.update(headers)
     return result
 
 
@@ -154,8 +160,10 @@ def handle_services(request: Request, account_id: str, service_name: str) -> dic
         }
     )
 
+
 def handle_standard(request: Request, account_id: str) -> dict:
     return _wrap({})
+
 
 def handle_subdomain(request: Request, account_id: str) -> dict:
     return _wrap({})

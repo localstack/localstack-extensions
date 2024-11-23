@@ -278,7 +278,7 @@ class AuthProxyAWS(Server):
             regex_base_domain = rf"((amazonaws\.com)|({LOCALHOST_HOSTNAME}))"
             host = request.headers.pop(HEADER_HOST_ORIGINAL, None)
             host = host or request.headers.get("Host") or ""
-            match = re.match(rf"(.+)\.s3\.{regex_base_domain}", host)
+            match = re.match(rf"(.+)\.s3\..*{regex_base_domain}", host)
             if match:
                 # prepend the bucket name (extracted from the host) to the path of the request (path-based addressing)
                 request.path = f"/{match.group(1)}{request.path}"
