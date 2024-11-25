@@ -25,13 +25,22 @@ class LocalstripeExtension(Extension):
         # a ProxyHandler forwards all incoming requests to the backend URL
         endpoint = http.ProxyHandler(self.backend_url)
 
-        # add path routes for localhost:4566/stripe
+        # add path routes for localhost:4566/stripe (backwards compatibility)
         router.add(
             "/stripe",
             endpoint=endpoint,
         )
         router.add(
             "/stripe/<path:path>",
+            endpoint=endpoint,
+        )
+        # modern mounts
+        router.add(
+            "/_extension/stripe",
+            endpoint=endpoint,
+        )
+        router.add(
+            "/_extension/stripe/<path:path>",
             endpoint=endpoint,
         )
         # add alternative host routes for stripe.localhost.localstack.cloud:4566
