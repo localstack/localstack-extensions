@@ -85,7 +85,7 @@ This section provides a brief overview of how to develop your own extensions.
 
 LocalStack exposes a Python API for building extensions that can be found in
 the core codebase in
-[`localstack.extensions.api`](https://github.com/localstack/localstack/tree/master/localstack/extensions/api).
+[`localstack.extensions.api`](https://github.com/localstack/localstack/tree/master/localstack-core/localstack/extensions/api).
 
 The basic interface to implement is as follows:
 
