@@ -126,6 +126,7 @@ If you wish to access the deprecated instructions, they can be found [here](http
 
 ## Change Log
 
+* `0.1.23`: Fix unpinned React.js dependencies preventing webui from loading
 * `0.1.22`: Fix auth-related imports that prevent the AWS proxy from starting
 * `0.1.20`: Fix logic for proxying S3 requests with `*.s3.amazonaws.com` host header
 * `0.1.19`: Print human-readable message for invalid regexes in resource configs; fix logic for proxying S3 requests with host-based addressing
