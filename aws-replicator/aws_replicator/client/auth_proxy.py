@@ -334,13 +334,16 @@ def start_aws_auth_proxy_in_container(
     # create container
     container_name = f"{CONTAINER_NAME_PREFIX}{short_uid()}"
     image_name = DOCKER_IMAGE_NAME_PRO
+    additional_flags = (
+        repl_config.PROXY_DOCKER_FLAGS + " --add-host=localhost.localstack.cloud:host-gateway"
+    )
     DOCKER_CLIENT.create_container(
         image_name,
         name=container_name,
         entrypoint="",
         command=["bash", "-c", f"touch {CONTAINER_LOG_FILE}; tail -f {CONTAINER_LOG_FILE}"],
         ports=ports,
-        additional_flags=repl_config.PROXY_DOCKER_FLAGS,
+        additional_flags=additional_flags,
     )
 
     # start container in detached mode
