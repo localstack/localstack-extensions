@@ -334,6 +334,7 @@ def start_aws_auth_proxy_in_container(
     # create container
     container_name = f"{CONTAINER_NAME_PREFIX}{short_uid()}"
     image_name = DOCKER_IMAGE_NAME_PRO
+    # add host mapping for localstack.cloud to localhost to prevent the health check from failing
     additional_flags = (
         repl_config.PROXY_DOCKER_FLAGS + " --add-host=localhost.localstack.cloud:host-gateway"
     )
