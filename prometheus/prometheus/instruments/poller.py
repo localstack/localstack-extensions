@@ -10,7 +10,6 @@ from localstack.services.lambda_.event_source_mapping.senders.sender import Send
 from prometheus.instruments.util import get_event_target_from_procesor
 from prometheus.metrics.event_polling import (
     LOCALSTACK_POLLED_BATCH_EFFICIENCY_RATIO,
-    LOCALSTACK_POLLER_MISS_TOTAL,
 )
 from prometheus.metrics.event_processing import (
     LOCALSTACK_EVENT_PROCESSING_ERRORS_TOTAL,
@@ -33,11 +32,6 @@ def tracked_poll_events(fn, self: Poller):
         ).time():
             fn(self)
     except EmptyPollResultsException:
-        LOCALSTACK_POLLER_MISS_TOTAL.labels(
-            event_source=event_source,
-            event_target=event_target,
-        ).inc()
-
         # set to 0 since it's a batch-miss
         LOCALSTACK_POLLED_BATCH_EFFICIENCY_RATIO.labels(
             event_source=event_source, event_target=event_target

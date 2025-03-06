@@ -7,9 +7,6 @@ from prometheus.metrics.event_polling import (
     LOCALSTACK_POLLED_BATCH_EFFICIENCY_RATIO,
     LOCALSTACK_RECORDS_PER_POLL,
 )
-from prometheus.metrics.event_processing import (
-    LOCALSTACK_EVENT_PROCESSING_DURATION_SECONDS,
-)
 
 
 def tracked_stream_poll_events_from_shard(
@@ -40,12 +37,8 @@ def tracked_stream_poll_events_from_shard(
 
         return response
 
-    self.get_records = wrapped_get_records
-
     try:
-        with LOCALSTACK_EVENT_PROCESSING_DURATION_SECONDS.labels(
-            event_source=event_source, event_target=event_target
-        ).time():
-            return fn(self, shard_id, shard_iterator)
+        self.get_records = wrapped_get_records
+        return fn(self, shard_id, shard_iterator)
     finally:
         self.get_records = original_get_records

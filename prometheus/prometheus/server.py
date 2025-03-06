@@ -1,4 +1,5 @@
 import logging
+import threading
 
 from localstack.extensions.api import http
 from localstack.utils.common import TMP_THREADS
@@ -14,6 +15,8 @@ class PrometheusServer(Server):
 
     def __init__(self, port=None, host="localhost"):
         port = port or get_free_tcp_port()
+        self._registry = REGISTRY
+        self._metrics_lock = threading.Lock()
         super().__init__(port, host)
 
     def do_run(self):
@@ -25,7 +28,8 @@ class PrometheusServer(Server):
         return self.server.shutdown()
 
     def metrics(self, *args, **kwargs):
-        """Expose the Prometheus metrics"""
-        return http.Response(
-            response=generate_latest(REGISTRY), status=200, mimetype="text/plain"
-        )
+        """Expose the Prometheus metrics with improved performance"""
+        with self._metrics_lock:
+            data = generate_latest(self._registry)
+
+        return http.Response(response=data, status=200, mimetype="text/plain")
