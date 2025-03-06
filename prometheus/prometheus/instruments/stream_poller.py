@@ -1,6 +1,6 @@
-import time
-
-from localstack.services.lambda_.event_source_mapping.pollers.stream_poller import StreamPoller
+from localstack.services.lambda_.event_source_mapping.pollers.stream_poller import (
+    StreamPoller,
+)
 
 from prometheus.instruments.util import get_event_target_from_procesor
 from prometheus.metrics.event_polling import (
@@ -12,7 +12,9 @@ from prometheus.metrics.event_processing import (
 )
 
 
-def tracked_stream_poll_events_from_shard(fn, self: StreamPoller, shard_id, shard_iterator):
+def tracked_stream_poll_events_from_shard(
+    fn, self: StreamPoller, shard_id, shard_iterator
+):
     """Stream-specific handler for tracking and processing events from a shard (DynamoDB Streams & Kinesis)"""
 
     event_source = self.event_source()

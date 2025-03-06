@@ -1,4 +1,4 @@
-from prometheus_client import Counter, Gauge, Histogram
+from prometheus_client import Counter, Histogram
 
 # Poll operation tracking
 LOCALSTACK_RECORDS_PER_POLL = Histogram(

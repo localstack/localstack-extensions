@@ -85,14 +85,16 @@ def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
             if creation_time := dynamodb.get("ApproximateCreationDateTime"):
                 delay = current_epoch_time - float(creation_time)
                 LOCALSTACK_EVENT_PROPAGATION_DELAY_SECONDS.labels(
-                    event_source=event_source or "aws:dynamodb", event_target=event_target
+                    event_source=event_source or "aws:dynamodb",
+                    event_target=event_target,
                 ).observe(delay)
 
         elif kinesis := event.get("kinesis", {}):
             if arrival_time := kinesis.get("approximateArrivalTimestamp"):
                 delay = current_epoch_time - float(arrival_time)
                 LOCALSTACK_EVENT_PROPAGATION_DELAY_SECONDS.labels(
-                    event_source=event_source or "aws:kinesis", event_target=event_target
+                    event_source=event_source or "aws:kinesis",
+                    event_target=event_target,
                 ).observe(delay)
 
         elif sqs_attributes := event.get("attributes", {}):

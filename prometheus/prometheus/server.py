@@ -1,6 +1,6 @@
 import logging
 
-from localstack.extensions.api import Extension, http
+from localstack.extensions.api import http
 from localstack.utils.common import TMP_THREADS
 from localstack.utils.net import get_free_tcp_port
 from localstack.utils.serving import Server
@@ -26,4 +26,6 @@ class PrometheusServer(Server):
 
     def metrics(self, *args, **kwargs):
         """Expose the Prometheus metrics"""
-        return http.Response(response=generate_latest(REGISTRY), status=200, mimetype="text/plain")
+        return http.Response(
+            response=generate_latest(REGISTRY), status=200, mimetype="text/plain"
+        )
