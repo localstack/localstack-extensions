@@ -9,7 +9,9 @@ from localstack.services.lambda_.event_source_mapping.senders.sender import Send
 
 from prometheus.instruments.util import get_event_target_from_procesor
 from prometheus.metrics.event_polling import (
-    LOCALSTACK_POLLED_BATCH_EFFICIENCY_RATIO,
+    LOCALSTACK_POLL_EVENTS_DURATION_SECONDS,
+    LOCALSTACK_POLL_MISS_TOTAL,
+    LOCALSTACK_POLLED_BATCH_SIZE_EFFICIENCY_RATIO,
 )
 from prometheus.metrics.event_processing import (
     LOCALSTACK_EVENT_PROCESSING_ERRORS_TOTAL,
@@ -26,16 +28,21 @@ def tracked_poll_events(fn, self: Poller):
     event_target = get_event_target_from_procesor(self.processor)
 
     try:
-        with LOCALSTACK_EVENT_PROPAGATION_DELAY_SECONDS.labels(
+        current_time_epoch = time.time()
+        fn(self)
+        LOCALSTACK_POLL_EVENTS_DURATION_SECONDS.labels(
             event_source=event_source,
             event_target=event_target,
-        ).time():
-            fn(self)
+        ).observe(time.time() - current_time_epoch)
     except EmptyPollResultsException:
         # set to 0 since it's a batch-miss
-        LOCALSTACK_POLLED_BATCH_EFFICIENCY_RATIO.labels(
+        LOCALSTACK_POLLED_BATCH_SIZE_EFFICIENCY_RATIO.labels(
             event_source=event_source, event_target=event_target
         ).observe(0)
+
+        LOCALSTACK_POLL_MISS_TOTAL.labels(
+            event_source=event_source, event_target=event_target
+        ).inc()
 
         raise
     except Exception as e:
@@ -51,13 +58,13 @@ def tracked_poll_events(fn, self: Poller):
 def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
     """Track metrics for event sending operations"""
     LOG.debug("Tracking send_events call with %d events", len(events))
+    original_events = events.copy()
+
     if not events:
         # This shouldn't happen but cater for it anyway
         return fn(self, events)
 
     total_events = len(events)
-    current_epoch_time = time.time()
-
     event_target = self.event_target()
 
     event_source = ""
@@ -71,6 +78,7 @@ def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
         # Need to flatten 2d array since records are split by topic-partition key
         events = sum(events.get("records", []), [])
 
+    current_epoch_time = time.time()
     for event in events:
         if not isinstance(event, dict):
             continue
@@ -109,7 +117,7 @@ def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
     ).inc(total_events)
 
     try:
-        result = fn(self, events)
+        result = fn(self, original_events)
         LOCALSTACK_PROCESSED_EVENTS_TOTAL.labels(
             event_source=event_source, event_target=event_target, status="success"
         ).inc(total_events)

@@ -30,5 +30,5 @@ EXTENSION_DEV_MODE=1 localstack start
 To distribute your extension, simply upload it to your github account. Your extension can then be installed via:
 
 ```bash
-localstack extensions install "git+https://github.com/gregfurman/localstack-extension-prometheus-metrics/#egg=localstack-extension-prometheus-metrics"
+localstack extensions install "git+https://github.com/localstack/localstack-extension/#egg=localstack-extension-terraform-init&subdirectory=terraform-init"
 ```

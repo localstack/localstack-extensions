@@ -16,7 +16,7 @@ from localstack.utils.patch import Patch, Patches
 
 from prometheus.instruments.poller import tracked_poll_events, tracked_send_events
 from prometheus.instruments.sqs_poller import tracked_sqs_handle_messages
-from prometheus.instruments.stream_poller import tracked_stream_poll_events_from_shard
+from prometheus.instruments.stream_poller import tracked_get_records
 
 LOG = logging.getLogger(__name__)
 
@@ -32,17 +32,15 @@ def apply_poller_tracking_patches():
             # Track when events get sent to the target lambda
             Patch.function(target=LambdaSender.send_events, fn=tracked_send_events),
             # SQS-specific patches
-            Patch.function(
-                target=SqsPoller.handle_messages, fn=tracked_sqs_handle_messages
-            ),
+            Patch.function(target=SqsPoller.handle_messages, fn=tracked_sqs_handle_messages),
             # Stream-specific patches
             Patch.function(
-                target=KinesisPoller.poll_events_from_shard,
-                fn=tracked_stream_poll_events_from_shard,
+                target=KinesisPoller.get_records,
+                fn=tracked_get_records,
             ),
             Patch.function(
-                target=DynamoDBPoller.poll_events_from_shard,
-                fn=tracked_stream_poll_events_from_shard,
+                target=DynamoDBPoller.get_records,
+                fn=tracked_get_records,
             ),
             # TODO: How should KafkaPollers be handled?
         ]

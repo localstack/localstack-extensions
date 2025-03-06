@@ -22,9 +22,7 @@ class RequestMetricsHandler(Handler):
     Handler that records the start time of incoming requests
     """
 
-    def __call__(
-        self, chain: HandlerChain, context: TimedRequestContext, response: Response
-    ):
+    def __call__(self, chain: HandlerChain, context: TimedRequestContext, response: Response):
         # Record the start time
         context.start_time = time.perf_counter()
 
@@ -33,9 +31,7 @@ class RequestMetricsHandler(Handler):
             return
 
         service, operation = context.service_operation
-        LOCALSTACK_INFLIGHT_REQUESTS_GAUGE.labels(
-            service=service, operation=operation
-        ).inc()
+        LOCALSTACK_INFLIGHT_REQUESTS_GAUGE.labels(service=service, operation=operation).inc()
 
 
 class ResponseMetricsHandler(Handler):
@@ -43,17 +39,13 @@ class ResponseMetricsHandler(Handler):
     Handler that records metrics when a response is ready
     """
 
-    def __call__(
-        self, chain: HandlerChain, context: TimedRequestContext, response: Response
-    ):
+    def __call__(self, chain: HandlerChain, context: TimedRequestContext, response: Response):
         # Do not record metrics if no service operation information is found
         if not context.service_operation:
             return
 
         service, operation = context.service_operation
-        LOCALSTACK_INFLIGHT_REQUESTS_GAUGE.labels(
-            service=service, operation=operation
-        ).dec()
+        LOCALSTACK_INFLIGHT_REQUESTS_GAUGE.labels(service=service, operation=operation).dec()
 
         # Do not record if response is None
         if response is None:
