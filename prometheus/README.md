@@ -28,7 +28,7 @@ First, enable the extension by adding it to your LocalStack environment:
 services:
   localstack:
     environment:
-      - EXTENSION_AUTO_INSTALL=localstack-extension-prometheus
+      - EXTENSION_AUTO_INSTALL=localstack-extension-prometheus-metrics
 ```
 
 Next, you'll need to spin up a Prometheus instance to run alongside your LocalStack container. A [configuration file](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#configuration-file) is required.
@@ -48,7 +48,7 @@ scrape_configs:
     metrics_path: '/_extension/metrics' # Metrics are exposed via `/_extension/metrics` endpoint
 ```
 
-And mount it on startup to your `docker-compose.yml`:
+And mount it on startup in your `docker-compose.yml`:
 ```yaml
 services:
   # ... LocalStack container should be defined
@@ -101,11 +101,10 @@ services:
       - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:?}  # required for Pro
       - DEBUG=${DEBUG:-0}
       - PERSISTENCE=${PERSISTENCE:-0}
-      - EXTENSION_AUTO_INSTALL=localstack-extension-prometheus
+      - EXTENSION_AUTO_INSTALL=localstack-extension-prometheus-metrics
     volumes:
       - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "conf.d:/etc/localstack/conf.d"
 
   prometheus:
     image: prom/prometheus
