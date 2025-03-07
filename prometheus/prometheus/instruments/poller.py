@@ -28,12 +28,12 @@ def tracked_poll_events(fn, self: Poller):
     event_target = get_event_target_from_procesor(self.processor)
 
     try:
-        current_time_epoch = time.time()
+        current_time_epoch = time.perf_counter()
         fn(self)
         LOCALSTACK_POLL_EVENTS_DURATION_SECONDS.labels(
             event_source=event_source,
             event_target=event_target,
-        ).observe(time.time() - current_time_epoch)
+        ).observe(time.perf_counter() - current_time_epoch)
     except EmptyPollResultsException:
         # set to 0 since it's a batch-miss
         LOCALSTACK_POLLED_BATCH_SIZE_EFFICIENCY_RATIO.labels(
@@ -78,7 +78,7 @@ def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
         # Need to flatten 2d array since records are split by topic-partition key
         events = sum(events.get("records", []), [])
 
-    current_epoch_time = time.time()
+    current_epoch_time = time.perf_counter()
     for event in events:
         if not isinstance(event, dict):
             continue

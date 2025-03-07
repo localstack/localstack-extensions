@@ -32,3 +32,5 @@ To distribute your extension, simply upload it to your github account. Your exte
 ```bash
 localstack extensions install "git+https://github.com/localstack/localstack-extension/#egg=localstack-extension-terraform-init&subdirectory=terraform-init"
 ```
+
+# TODO fix the above ^^^^

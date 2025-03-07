@@ -16,8 +16,10 @@ def tracked_get_records(fn, self: StreamPoller, shard_iterator: str):
     event_source = self.event_source()
     event_target = get_event_target_from_procesor(self.processor)
 
-    with LOCALSTACK_POLLED_BATCH_WINDOW_EFFICIENCY_RATIO.time():
-        response = fn(shard_iterator)
+    with LOCALSTACK_POLLED_BATCH_WINDOW_EFFICIENCY_RATIO.labels(
+        event_source=event_source, event_target=event_target
+    ).time():
+        response = fn(self, shard_iterator)
     records = response.get("Records", [])
     record_count = len(records)
 
