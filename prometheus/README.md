@@ -9,7 +9,9 @@ Instruments, collects, and exposes LocalStack metrics via a [Prometheus](https:/
 localstack extensions install localstack-extension-prometheus-metrics
 ```
 
-## Using
+**Note**: This plugin only supports LocalStack `>=v4.2`
+
+## Usage
 
 Scrape metrics via the endpoint:
 ```bash
