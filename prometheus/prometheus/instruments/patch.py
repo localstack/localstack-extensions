@@ -14,7 +14,8 @@ from localstack.services.lambda_.event_source_mapping.senders.lambda_sender impo
 )
 from localstack.utils.patch import Patch, Patches
 
-from prometheus.instruments.poller import tracked_poll_events, tracked_send_events
+from prometheus.instruments.poller import tracked_poll_events
+from prometheus.instruments.sender import tracked_send_events
 from prometheus.instruments.sqs_poller import tracked_sqs_handle_messages
 from prometheus.instruments.stream_poller import tracked_get_records
 
@@ -31,20 +32,18 @@ def apply_poller_tracking_patches():
             Patch.function(target=DynamoDBPoller.poll_events, fn=tracked_poll_events),
             # Track when events get sent to the target lambda
             Patch.function(target=LambdaSender.send_events, fn=tracked_send_events),
+            # TODO: Standardise a single abstract method that all Poller subclasses can use to fetch records
             # SQS-specific patches
             Patch.function(target=SqsPoller.handle_messages, fn=tracked_sqs_handle_messages),
             # Stream-specific patches
-            Patch.function(
-                target=KinesisPoller.get_records,
-                fn=tracked_get_records,
-            ),
-            Patch.function(
-                target=DynamoDBPoller.get_records,
-                fn=tracked_get_records,
-            ),
+            Patch.function(target=KinesisPoller.get_records, fn=tracked_get_records),
+            Patch.function(target=DynamoDBPoller.get_records, fn=tracked_get_records),
             # TODO: How should KafkaPollers be handled?
         ]
     )
+
+    # TODO: Investigate patching subclasses of Poller and Sender to ensure all children have changes
+    # since currently, Pipes Senders and Kafka Pollers are unsupported.
 
     patches.apply()
     LOG.debug("Applied all poller event and latency tracking patches")
