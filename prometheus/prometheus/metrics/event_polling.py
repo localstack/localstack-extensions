@@ -9,7 +9,7 @@ LOCALSTACK_RECORDS_PER_POLL = Histogram(
 )
 
 LOCALSTACK_POLL_EVENTS_DURATION_SECONDS = Histogram(
-    "localstack_poll_events_duration_seconds",
+    "localstack_poll_events_duration_second",
     "Count of poll events .",
     ["event_source", "event_target"],
     buckets=[0.005, 0.05, 0.5, 5, 30, 60, 300, 900, 3600],
