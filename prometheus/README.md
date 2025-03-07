@@ -44,7 +44,8 @@ global:
 scrape_configs:
   - job_name: 'localstack'
     static_configs:
-      - targets: ['localstack:4566']    # Target the LocalStack Gateway
+        # Note: The target needs to match the LocalStack container name for the Prometheus container to resolve the endpoint.
+      - targets: ['localstack:4566']    # Target the LocalStack Gateway. 
     metrics_path: '/_extension/metrics' # Metrics are exposed via `/_extension/metrics` endpoint
 ```
 
