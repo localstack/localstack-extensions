@@ -15,7 +15,7 @@ LOCALSTACK_PROCESS_EVENT_DURATION_SECONDS = Histogram(
 )
 
 LOCALSTACK_IN_FLIGHT_EVENTS_GAUGE = Gauge(
-    "localstack_in_flight_events_total",
+    "localstack_in_flight_events",
     "Total number of event batches currently being processed by the target",
     ["event_source", "event_target"],
 )
