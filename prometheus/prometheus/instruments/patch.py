@@ -34,7 +34,9 @@ def apply_poller_tracking_patches():
             Patch.function(target=LambdaSender.send_events, fn=tracked_send_events),
             # TODO: Standardise a single abstract method that all Poller subclasses can use to fetch records
             # SQS-specific patches
-            Patch.function(target=SqsPoller.handle_messages, fn=tracked_sqs_handle_messages),
+            Patch.function(
+                target=SqsPoller.handle_messages, fn=tracked_sqs_handle_messages
+            ),
             # Stream-specific patches
             Patch.function(target=KinesisPoller.get_records, fn=tracked_get_records),
             Patch.function(target=DynamoDBPoller.get_records, fn=tracked_get_records),

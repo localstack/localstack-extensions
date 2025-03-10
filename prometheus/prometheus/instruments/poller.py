@@ -24,7 +24,9 @@ def tracked_poll_events(fn, self: Poller):
     event_target = get_event_target_from_procesor(self.processor)
 
     try:
-        with LOCALSTACK_POLL_EVENTS_DURATION_SECONDS.time():
+        with LOCALSTACK_POLL_EVENTS_DURATION_SECONDS.labels(
+            event_source=event_source, event_target=event_target
+        ).time():
             fn(self)
     except EmptyPollResultsException:
         # set to 0 since it's a batch-miss

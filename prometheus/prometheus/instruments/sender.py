@@ -77,7 +77,9 @@ def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
     ).inc()
 
     try:
-        with LOCALSTACK_PROCESS_EVENT_DURATION_SECONDS.time():
+        with LOCALSTACK_PROCESS_EVENT_DURATION_SECONDS.labels(
+            event_source=event_source, event_target=event_target
+        ).time():
             result = fn(self, original_events)
         LOCALSTACK_PROCESSED_EVENTS_TOTAL.labels(
             event_source=event_source, event_target=event_target, status="success"
