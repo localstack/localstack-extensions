@@ -6,6 +6,8 @@ from localstack.services.lambda_.event_source_mapping.senders.sender import Send
 from prometheus.metrics.event_processing import (
     LOCALSTACK_EVENT_PROCESSING_ERRORS_TOTAL,
     LOCALSTACK_EVENT_PROPAGATION_DELAY_SECONDS,
+    LOCALSTACK_IN_FLIGHT_EVENTS_GAUGE,
+    LOCALSTACK_PROCESS_EVENT_DURATION_SECONDS,
     LOCALSTACK_PROCESSED_EVENTS_TOTAL,
 )
 
@@ -69,12 +71,14 @@ def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
                     event_source=event_source, event_target=event_target
                 ).observe(delay)
 
-    LOCALSTACK_PROCESSED_EVENTS_TOTAL.labels(
-        event_source=event_source, event_target=event_target, status="processing"
-    ).inc(total_events)
+    LOCALSTACK_IN_FLIGHT_EVENTS_GAUGE.labels(
+        event_source=event_source,
+        event_target=event_target,
+    ).inc()
 
     try:
-        result = fn(self, original_events)
+        with LOCALSTACK_PROCESS_EVENT_DURATION_SECONDS.time():
+            result = fn(self, original_events)
         LOCALSTACK_PROCESSED_EVENTS_TOTAL.labels(
             event_source=event_source, event_target=event_target, status="success"
         ).inc(total_events)
@@ -91,3 +95,8 @@ def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
             event_source=event_source, event_target=event_target, status="error"
         ).inc(total_events)
         raise
+    finally:
+        LOCALSTACK_IN_FLIGHT_EVENTS_GAUGE.labels(
+            event_source=event_source,
+            event_target=event_target,
+        ).dec()

@@ -7,19 +7,15 @@ from localstack.aws.chain import (
 )
 from localstack.extensions.api import Extension, http
 
+from prometheus.expose import retrieve_metrics
 from prometheus.handler import RequestMetricsHandler, ResponseMetricsHandler
 from prometheus.instruments.patch import apply_poller_tracking_patches
-from prometheus.server import PrometheusServer
 
 LOG = logging.getLogger(__name__)
 
 
 class PrometheusMetricsExtension(Extension):
     name = "prometheus"
-    prometheus_metrics_server: PrometheusServer
-
-    def __init__(self, host="localhost", port=None):
-        self.prometheus_metrics_server = PrometheusServer(port, host)
 
     def on_extension_load(self):
         apply_poller_tracking_patches()
@@ -27,13 +23,12 @@ class PrometheusMetricsExtension(Extension):
 
     def on_platform_start(self):
         LOG.debug("PrometheusMetricsExtension: localstack is starting")
-        self.prometheus_metrics_server.start()
 
     def on_platform_ready(self):
         LOG.debug("PrometheusMetricsExtension: localstack is running")
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
-        router.add("/_extension/metrics", self.prometheus_metrics_server.metrics)
+        router.add("/_extension/metrics", retrieve_metrics)
         LOG.debug("Added /metrics endpoint for Prometheus metrics")
 
     def update_request_handlers(self, handlers: CompositeHandler):

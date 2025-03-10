@@ -1,5 +1,4 @@
 import logging
-import time
 
 from localstack.services.lambda_.event_source_mapping.pollers.poller import (
     EmptyPollResultsException,
@@ -25,12 +24,8 @@ def tracked_poll_events(fn, self: Poller):
     event_target = get_event_target_from_procesor(self.processor)
 
     try:
-        current_time_epoch = time.perf_counter()
-        fn(self)
-        LOCALSTACK_POLL_EVENTS_DURATION_SECONDS.labels(
-            event_source=event_source,
-            event_target=event_target,
-        ).observe(time.perf_counter() - current_time_epoch)
+        with LOCALSTACK_POLL_EVENTS_DURATION_SECONDS.time():
+            fn(self)
     except EmptyPollResultsException:
         # set to 0 since it's a batch-miss
         LOCALSTACK_POLLED_BATCH_SIZE_EFFICIENCY_RATIO.labels(
