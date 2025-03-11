@@ -115,15 +115,16 @@ services:
       - "./prometheus_config.yml:/etc/prometheus/prometheus.yml" # Assumes prometheus_config.yml exists in your CWD
 ```
 
-## Available Metrics
+## Metrics
 
-The Prometheus extension exposes various LocalStack metrics through the `/_extension/metrics` endpoint, including:
-- Request counts by service
-- Request latencies
-- Resource utilization
-- Error rates
+The Prometheus extension exposes various LocalStack and system metrics through the `/_extension/metrics` endpoint.
 
-For a complete list of available metrics, visit the endpoint directly at `localhost.localstack.cloud:4566/_extension/metrics` when LocalStack is running.
+For a complete list of available metrics, view the:
+- [LocalStack Metrics documentation](./docs/localstack_metrics.md) 
+- [System Metrics documentation](./docs/system_metrics.md) 
+- Otherwise, visit the endpoint directly at `localhost.localstack.cloud:4566/_extension/metrics` when LocalStack is running.
+
+We've also included a [collection of PromQL queries](./docs/event_analysis.md) that are useful for analyzing LocalStack event source mappings performance.
 
 ## Licensing
 
