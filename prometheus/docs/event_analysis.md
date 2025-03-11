@@ -1,7 +1,6 @@
-
 # PromQL Queries for Event Processing Statistics
 
-The following queries can be used to analyse performance of LocalStack’s event processing capabilties.
+The following queries can be used to analyse performance of LocalStack's event processing capabilties.
 
 ## Average Propagation Delay from Event Source to Poller
 
@@ -12,8 +11,7 @@ rate(localstack_event_propagation_delay_seconds_sum[5m]) / rate(localstack_event
 ```
 
 **Example**:
-
-![image.png](images/image.png)
+![Average Propagation Delay](images/avg_propagation_delay.png)
 
 ## Batch Efficiency
 
@@ -24,8 +22,7 @@ rate(localstack_batch_size_efficiency_ratio_sum[1m]) / rate(localstack_batch_siz
 ```
 
 Example:
-
-![image.png](images/image%201.png)
+![Batch Efficiency Ratio](images/batch_efficiency_ratio.png)
 
 ## Records Per Poll
 
@@ -37,7 +34,7 @@ rate(localstack_records_per_poll_sum[1m]) / rate(localstack_records_per_poll_cou
 
 Example:
 
-![image.png](images/image%202.png)
+![Records Per Poll](images/records_per_poll.png)
 
 ## In-Flight Events
 
@@ -48,8 +45,7 @@ localstack_in_flight_events
 ```
 
 Example:
-
-![image.png](images/image%203.png)
+![In-Flight Events](images/in_flight_events.png)
 
 ## Event Processing Duration
 
@@ -61,7 +57,7 @@ rate(localstack_process_event_duration_seconds_sum[1m]) / rate(localstack_proces
 
 Example:
 
-![image.png](images/image%204.png)
+![Event Processing Duration](images/event_processing_duration.png)
 
 ## High Latency Event Processing
 
@@ -72,8 +68,7 @@ histogram_quantile(0.95, sum by(service, operation, le) (rate(localstack_request
 ```
 
 Example:
-
-![image.png](images/image%205.png)
+![High Latency Event Processing](images/high_latency_event_processing.png)
 
 ## Empty Poll Responses
 
@@ -84,8 +79,7 @@ rate(localstack_poll_miss_total[5m]) * 60
 ```
 
 Example:
-
-![image.png](images/image%206.png)
+![Empty Poll Responses](images/empty_poll_responses.png)
 
 ## Number of LocalStack requests Processed
 
@@ -96,8 +90,7 @@ sum by(service, operation) (rate(localstack_request_processing_duration_seconds_
 ```
 
 Example:
-
-![image.png](images/image%207.png)
+![Requests Processed](images/requests_processed.png)
 
 ## In-Flight Requests Against LocalStack Gateway
 
@@ -108,5 +101,4 @@ sum_over_time(localstack_in_flight_requests{service=~"dynamodb|kinesis|sqs|lambd
 ```
 
 Example:
-
-![image.png](images/image%208.png)
+![In-Flight Requests](images/in_flight_requests.png)
