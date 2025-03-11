@@ -29,7 +29,7 @@ dev = [
 
 [tool.black]
 line_length = 100
-include = '(prometheus/.*\.py$)'
+include = '(localstack_prometheus/.*\.py$)'
 
 [tool.isort]
 profile = 'black'
