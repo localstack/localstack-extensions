@@ -3,7 +3,7 @@ import time
 
 from localstack.services.lambda_.event_source_mapping.senders.sender import Sender
 
-from prometheus.metrics.event_processing import (
+from localstack_prometheus.metrics.event_processing import (
     LOCALSTACK_EVENT_PROCESSING_ERRORS_TOTAL,
     LOCALSTACK_EVENT_PROPAGATION_DELAY_SECONDS,
     LOCALSTACK_IN_FLIGHT_EVENTS_GAUGE,
@@ -37,14 +37,14 @@ def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
         # Need to flatten 2d array since records are split by topic-partition key
         events = sum(events.get("records", []), [])
 
-    current_epoch_time = time.perf_counter()
+    start_time = time.time()
     for event in events:
         if not isinstance(event, dict):
             continue
 
         if dynamodb := event.get("dynamodb", {}):
             if creation_time := dynamodb.get("ApproximateCreationDateTime"):
-                delay = current_epoch_time - float(creation_time)
+                delay = start_time - float(creation_time)
                 LOCALSTACK_EVENT_PROPAGATION_DELAY_SECONDS.labels(
                     event_source=event_source or "aws:dynamodb",
                     event_target=event_target,
@@ -52,7 +52,7 @@ def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
 
         elif kinesis := event.get("kinesis", {}):
             if arrival_time := kinesis.get("approximateArrivalTimestamp"):
-                delay = current_epoch_time - float(arrival_time)
+                delay = start_time - float(arrival_time)
                 LOCALSTACK_EVENT_PROPAGATION_DELAY_SECONDS.labels(
                     event_source=event_source or "aws:kinesis",
                     event_target=event_target,
@@ -60,13 +60,13 @@ def tracked_send_events(fn, self: Sender, events: list[dict] | dict):
 
         elif sqs_attributes := event.get("attributes", {}):
             if sent_timestamp := sqs_attributes.get("SentTimestamp"):
-                delay = current_epoch_time - (float(sent_timestamp) / 1000.0)
+                delay = start_time - (float(sent_timestamp) / 1000.0)
                 LOCALSTACK_EVENT_PROPAGATION_DELAY_SECONDS.labels(
                     event_source=event_source or "aws:sqs", event_target=event_target
                 ).observe(delay)
         elif event_source in {"aws:kafka", "SelfManagedKafka"}:
             if sent_timestamp := event.get("timestamp"):
-                delay = current_epoch_time - (float(sent_timestamp) / 1000.0)
+                delay = start_time - (float(sent_timestamp) / 1000.0)
                 LOCALSTACK_EVENT_PROPAGATION_DELAY_SECONDS.labels(
                     event_source=event_source, event_target=event_target
                 ).observe(delay)

@@ -43,4 +43,4 @@ select = 'B,C,E,F,I,W,T4,B9'
 exclude = '.venv*,venv*,dist,*.egg-info,.git'
 
 [project.entry-points."localstack.extensions"]
-prometheus = "prometheus.extension:PrometheusMetricsExtension"
+localstack_prometheus = "localstack_prometheus.extension:PrometheusMetricsExtension"

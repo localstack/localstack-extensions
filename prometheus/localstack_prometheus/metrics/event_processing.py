@@ -8,7 +8,7 @@ LOCALSTACK_PROCESSED_EVENTS_TOTAL = Counter(
 )
 
 LOCALSTACK_PROCESS_EVENT_DURATION_SECONDS = Histogram(
-    "localstack_process_event_duration_second",
+    "localstack_process_event_duration_seconds",
     "Duration to process a polled event from start to completion",
     ["event_source", "event_target"],
     buckets=[0.005, 0.05, 0.5, 5, 30, 60, 300, 900, 3600],

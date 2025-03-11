@@ -5,7 +5,7 @@ from localstack.aws.api import RequestContext
 from localstack.aws.chain import Handler, HandlerChain
 from localstack.http import Response
 
-from prometheus.metrics.core import (
+from localstack_prometheus.metrics.core import (
     LOCALSTACK_IN_FLIGHT_REQUESTS_GAUGE,
     LOCALSTACK_REQUEST_PROCESSING_DURATION_SECONDS,
 )

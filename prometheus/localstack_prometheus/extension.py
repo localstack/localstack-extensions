@@ -7,9 +7,9 @@ from localstack.aws.chain import (
 )
 from localstack.extensions.api import Extension, http
 
-from prometheus.expose import retrieve_metrics
-from prometheus.handler import RequestMetricsHandler, ResponseMetricsHandler
-from prometheus.instruments.patch import apply_poller_tracking_patches
+from localstack_prometheus.expose import retrieve_metrics
+from localstack_prometheus.handler import RequestMetricsHandler, ResponseMetricsHandler
+from localstack_prometheus.instruments.patch import apply_poller_tracking_patches
 
 LOG = logging.getLogger(__name__)
 

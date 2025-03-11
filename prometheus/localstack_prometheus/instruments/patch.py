@@ -14,10 +14,10 @@ from localstack.services.lambda_.event_source_mapping.senders.lambda_sender impo
 )
 from localstack.utils.patch import Patch, Patches
 
-from prometheus.instruments.poller import tracked_poll_events
-from prometheus.instruments.sender import tracked_send_events
-from prometheus.instruments.sqs_poller import tracked_sqs_handle_messages
-from prometheus.instruments.stream_poller import tracked_get_records
+from localstack_prometheus.instruments.poller import tracked_poll_events
+from localstack_prometheus.instruments.sender import tracked_send_events
+from localstack_prometheus.instruments.sqs_poller import tracked_sqs_handle_messages
+from localstack_prometheus.instruments.stream_poller import tracked_get_records
 
 LOG = logging.getLogger(__name__)
 

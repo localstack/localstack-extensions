@@ -5,13 +5,13 @@ from localstack.services.lambda_.event_source_mapping.pollers.poller import (
     Poller,
 )
 
-from prometheus.instruments.util import get_event_target_from_procesor
-from prometheus.metrics.event_polling import (
+from localstack_prometheus.instruments.util import get_event_target_from_procesor
+from localstack_prometheus.metrics.event_polling import (
     LOCALSTACK_POLL_EVENTS_DURATION_SECONDS,
     LOCALSTACK_POLL_MISS_TOTAL,
     LOCALSTACK_POLLED_BATCH_SIZE_EFFICIENCY_RATIO,
 )
-from prometheus.metrics.event_processing import (
+from localstack_prometheus.metrics.event_processing import (
     LOCALSTACK_EVENT_PROCESSING_ERRORS_TOTAL,
 )
 

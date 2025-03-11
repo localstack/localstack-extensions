@@ -4,8 +4,8 @@ from localstack.services.lambda_.event_source_mapping.pollers.sqs_poller import 
     SqsPoller,
 )
 
-from prometheus.instruments.util import get_event_target_from_procesor
-from prometheus.metrics.event_polling import (
+from localstack_prometheus.instruments.util import get_event_target_from_procesor
+from localstack_prometheus.metrics.event_polling import (
     LOCALSTACK_POLLED_BATCH_SIZE_EFFICIENCY_RATIO,
     LOCALSTACK_RECORDS_PER_POLL,
 )
