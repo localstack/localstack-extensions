@@ -6,7 +6,7 @@ from localstack.aws.chain import Handler, HandlerChain
 from localstack.http import Response
 
 from localstack_prometheus.metrics.core import (
-    LOCALSTACK_IN_FLIGHT_REQUESTS_GAUGE,
+    LOCALSTACK_IN_FLIGHT_REQUESTS,
     LOCALSTACK_REQUEST_PROCESSING_DURATION_SECONDS,
 )
 
@@ -31,7 +31,7 @@ class RequestMetricsHandler(Handler):
             return
 
         service, operation = context.service_operation
-        LOCALSTACK_IN_FLIGHT_REQUESTS_GAUGE.labels(service=service, operation=operation).inc()
+        LOCALSTACK_IN_FLIGHT_REQUESTS.labels(service=service, operation=operation).inc()
 
 
 class ResponseMetricsHandler(Handler):
@@ -45,7 +45,7 @@ class ResponseMetricsHandler(Handler):
             return
 
         service, operation = context.service_operation
-        LOCALSTACK_IN_FLIGHT_REQUESTS_GAUGE.labels(service=service, operation=operation).dec()
+        LOCALSTACK_IN_FLIGHT_REQUESTS.labels(service=service, operation=operation).dec()
 
         # Do not record if response is None
         if response is None:

@@ -19,6 +19,7 @@ from localstack.services.lambda_.invocation.docker_runtime_executor import (
 from localstack.utils.patch import Patch, Patches
 
 from localstack_prometheus.instruments.lambda_ import (
+    init_assignment_service_with_metrics,
     tracked_docker_start,
     tracked_docker_stop,
     tracked_get_environment,
@@ -40,6 +41,10 @@ def apply_lambda_tracking_patches():
             Patch.function(target=DockerRuntimeExecutor.stop, fn=tracked_docker_stop),
             # Track cold and warm starts
             Patch.function(target=AssignmentService.get_environment, fn=tracked_get_environment),
+            # Track and collect all environment
+            Patch.function(
+                target=AssignmentService.__init__, fn=init_assignment_service_with_metrics
+            ),
         ]
     )
 

@@ -8,7 +8,7 @@ LOCALSTACK_REQUEST_PROCESSING_DURATION_SECONDS = Histogram(
     buckets=[0.005, 0.05, 0.5, 5, 30, 60, 300, 900, 3600],
 )
 
-LOCALSTACK_IN_FLIGHT_REQUESTS_GAUGE = Gauge(
+LOCALSTACK_IN_FLIGHT_REQUESTS = Gauge(
     "localstack_in_flight_requests",
     "Total number of currently in-flight requests",
     ["service", "operation"],
