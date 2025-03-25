@@ -9,7 +9,10 @@ from localstack.extensions.api import Extension, http
 
 from localstack_prometheus.expose import retrieve_metrics
 from localstack_prometheus.handler import RequestMetricsHandler, ResponseMetricsHandler
-from localstack_prometheus.instruments.patch import apply_poller_tracking_patches, apply_lambda_tracking_patches
+from localstack_prometheus.instruments.patch import (
+    apply_lambda_tracking_patches,
+    apply_poller_tracking_patches,
+)
 
 LOG = logging.getLogger(__name__)
 

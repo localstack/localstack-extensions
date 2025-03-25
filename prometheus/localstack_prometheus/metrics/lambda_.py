@@ -1,4 +1,4 @@
-from prometheus_client import Counter, Gauge, Histogram
+from prometheus_client import Counter, Gauge
 
 # Lambda environment metrics
 LOCALSTACK_LAMBDA_ENVIRONMENT_START_TOTAL = Counter(
