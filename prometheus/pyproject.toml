@@ -19,6 +19,9 @@ dependencies = [
     "localstack-core (>=4.2.0,<5.0.0)",
 ]
 
+[tool.setuptools]
+packages = ["localstack_prometheus"]
+
 [project.urls]
 Homepage = "https://github.com/localstack/localstack-extensions/tree/main/prometheus/README.md"
 

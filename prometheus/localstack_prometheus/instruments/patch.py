@@ -17,6 +17,7 @@ from localstack.services.lambda_.invocation.docker_runtime_executor import (
     DockerRuntimeExecutor,
 )
 from localstack.utils.patch import Patch, Patches
+from localstack.services.dynamodb.server import DynamodbServer
 
 from localstack_prometheus.instruments.lambda_ import (
     init_assignment_service_with_metrics,
@@ -28,6 +29,7 @@ from localstack_prometheus.instruments.poller import tracked_poll_events
 from localstack_prometheus.instruments.sender import tracked_send_events
 from localstack_prometheus.instruments.sqs_poller import tracked_sqs_handle_messages
 from localstack_prometheus.instruments.stream_poller import tracked_get_records
+from localstack_prometheus.instruments.dynamodb_local import create_shell_command_with_jmx_exporter
 
 LOG = logging.getLogger(__name__)
 
@@ -78,4 +80,18 @@ def apply_poller_tracking_patches():
 
     patches.apply()
     LOG.debug("Applied all poller event and latency tracking patches")
+    return patches
+
+
+def apply_dynamodb_local_tracking_patches():
+    """Apply all DynamoDB Local metrics tracking patches in one call"""
+    patches = Patches(
+        [
+            # Start up DynamoDB Local instance with Prometheus JMX exporter for tracking usage
+            Patch.function(target=DynamodbServer._create_shell_command, fn=create_shell_command_with_jmx_exporter),
+        ]
+    )
+
+    patches.apply()
+    LOG.debug("Applied all DynamoDB Local tracking patches")
     return patches

@@ -12,7 +12,9 @@ from localstack_prometheus.handler import RequestMetricsHandler, ResponseMetrics
 from localstack_prometheus.instruments.patch import (
     apply_lambda_tracking_patches,
     apply_poller_tracking_patches,
+    apply_dynamodb_local_tracking_patches,
 )
+from localstack_prometheus import config
 
 LOG = logging.getLogger(__name__)
 
@@ -23,6 +25,8 @@ class PrometheusMetricsExtension(Extension):
     def on_extension_load(self):
         apply_lambda_tracking_patches()
         apply_poller_tracking_patches()
+        if config.ENABLE_PROMETHEUS_JMX_EXPORTER:
+            apply_dynamodb_local_tracking_patches()
         LOG.debug("PrometheusMetricsExtension: extension is loaded")
 
     def on_platform_start(self):
