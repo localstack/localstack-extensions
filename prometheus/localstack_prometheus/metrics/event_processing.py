@@ -23,7 +23,7 @@ LOCALSTACK_IN_FLIGHT_EVENTS_GAUGE = Gauge(
 # Performance and latency metrics
 LOCALSTACK_EVENT_PROPAGATION_DELAY_SECONDS = Histogram(
     "localstack_event_propagation_delay_seconds",
-    "End-to-end latency between event creation and processing",
+    "End-to-end latency between event creation (at source) until just before being sent to a target for processing.",
     ["event_source", "event_target"],
     buckets=[0.005, 0.05, 0.5, 5, 30, 60, 300, 900, 3600],
 )
