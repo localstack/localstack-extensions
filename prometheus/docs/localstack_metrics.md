@@ -64,7 +64,7 @@
 
 `localstack_event_propagation_delay_seconds`
 
-- **Description:** End-to-end latency between event creation and processing
+- **Description:** End-to-end latency between event creation (at source) until just before being sent to a target for processing.
 - **Labels:** `event_source`, `event_target`
 - **Type:** histogram
 
