@@ -43,10 +43,10 @@ build-frontend: # Build the React app
 	@if [ ! -d "$(FRONTEND_FOLDER)/node_modules" ]; then \
 		$(MAKE) install-frontend; \
 	fi
-	cd $(FRONTEND_FOLDER); rm -rf build && REACT_APP_DEVELOPMENT_ENVIRONMENT=false NODE_ENV=prod npm run build
+	cd $(FRONTEND_FOLDER); rm -rf build && NODE_ENV=prod npm run build
 
 start-frontend: ## Start the frontend in dev mode (hot reload)
-	cd $(FRONTEND_FOLDER); REACT_APP_DEVELOPMENT_ENVIRONMENT=true yarn start
+	cd $(FRONTEND_FOLDER); yarn start
 
 install: venv install-backend install-frontend ## Install dependencies
 
