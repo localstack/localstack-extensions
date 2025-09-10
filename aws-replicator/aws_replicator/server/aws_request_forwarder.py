@@ -188,6 +188,13 @@ class AwsProxyHandler(Handler):
         # service-specific rules
         if context.service.service_name == "cognito-idp" and operation_name == "InitiateAuth":
             return True
+        if context.service.service_name == "dynamodb" and operation_name in {
+            "Scan",
+            "Query",
+            "BatchGetItem",
+            "PartiQLSelect",
+        }:
+            return True
         # TODO: add more rules
         return False
 
