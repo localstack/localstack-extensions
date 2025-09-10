@@ -157,11 +157,14 @@ class AwsProxyHandler(Handler):
             elif request.data:
                 data = request.data
             LOG.debug("Forward request: %s %s - %s - %s", request.method, url, dict(headers), data)
+            # construct response
             result = requests.request(
                 method=request.method, url=url, data=data, headers=dict(headers), stream=True
             )
             # TODO: ugly hack for now, simply attaching an additional attribute for raw response content
             result.raw_content = result.raw.read()
+            # make sure we're removing any transfer-encoding headers
+            result.headers.pop("Transfer-Encoding", None)
             LOG.debug(
                 "Returned response: %s %s - %s",
                 result.status_code,
