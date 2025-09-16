@@ -4,7 +4,6 @@ import sys
 import click
 import yaml
 from localstack.cli import LocalstackCli, LocalstackCliPlugin, console
-from localstack.logging.setup import setup_logging
 from localstack.utils.files import load_file
 
 from aws_proxy.shared.models import ProxyConfig, ProxyServiceConfig

@@ -25,7 +25,7 @@ from aws_proxy.client.auth_proxy import (
     CONTAINER_NAME_PREFIX,
     start_aws_auth_proxy_in_container,
 )
-from aws_proxy.config import HANDLER_PATH_PROXIES, HANDLER_PATH_REPLICATE
+from aws_proxy.config import HANDLER_PATH_PROXIES, HANDLER_PATH_PROXY
 from aws_proxy.server import ui as web_ui
 from aws_proxy.server.aws_request_forwarder import AwsProxyHandler
 from aws_proxy.shared.models import AddProxyRequest, ReplicateStateRequest, ResourceReplicator
@@ -37,7 +37,7 @@ ROUTE_HOST = f"{DOMAIN_NAME}<port:port>"
 
 
 class RequestHandler:
-    @route(HANDLER_PATH_REPLICATE, methods=["POST"])
+    @route(HANDLER_PATH_PROXY, methods=["POST"])
     def handle_replicate(self, request: Request, **kwargs):
         replicator = _get_replicator()
         payload = _get_json(request)
@@ -110,7 +110,7 @@ def handle_replicate_request(request: ReplicateStateRequest):
 
 
 def _get_replicator() -> ResourceReplicator:
-    from aws_replicator.server.resource_replicator import ResourceReplicatorFormer2
+    from aws_proxy.server.resource_replicator import ResourceReplicatorFormer2
 
     # TODO deprecated - fix the implementation of the replicator/copy logic!
     # return ResourceReplicatorInternal()

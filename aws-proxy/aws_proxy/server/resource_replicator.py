@@ -9,9 +9,9 @@ from localstack.services.cloudformation.provider import Stack
 from localstack.utils.files import mkdir
 from localstack.utils.run import run
 
-from aws_replicator.client.service_states import ExtendedResourceStateReplicator
-from aws_replicator.shared.models import ResourceReplicator
-from aws_replicator.shared.utils import get_resource_type
+from aws_proxy.client.service_states import ExtendedResourceStateReplicator
+from aws_proxy.shared.models import ResourceReplicator
+from aws_proxy.shared.utils import get_resource_type
 
 LOG = logging.getLogger(__name__)
 
