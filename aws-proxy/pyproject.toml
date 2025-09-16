@@ -1,6 +1,6 @@
 [tool.black]
 line_length = 100
-include = '(aws_replicator|example|tests)/.*\.py$'
+include = '(aws_proxy|example|tests)/.*\.py$'
 
 [tool.isort]
 profile = 'black'

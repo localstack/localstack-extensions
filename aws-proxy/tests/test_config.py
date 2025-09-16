@@ -1,5 +1,5 @@
-from aws_replicator.server.aws_request_forwarder import AwsProxyHandler
-from aws_replicator.shared.models import ProxyServiceConfig
+from aws_proxy.server.aws_request_forwarder import AwsProxyHandler
+from aws_proxy.shared.models import ProxyServiceConfig
 
 
 def test_get_resource_names():

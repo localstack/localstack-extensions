@@ -7,7 +7,7 @@ from localstack.cli import LocalstackCli, LocalstackCliPlugin, console
 from localstack.logging.setup import setup_logging
 from localstack.utils.files import load_file
 
-from aws_replicator.shared.models import ProxyConfig, ProxyServiceConfig
+from aws_proxy.shared.models import ProxyConfig, ProxyServiceConfig
 
 try:
     from localstack.pro.core.bootstrap.auth import get_platform_auth_headers
@@ -20,8 +20,8 @@ except ImportError:
     from localstack.pro.core.config import is_api_key_configured as is_auth_token_configured
 
 
-class AwsReplicatorPlugin(LocalstackCliPlugin):
-    name = "aws-replicator"
+class AwsProxyPlugin(LocalstackCliPlugin):
+    name = "aws-proxy"
 
     def should_load(self) -> bool:
         return _is_logged_in() or is_auth_token_configured()
@@ -31,7 +31,6 @@ class AwsReplicatorPlugin(LocalstackCliPlugin):
         if not group.get_command(ctx=None, cmd_name="aws"):
             group.add_command(aws)
         aws.add_command(cmd_aws_proxy)
-        aws.add_command(cmd_aws_replicate)
 
 
 # TODO: remove over time as we're phasing out the `login` command
@@ -47,7 +46,7 @@ def _is_logged_in() -> bool:
 @click.option(
     "-s",
     "--services",
-    help="Comma-delimited list of services to replicate (e.g., sqs,s3)",
+    help="Comma-delimited list of services to proxy (e.g., sqs,s3)",
     required=False,
 )
 @click.option(
@@ -74,7 +73,7 @@ def _is_logged_in() -> bool:
     required=False,
 )
 def cmd_aws_proxy(services: str, config: str, container: bool, port: int, host: str):
-    from aws_replicator.client.auth_proxy import start_aws_auth_proxy_in_container
+    from aws_proxy.client.auth_proxy import start_aws_auth_proxy_in_container
 
     config_json: ProxyConfig = {"services": {}}
     if config:
@@ -90,28 +89,13 @@ def cmd_aws_proxy(services: str, config: str, container: bool, port: int, host: 
             return start_aws_auth_proxy_in_container(config_json)
 
         # note: deferring the import here, to avoid import errors in CLI context
-        from aws_replicator.client.auth_proxy import start_aws_auth_proxy
+        from aws_proxy.client.auth_proxy import start_aws_auth_proxy
 
         proxy = start_aws_auth_proxy(config_json, port=port)
         proxy.join()
     except Exception as e:
         console.print(f"Unable to start and register auth proxy: {e}")
         sys.exit(1)
-
-
-@click.command(name="replicate", help="Replicate the state of an AWS account into LocalStack")
-@click.option(
-    "-s",
-    "--services",
-    help="Comma-delimited list of services to replicate (e.g., sqs,s3)",
-    required=True,
-)
-def cmd_aws_replicate(services: str):
-    from aws_replicator.client.replicate import replicate_state_into_local
-
-    setup_logging()
-    services = _split_string(services)
-    replicate_state_into_local(services)
 
 
 def _split_string(string):

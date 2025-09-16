@@ -11,13 +11,13 @@ from localstack.utils.files import load_file, save_file
 from localstack.utils.json import extract_jsonpath
 from localstack.utils.threads import parallelize
 
-from aws_replicator.client.utils import post_request_to_instance
-from aws_replicator.shared.models import (
+from aws_proxy.client.utils import post_request_to_instance
+from aws_proxy.shared.models import (
     ExtendedResourceStateReplicator,
     ReplicateStateRequest,
     ResourceReplicator,
 )
-from aws_replicator.shared.utils import list_all_resources
+from aws_proxy.shared.utils import list_all_resources
 
 LOG = logging.getLogger(__name__)
 

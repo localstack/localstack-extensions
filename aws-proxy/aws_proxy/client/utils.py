@@ -5,8 +5,8 @@ from localstack.config import get_edge_url
 from localstack.utils.functions import run_safe
 from localstack.utils.strings import to_str, truncate
 
-from aws_replicator.config import HANDLER_PATH_REPLICATE
-from aws_replicator.shared.models import ReplicateStateRequest
+from aws_proxy.config import HANDLER_PATH_REPLICATE
+from aws_proxy.shared.models import ReplicateStateRequest
 
 
 def post_request_to_instance(request: ReplicateStateRequest = None):

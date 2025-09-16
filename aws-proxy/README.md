@@ -1,13 +1,13 @@
 AWS Cloud Proxy Extension (experimental)
 ========================================
-[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator)
+[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-aws-proxy&subdirectory=aws-proxy)
 
 A LocalStack extension to proxy and integrate AWS resources into your local machine.
 This enables one flavor of "hybrid" or "remocal" setups where you can easily bridge the gap between LocalStack (local resources) and remote AWS (resources in the real cloud).
 
 ⚠️ Please note that this extension is experimental and still under active development.
 
-⚠️ Note: Given that the scope of this extension has recently changed (see [below](#resource-replicator-cli-deprecated)), it may get renamed from `aws-replicator` to `cloud-proxy` in an upcoming release.
+⚠️ Note: Given that the scope of this extension has recently changed (see [below](#resource-proxy-cli-deprecated)) - it has been recently renamed from `aws-replicator` to `aws-proxy`.
 
 ## Prerequisites
 
@@ -33,11 +33,11 @@ For example, in order to forward all API calls for DynamoDB/S3/Cognito to real A
 ```
 $ localstack start -d
 ```
-2. Enable LocalStack AWS replicator from the Web Application Extension Library
+2. Enable LocalStack AWS Proxy from the Web Application Extension Library
 3. After installation restart Localstack
-4. Install the AWS replicator CLI package
+4. Install the AWS Proxy CLI package
 ```
-$ pip install localstack-extension-aws-replicator
+$ pip install localstack-extension-aws-proxy
 ```
 5. Configure real cloud account credentials in a new terminal session to allow access
 ```

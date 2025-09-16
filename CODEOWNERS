@@ -12,7 +12,7 @@
 ###   Extensions   ###
 ######################
 
-/aws-replicator/ @whummer
+/aws-proxy/ @whummer @nik-localstack
 /diagnosis-viewer/ @thrau @silv-io
 /hello-world/ @lukqw @thrau
 /http-bin/ @thrau @dominikschubert

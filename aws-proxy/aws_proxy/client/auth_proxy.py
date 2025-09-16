@@ -29,11 +29,11 @@ from localstack.utils.serving import Server
 from localstack.utils.strings import short_uid, to_bytes, to_str, truncate
 from requests import Response
 
-from aws_replicator import config as repl_config
-from aws_replicator.client.utils import truncate_content
-from aws_replicator.config import HANDLER_PATH_PROXIES
-from aws_replicator.shared.constants import HEADER_HOST_ORIGINAL
-from aws_replicator.shared.models import AddProxyRequest, ProxyConfig
+from aws_proxy import config as repl_config
+from aws_proxy.client.utils import truncate_content
+from aws_proxy.config import HANDLER_PATH_PROXIES
+from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL
+from aws_proxy.shared.models import AddProxyRequest, ProxyConfig
 
 from .http2_server import run_server
 
@@ -55,9 +55,9 @@ if localstack_config.DEBUG:
     LOG.setLevel(logging.DEBUG)
 
 # TODO make configurable
-CLI_PIP_PACKAGE = "localstack-extension-aws-replicator"
+CLI_PIP_PACKAGE = "localstack-extension-aws-proxy"
 # note: enable the line below temporarily for testing:
-# CLI_PIP_PACKAGE = "git+https://github.com/localstack/localstack-extensions/@branch#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator"
+# CLI_PIP_PACKAGE = "git+https://github.com/localstack/localstack-extensions/@branch#egg=localstack-extension-aws-proxy&subdirectory=aws-proxy"
 
 CONTAINER_NAME_PREFIX = "ls-aws-proxy-"
 CONTAINER_CONFIG_FILE = "/tmp/ls.aws.proxy.yml"

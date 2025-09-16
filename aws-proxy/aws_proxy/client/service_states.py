@@ -1,3 +1,5 @@
+# TODO: remove this module - no longer used or required in this project!
+
 import logging
 from typing import Dict, Optional, Type
 
@@ -9,9 +11,9 @@ from localstack.utils.aws import aws_stack
 from localstack.utils.objects import get_all_subclasses
 from localstack.utils.threads import parallelize
 
-from aws_replicator.client.utils import post_request_to_instance
-from aws_replicator.shared.models import ReplicateStateRequest
-from aws_replicator.shared.utils import get_resource_type
+from aws_proxy.client.utils import post_request_to_instance
+from aws_proxy.shared.models import ReplicateStateRequest
+from aws_proxy.shared.utils import get_resource_type
 
 LOG = logging.getLogger(__name__)
 

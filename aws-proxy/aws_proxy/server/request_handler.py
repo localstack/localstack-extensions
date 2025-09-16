@@ -19,16 +19,16 @@ from localstack.utils.json import parse_json_or_yaml
 from localstack.utils.strings import to_str
 from localstack.utils.threads import start_worker_thread
 
-from aws_replicator import config as repl_config
-from aws_replicator.client.auth_proxy import (
+from aws_proxy import config as repl_config
+from aws_proxy.client.auth_proxy import (
     CONTAINER_CONFIG_FILE,
     CONTAINER_NAME_PREFIX,
     start_aws_auth_proxy_in_container,
 )
-from aws_replicator.config import HANDLER_PATH_PROXIES, HANDLER_PATH_REPLICATE
-from aws_replicator.server import ui as web_ui
-from aws_replicator.server.aws_request_forwarder import AwsProxyHandler
-from aws_replicator.shared.models import AddProxyRequest, ReplicateStateRequest, ResourceReplicator
+from aws_proxy.config import HANDLER_PATH_PROXIES, HANDLER_PATH_REPLICATE
+from aws_proxy.server import ui as web_ui
+from aws_proxy.server.aws_request_forwarder import AwsProxyHandler
+from aws_proxy.shared.models import AddProxyRequest, ReplicateStateRequest, ResourceReplicator
 
 LOG = logging.getLogger(__name__)
 

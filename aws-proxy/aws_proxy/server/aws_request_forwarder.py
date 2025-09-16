@@ -22,8 +22,8 @@ try:
 except ImportError:
     from localstack.constants import TEST_AWS_ACCESS_KEY_ID
 
-from aws_replicator.shared.constants import HEADER_HOST_ORIGINAL
-from aws_replicator.shared.models import ProxyInstance, ProxyServiceConfig
+from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL
+from aws_proxy.shared.models import ProxyInstance, ProxyServiceConfig
 
 LOG = logging.getLogger(__name__)
 
