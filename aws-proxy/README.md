@@ -1,13 +1,13 @@
 AWS Cloud Proxy Extension (experimental)
 ========================================
-[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-aws-replicator&subdirectory=aws-replicator)
+[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-aws-proxy&subdirectory=aws-proxy)
 
 A LocalStack extension to proxy and integrate AWS resources into your local machine.
 This enables one flavor of "hybrid" or "remocal" setups where you can easily bridge the gap between LocalStack (local resources) and remote AWS (resources in the real cloud).
 
 ⚠️ Please note that this extension is experimental and still under active development.
 
-⚠️ Note: Given that the scope of this extension has recently changed (see [below](#resource-replicator-cli-deprecated)), it may get renamed from `aws-replicator` to `cloud-proxy` in an upcoming release.
+⚠️ Note: Given that the scope of this extension has recently changed (see [below](#resource-replicator-cli-deprecated)) - it has been renamed from `aws-replicator` to `aws-proxy`.
 
 ## Prerequisites
 
@@ -33,11 +33,11 @@ For example, in order to forward all API calls for DynamoDB/S3/Cognito to real A
 ```
 $ localstack start -d
 ```
-2. Enable LocalStack AWS replicator from the Web Application Extension Library
+2. Enable LocalStack AWS Proxy from the Web Application Extension Library
 3. After installation restart Localstack
-4. Install the AWS replicator CLI package
+4. Install the AWS Proxy CLI package
 ```
-$ pip install localstack-extension-aws-replicator
+$ pip install localstack-extension-aws-proxy
 ```
 5. Configure real cloud account credentials in a new terminal session to allow access
 ```
@@ -53,12 +53,12 @@ $ localstack aws proxy -s dynamodb,s3,cognito-idp
 
 1. Start Localstack with extra CORS
 ```
-EXTRA_CORS_ALLOWED_ORIGINS=https://aws-replicator.localhost.localstack.cloud:4566 localstack start -d
+EXTRA_CORS_ALLOWED_ORIGINS=https://aws-proxy.localhost.localstack.cloud:4566 localstack start -d
 ```
 
-2. Enable Localstack AWS replicator from the Web Application Extension Library
+2. Enable Localstack AWS Proxy from the Web Application Extension Library
 
-3. Once the extension is installed, it will expose a small configuration endpoint in your LocalStack container under the following endpoint: http://localhost:4566/_localstack/aws-replicator/index.html . 
+3. Once the extension is installed, it will expose a small configuration endpoint in your LocalStack container under the following endpoint: http://localhost:4566/_localstack/aws-proxy/index.html . 
 
 4. Use this Web UI to define the proxy configuration (in YAML syntax), as well as the AWS credentials (AWS access key ID, secret access key, and optionally session token) and save configuration. The proxy should report enabled state and on the host a proxy container should spawn.
 
@@ -111,22 +111,23 @@ A more comprehensive sample, involving local Lambda functions combined with remo
 ### Configuration
 
 In addition to the proxy services configuration shown above, the following configs can be used to customize the behavior of the extension itself (simply pass them as environment variables to the main LocalStack container):
-* `REPLICATOR_CLEANUP_PROXY_CONTAINERS`: whether to clean up (remove) the proxy Docker containers once they shut down (default `1`). Can be set to `0` to help debug issues, e.g., if a proxy container starts up and exits immediately.
-* `REPLICATOR_LOCALSTACK_HOST`: the target host to use when the proxy container connects to the LocalStack main container (automatically determined by default)
-* `REPLICATOR_PROXY_DOCKER_FLAGS`: additional flags that should be passed when creating the proxy Docker containers
+* `PROXY_CLEANUP_CONTAINERS`: whether to clean up (remove) the proxy Docker containers once they shut down (default `1`). Can be set to `0` to help debug issues, e.g., if a proxy container starts up and exits immediately.
+* `PROXY_LOCALSTACK_HOST`: the target host to use when the proxy container connects to the LocalStack main container (automatically determined by default)
+* `PROXY_DOCKER_FLAGS`: additional flags that should be passed when creating the proxy Docker containers
 
 **Note:** Due to some recent changes in the core framework, make sure to start up your LocalStack container with the `GATEWAY_SERVER=hypercorn` configuration enabled, for backwards compatibility. This will be fixed in an upcoming release.
 
 ## Resource Replicator CLI (deprecated)
 
 Note: Previous versions of this extension also offered a "replicate" mode to copy/clone (rather than proxy) resources from an AWS account into the local instance.
-This functionality has been removed from this extension, and is now being migrated to a new extension (more details following soon).
+This functionality has been removed from this extension, and is now available directly in the LocalStack Pro image (see [here](https://docs.localstack.cloud/aws/tooling/aws-replicator)).
 
 If you wish to access the deprecated instructions, they can be found [here](https://github.com/localstack/localstack-extensions/blob/fe0c97e8a9d94f72c80358493e51ce6c1da535dc/aws-replicator/README.md#resource-replicator-cli).
 
 ## Change Log
 
-* `0.1.25`: Fix dynamodb proxying for read-only mode.
+* `0.2.0`: Rename extension from `localstack-extension-aws-replicator` to `localstack-extension-aws-proxy`
+* `0.1.25`: Fix dynamodb proxying for read-only mode
 * `0.1.24`: Fix healthcheck probe for proxy container
 * `0.1.23`: Fix unpinned React.js dependencies preventing webui from loading
 * `0.1.22`: Fix auth-related imports that prevent the AWS proxy from starting

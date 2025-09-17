@@ -15,8 +15,8 @@ from localstack.utils.net import wait_for_port_open
 from localstack.utils.strings import short_uid
 from localstack.utils.sync import retry
 
-from aws_replicator.client.auth_proxy import start_aws_auth_proxy
-from aws_replicator.shared.models import ProxyConfig
+from aws_proxy.client.auth_proxy import start_aws_auth_proxy
+from aws_proxy.shared.models import ProxyConfig
 
 try:
     from localstack.testing.config import TEST_AWS_ACCOUNT_ID

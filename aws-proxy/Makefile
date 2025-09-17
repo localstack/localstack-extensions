@@ -40,12 +40,12 @@ dist: venv
 
 build:   ## Build the extension
 	mkdir -p build
-	cp -r setup.py setup.cfg README.md aws_replicator build/
+	cp -r setup.py setup.cfg README.md aws_proxy build/
 	(cd build && python setup.py sdist)
 
-enable: $(wildcard ./build/dist/localstack_extension_aws_replicator-*.tar.gz)  ## Enable the extension in LocalStack
+enable: $(wildcard ./build/dist/localstack_extension_aws_proxy-*.tar.gz)  ## Enable the extension in LocalStack
 	$(VENV_RUN); \
-		pip uninstall --yes localstack-extension-aws-replicator; \
+		pip uninstall --yes localstack-extension-aws-proxy; \
 		localstack extensions -v install file://$?
 
 publish: clean-dist venv dist

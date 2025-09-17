@@ -1,15 +1,15 @@
-name: LocalStack AWS Replicator Extension Tests
+name: LocalStack AWS Proxy Extension Tests
 
 on:
   push:
     paths:
-      - aws-replicator/**
+      - aws-proxy/**
     branches:
       - main
   pull_request:
     paths:
-      - .github/workflows/aws-replicator.yml
-      - aws-replicator/**
+      - .github/workflows/aws-proxy.yml
+      - aws-proxy/**
   workflow_dispatch:
 
 jobs:
@@ -49,7 +49,7 @@ jobs:
           # build and install extension
           localstack extensions init
           (
-            cd aws-replicator
+            cd aws-proxy
             make install
             . .venv/bin/activate
             pip install --upgrade --pre localstack localstack-ext
@@ -68,7 +68,7 @@ jobs:
 
       - name: Run linter
         run: |
-          cd aws-replicator
+          cd aws-proxy
           (. .venv/bin/activate; pip install --upgrade --pre localstack localstack-ext)
           make lint
 
@@ -78,7 +78,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
         run: |
-          cd aws-replicator
+          cd aws-proxy
           make test
 
       - name: Deploy and test sample app
@@ -88,7 +88,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
         run: |
-          cd aws-replicator/example
+          cd aws-proxy/example
           make test
 
       - name: Print LocalStack logs

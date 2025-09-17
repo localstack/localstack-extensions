@@ -1,0 +1,3 @@
+recursive-include aws_proxy *.html
+recursive-include aws_proxy *.js
+recursive-include aws_proxy *.png
