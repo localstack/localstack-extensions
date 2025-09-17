@@ -7,7 +7,7 @@ This enables one flavor of "hybrid" or "remocal" setups where you can easily bri
 
 ⚠️ Please note that this extension is experimental and still under active development.
 
-⚠️ Note: Given that the scope of this extension has recently changed (see [below](#resource-replicator-cli-deprecated)) - it has been recently renamed from `aws-replicator` to `aws-proxy`.
+⚠️ Note: Given that the scope of this extension has recently changed (see [below](#resource-replicator-cli-deprecated)) - it has been renamed from `aws-replicator` to `aws-proxy`.
 
 ## Prerequisites
 
@@ -120,13 +120,13 @@ In addition to the proxy services configuration shown above, the following confi
 ## Resource Replicator CLI (deprecated)
 
 Note: Previous versions of this extension also offered a "replicate" mode to copy/clone (rather than proxy) resources from an AWS account into the local instance.
-This functionality has been removed from this extension, and is now being migrated to a new extension (more details following soon).
+This functionality has been removed from this extension, and is now available directly in the LocalStack Pro image (see [here](https://docs.localstack.cloud/aws/tooling/aws-replicator)).
 
 If you wish to access the deprecated instructions, they can be found [here](https://github.com/localstack/localstack-extensions/blob/fe0c97e8a9d94f72c80358493e51ce6c1da535dc/aws-replicator/README.md#resource-replicator-cli).
 
 ## Change Log
 
-* `0.1.25`: Fix dynamodb proxying for read-only mode.
+* `0.1.25`: Fix dynamodb proxying for read-only mode
 * `0.1.24`: Fix healthcheck probe for proxy container
 * `0.1.23`: Fix unpinned React.js dependencies preventing webui from loading
 * `0.1.22`: Fix auth-related imports that prevent the AWS proxy from starting

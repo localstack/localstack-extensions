@@ -17,6 +17,10 @@ from localstack.aws.spec import load_service
 from localstack.config import external_service_url
 from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO, LOCALHOST_HOSTNAME
 from localstack.http import Request
+from localstack.pro.core.bootstrap.licensingv2 import (
+    ENV_LOCALSTACK_API_KEY,
+    ENV_LOCALSTACK_AUTH_TOKEN,
+)
 from localstack.utils.aws.aws_responses import requests_response
 from localstack.utils.bootstrap import setup_logging
 from localstack.utils.collections import select_attributes
@@ -36,18 +40,6 @@ from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL
 from aws_proxy.shared.models import AddProxyRequest, ProxyConfig
 
 from .http2_server import run_server
-
-try:
-    from localstack.pro.core.bootstrap.licensingv2 import (
-        ENV_LOCALSTACK_API_KEY,
-        ENV_LOCALSTACK_AUTH_TOKEN,
-    )
-except ImportError:
-    # TODO remove once we don't need compatibility with <3.6 anymore
-    from localstack_ext.bootstrap.licensingv2 import (
-        ENV_LOCALSTACK_API_KEY,
-        ENV_LOCALSTACK_AUTH_TOKEN,
-    )
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)

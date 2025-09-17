@@ -4,41 +4,24 @@ import sys
 import click
 import yaml
 from localstack.cli import LocalstackCli, LocalstackCliPlugin, console
+from localstack.pro.core.cli.aws import aws
+from localstack.pro.core.config import is_auth_token_configured
 from localstack.utils.files import load_file
 
 from aws_proxy.shared.models import ProxyConfig, ProxyServiceConfig
-
-try:
-    from localstack.pro.core.bootstrap.auth import get_platform_auth_headers
-    from localstack.pro.core.cli.aws import aws
-    from localstack.pro.core.config import is_auth_token_configured
-except ImportError:
-    # Only support anything over version 3.6
-    from localstack.pro.core.bootstrap.auth import get_auth_headers as get_platform_auth_headers
-    from localstack.pro.core.cli.aws import aws
-    from localstack.pro.core.config import is_api_key_configured as is_auth_token_configured
 
 
 class AwsProxyPlugin(LocalstackCliPlugin):
     name = "aws-proxy"
 
     def should_load(self) -> bool:
-        return _is_logged_in() or is_auth_token_configured()
+        return is_auth_token_configured()
 
     def attach(self, cli: LocalstackCli) -> None:
         group: click.Group = cli.group
         if not group.get_command(ctx=None, cmd_name="aws"):
             group.add_command(aws)
         aws.add_command(cmd_aws_proxy)
-
-
-# TODO: remove over time as we're phasing out the `login` command
-def _is_logged_in() -> bool:
-    try:
-        get_platform_auth_headers()
-        return True
-    except Exception:
-        return False
 
 
 @click.command(name="proxy", help="Start up an authentication proxy against real AWS")

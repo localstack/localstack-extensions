@@ -25,10 +25,10 @@ from aws_proxy.client.auth_proxy import (
     CONTAINER_NAME_PREFIX,
     start_aws_auth_proxy_in_container,
 )
-from aws_proxy.config import HANDLER_PATH_PROXIES, HANDLER_PATH_PROXY
+from aws_proxy.config import HANDLER_PATH_PROXIES
 from aws_proxy.server import ui as web_ui
 from aws_proxy.server.aws_request_forwarder import AwsProxyHandler
-from aws_proxy.shared.models import AddProxyRequest, ReplicateStateRequest, ResourceReplicator
+from aws_proxy.shared.models import AddProxyRequest
 
 LOG = logging.getLogger(__name__)
 
@@ -37,16 +37,6 @@ ROUTE_HOST = f"{DOMAIN_NAME}<port:port>"
 
 
 class RequestHandler:
-    @route(HANDLER_PATH_PROXY, methods=["POST"])
-    def handle_replicate(self, request: Request, **kwargs):
-        replicator = _get_replicator()
-        payload = _get_json(request)
-        if payload:
-            req = ReplicateStateRequest(**payload)
-            result = replicator.create(req)
-        else:
-            result = replicator.create_all()
-        return result or {}
 
     @route(HANDLER_PATH_PROXIES, methods=["POST"])
     def add_proxy(self, request: Request, **kwargs):
@@ -102,19 +92,6 @@ class RequestHandler:
         mime_type = mimetypes.guess_type(os.path.basename(path))
         mime_type = mime_type[0] if mime_type else APPLICATION_OCTET_STREAM
         return Response(Path(file_path).open(mode="rb"), mimetype=mime_type)
-
-
-def handle_replicate_request(request: ReplicateStateRequest):
-    replicator = _get_replicator()
-    return replicator.create(request)
-
-
-def _get_replicator() -> ResourceReplicator:
-    from aws_proxy.server.resource_replicator import ResourceReplicatorFormer2
-
-    # TODO deprecated - fix the implementation of the replicator/copy logic!
-    # return ResourceReplicatorInternal()
-    return ResourceReplicatorFormer2()
 
 
 def handle_proxies_request(request: AddProxyRequest):
