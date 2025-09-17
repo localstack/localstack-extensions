@@ -126,6 +126,7 @@ If you wish to access the deprecated instructions, they can be found [here](http
 
 ## Change Log
 
+* `0.2.0`: Rename extension from `localstack-extension-aws-replicator` to `localstack-extension-aws-proxy`
 * `0.1.25`: Fix dynamodb proxying for read-only mode
 * `0.1.24`: Fix healthcheck probe for proxy container
 * `0.1.23`: Fix unpinned React.js dependencies preventing webui from loading
