@@ -4,10 +4,10 @@ import os
 from localstack import config
 from localstack.extensions.api import Extension
 from localstack.packages import InstallTarget
-from localstack.packages.terraform import terraform_package
 from localstack.runtime.init import ScriptRunner
 from localstack.utils.run import run
-from .packages import tflocal_package
+
+from .packages import terraform_package, tflocal_package
 
 LOG = logging.getLogger(__name__)
 
