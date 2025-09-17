@@ -1,14 +1,13 @@
 import logging
 import os
-from typing import List
 
 from localstack import config
 from localstack.extensions.api import Extension
-from localstack.packages import InstallTarget, Package, PackageInstaller
-from localstack.packages.core import PythonPackageInstaller
+from localstack.packages import InstallTarget
 from localstack.packages.terraform import terraform_package
 from localstack.runtime.init import ScriptRunner
 from localstack.utils.run import run
+from .packages import tflocal_package
 
 LOG = logging.getLogger(__name__)
 
@@ -21,25 +20,6 @@ class TflocalInitExtension(Extension):
         logging.getLogger("localstack_terraform_init").setLevel(
             logging.DEBUG if config.DEBUG else logging.INFO
         )
-
-
-class TflocalPackage(Package):
-    def __init__(self, default_version: str = "0.18.2"):
-        super().__init__(name="terraform_local", default_version=default_version)
-
-    def _get_installer(self, version: str) -> PackageInstaller:
-        return TflocalPackageInstaller(version)
-
-    def get_versions(self) -> List[str]:
-        return [self.default_version]
-
-
-class TflocalPackageInstaller(PythonPackageInstaller):
-    def __init__(self, version: str):
-        super().__init__("terraform_local", version)
-
-
-tflocal_package = TflocalPackage()
 
 
 class TflocalScriptRunner(ScriptRunner):
