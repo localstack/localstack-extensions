@@ -1,20 +1,7 @@
 from typing import Union
 
-import requests
-from localstack.config import get_edge_url
 from localstack.utils.functions import run_safe
 from localstack.utils.strings import to_str, truncate
-
-from aws_proxy.config import HANDLER_PATH_PROXY
-from aws_proxy.shared.models import ReplicateStateRequest
-
-
-def post_request_to_instance(request: ReplicateStateRequest = None):
-    url = f"{get_edge_url()}{HANDLER_PATH_PROXY}"
-    response = requests.post(url, json=request or {})
-    if not response.ok:
-        raise Exception(f"Invocation failed (code {response.status_code}): {response.content}")
-    return response
 
 
 # TODO: add to common utils

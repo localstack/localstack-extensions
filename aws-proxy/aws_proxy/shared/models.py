@@ -1,38 +1,7 @@
 import logging
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, TypedDict, Union
+from typing import Dict, List, TypedDict, Union
 
 LOG = logging.getLogger(__name__)
-
-
-class ReplicateStateRequest(TypedDict):
-    """
-    Represents a request sent from the CLI to the extension request
-    handler to inject additional resource state properties.
-    Using upper-case property names, to stay in line with CloudFormation/CloudControl resource models.
-    """
-
-    # resource type name (e.g., "AWS::S3::Bucket")
-    Type: str
-    # identifier of the resource
-    PhysicalResourceId: Optional[str]
-    # resource properties
-    Properties: Dict[str, Any]
-
-
-class ResourceReplicator(ABC):
-    """
-    Interface for resource replicator, to effect the creation of a cloned resource inside LocalStack.
-    This interface has a client-side and a server-side implementation.
-    """
-
-    @abstractmethod
-    def create(self, resource: Dict):
-        """Create the resource specified via the given resource dict."""
-
-    @abstractmethod
-    def create_all(self):
-        """Scrape and replicate all resources from the source AWS account into LocalStack."""
 
 
 class ProxyServiceConfig(TypedDict, total=False):
