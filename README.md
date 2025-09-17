@@ -66,15 +66,15 @@ Here is the current list of extensions developed by the LocalStack team and thei
 You can install the respective extension by calling `localstack install <Install name>`.
 
 | Extension                                                                                          | Install name | Version | Support status |
-|----------------------------------------------------------------------------------------------------| ------------ | ------- | -------------- |
-| [AWS Proxy](https://github.com/localstack/localstack-extensions/tree/main/aws-proxy)               | localstack-extension-aws-proxy | 0.1.25 | Experimental |
-| [Diagnosis Viewer](https://github.com/localstack/localstack-extensions/tree/main/diagnosis-viewer) | localstack-extension-diagnosis-viewer | 0.1.0 | Stable |
-| [Hello World](https://github.com/localstack/localstack-extensions/tree/main/hello-world)           | localstack-extension-hello-world | 0.1.0 | Stable |
-| [httpbin](https://github.com/localstack/localstack-extensions/tree/main/httpbin)                   | localstack-extension-httpbin | 0.1.0 | Stable |
-| [MailHog](https://github.com/localstack/localstack-extensions/tree/main/mailhog)                   | localstack-extension-mailhog | 0.1.0 | Stable |
-| [Miniflare](https://github.com/localstack/localstack-extensions/tree/main/miniflare)               | localstack-extension-miniflare | 0.1.0 | Experimental |
-| [Stripe](https://github.com/localstack/localstack-extensions/tree/main/stripe)                     | localstack-extension-stripe | 0.2.0 | Stable |
-| [Terraform Init](https://github.com/localstack/localstack-extensions/tree/main/terraform-init)     | localstack-extension-terraform-init | 0.2.0 | Experimental |
+|----------------------------------------------------------------------------------------------------| ------------ |---------| -------------- |
+| [AWS Proxy](https://github.com/localstack/localstack-extensions/tree/main/aws-proxy)               | localstack-extension-aws-proxy | 0.2.0   | Experimental |
+| [Diagnosis Viewer](https://github.com/localstack/localstack-extensions/tree/main/diagnosis-viewer) | localstack-extension-diagnosis-viewer | 0.1.0   | Stable |
+| [Hello World](https://github.com/localstack/localstack-extensions/tree/main/hello-world)           | localstack-extension-hello-world | 0.1.0   | Stable |
+| [httpbin](https://github.com/localstack/localstack-extensions/tree/main/httpbin)                   | localstack-extension-httpbin | 0.1.0   | Stable |
+| [MailHog](https://github.com/localstack/localstack-extensions/tree/main/mailhog)                   | localstack-extension-mailhog | 0.1.0   | Stable |
+| [Miniflare](https://github.com/localstack/localstack-extensions/tree/main/miniflare)               | localstack-extension-miniflare | 0.1.0   | Experimental |
+| [Stripe](https://github.com/localstack/localstack-extensions/tree/main/stripe)                     | localstack-extension-stripe | 0.2.0   | Stable |
+| [Terraform Init](https://github.com/localstack/localstack-extensions/tree/main/terraform-init)     | localstack-extension-terraform-init | 0.2.0   | Experimental |
 
 
 ## Developing Extensions
