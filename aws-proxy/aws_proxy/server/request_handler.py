@@ -32,7 +32,7 @@ from aws_proxy.shared.models import AddProxyRequest
 
 LOG = logging.getLogger(__name__)
 
-DOMAIN_NAME = f"aws-replicator.{LOCALHOST_HOSTNAME}"
+DOMAIN_NAME = f"aws-proxy.{LOCALHOST_HOSTNAME}"
 ROUTE_HOST = f"{DOMAIN_NAME}<port:port>"
 
 
@@ -71,17 +71,17 @@ class RequestHandler:
 
     @route("/", methods=["GET"], host=ROUTE_HOST)
     def forward_from_root(self, request: Request, **kwargs):
-        return redirect(f"{INTERNAL_RESOURCE_PATH}/aws-replicator/index.html")
+        return redirect(f"{INTERNAL_RESOURCE_PATH}/aws-proxy/index.html")
 
-    @route(f"{INTERNAL_RESOURCE_PATH}/aws-replicator", methods=["GET"])
+    @route(f"{INTERNAL_RESOURCE_PATH}/aws-proxy", methods=["GET"])
     def forward_from_extension_root(self, request: Request, **kwargs):
-        return redirect(f"{INTERNAL_RESOURCE_PATH}/aws-replicator/index.html")
+        return redirect(f"{INTERNAL_RESOURCE_PATH}/aws-proxy/index.html")
 
     @route("/favicon.png", methods=["GET"], host=ROUTE_HOST)
     def serve_favicon(self, request: Request, **kwargs):
         return self.serve_static_file("/favicon.png")
 
-    @route(f"{INTERNAL_RESOURCE_PATH}/aws-replicator/<path:path>", methods=["GET"])
+    @route(f"{INTERNAL_RESOURCE_PATH}/aws-proxy/<path:path>", methods=["GET"])
     def get_web_asset(self, request: Request, path: str, **kwargs):
         return self.serve_static_file(path)
 

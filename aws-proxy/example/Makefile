@@ -6,7 +6,7 @@ test:            ## Run the end-to-end test with a simple sample app
 		echo "Creating SQS queue in real AWS"; \
 		aws sqs create-queue --queue-name test-queue1; \
 		queueUrl=$$(aws sqs get-queue-url --queue-name test-queue1 | jq -r .QueueUrl); \
-		echo "Starting AWS replicator proxy"; \
+		echo "Starting AWS Proxy"; \
 		(DEBUG=1 localstack aws proxy -s s3,sqs --host 0.0.0.0 & ); \
 		echo "Deploying Terraform template locally"; \
 		tflocal init; \
