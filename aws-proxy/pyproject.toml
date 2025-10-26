@@ -18,9 +18,6 @@ dependencies = [
 
 [project.optional-dependencies]
 test=[
-    # Note: Currently requires a version pin, to avoid assertion errors (missing
-    # `BucketARN` response property) TODO: to be fixed in a future iteration!
-    "boto3==1.40.55",
     # couple of dependencies required to import localstack test tools
     "localstack-core[base-runtime]>4.9",
     "moto-ext",
