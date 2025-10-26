@@ -61,11 +61,6 @@ jobs:
           pip install awscli-local[ver1]
           pip install terraform-local
 
-          # Note: Install the same boto3 version as installed in the image. This is a small fix to avoid
-          # assertion errors (missing `BucketArn` in S3 responses). TODO: to be fixed in a future iteration!
-          version=$(docker run --entrypoint= --rm localstack/localstack-pro bash -c '. .venv/bin/activate; pip show boto3 | grep Version | cut -d" " -f2')
-          (. .venv/bin/activate; pip install "boto3==$version")
-
           find  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.*/site-packages/aws*
           ls -la  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.*/site-packages/aws*
           DEBUG=1 GATEWAY_SERVER=hypercorn localstack start -d

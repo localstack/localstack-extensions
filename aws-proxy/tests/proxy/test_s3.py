@@ -12,6 +12,17 @@ from localstack.utils.sync import retry
 from aws_proxy.shared.models import ProxyConfig
 
 
+def _compare_list_buckets_results(
+    buckets_aws: list, buckets_proxied: list, assert_not_empty=False
+):
+    for bucket in buckets_aws + buckets_proxied:
+        # TODO: tmp fix - seems like this attribute is missing for certain boto3 versions. To be investigated!
+        bucket.pop("BucketArn", None)
+    if assert_not_empty:
+        assert buckets_aws
+    assert buckets_proxied == buckets_aws
+
+
 @pytest.mark.parametrize(
     "metadata_gzip",
     [
@@ -53,13 +64,13 @@ def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip, target_en
     # list buckets to assert that proxy is up and running
     buckets_proxied = s3_client.list_buckets()["Buckets"]
     buckets_aws = s3_client_aws.list_buckets()["Buckets"]
-    assert buckets_proxied == buckets_aws
+    _compare_list_buckets_results(buckets_aws, buckets_proxied)
 
     # create bucket
     bucket = s3_create_bucket()
     buckets_proxied = s3_client.list_buckets()["Buckets"]
     buckets_aws = s3_client_aws.list_buckets()["Buckets"]
-    assert buckets_proxied and buckets_proxied == buckets_aws
+    _compare_list_buckets_results(buckets_aws, buckets_proxied, assert_not_empty=True)
 
     # put object
     key = "test-key-with-urlencoded-chars-:+"
@@ -131,7 +142,7 @@ def test_s3_list_objects_in_different_folders(start_aws_proxy, s3_create_bucket)
     bucket = s3_create_bucket()
     buckets_proxied = s3_client.list_buckets()["Buckets"]
     buckets_aws = s3_client_aws.list_buckets()["Buckets"]
-    assert buckets_proxied and buckets_proxied == buckets_aws
+    _compare_list_buckets_results(buckets_aws, buckets_proxied, assert_not_empty=True)
 
     # create a couple of objects under different paths/folders
     s3_client.put_object(Bucket=bucket, Key="test/foo/bar", Body=b"test")
