@@ -13,14 +13,27 @@ authors = [
 ]
 
 dependencies = [
-    "localstack-ext"
+    "localstack"
 ]
 
 [project.optional-dependencies]
 test=[
+    # Note: Currently requires a version pin, to avoid assertion errors (missing
+    # `BucketARN` response property) TODO: to be fixed in a future iteration!
+    "boto3==1.40.55",
+    # couple of dependencies required to import localstack test tools
+    "localstack-core[base-runtime]>4.9",
+    "moto-ext",
+    "quart",
+    # pytest and other test utils
+    "hypercorn",
     "pytest",
     "pytest-httpserver",
-    "ruff"
+    "ruff",
+    # build tools
+    "setuptools",
+    "setuptools_scm",
+    "wheel"
 ]
 
 

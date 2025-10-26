@@ -46,8 +46,6 @@ from aws_proxy.config import HANDLER_PATH_PROXIES
 from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL
 from aws_proxy.shared.models import AddProxyRequest, ProxyConfig
 
-from .http2_server import run_server
-
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)
 if localstack_config.DEBUG:
@@ -73,6 +71,9 @@ class AuthProxyAWS(Server):
         super().__init__(port=port)
 
     def do_run(self):
+        # note: keep import here, to avoid runtime errors
+        from .http2_server import run_server
+
         self.register_in_instance()
         bind_host = self.config.get("bind_host") or DEFAULT_BIND_HOST
         proxy = run_server(

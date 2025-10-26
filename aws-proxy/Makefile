@@ -10,6 +10,7 @@ usage:          ## Show this help
 
 install:        ## Install dependencies
 	test -d .venv || $(VENV_BIN) .venv
+	$(VENV_RUN); pip install -e .
 	$(VENV_RUN); pip install -e .[test]
 	touch $(VENV_DIR)/bin/activate
 
@@ -25,18 +26,18 @@ format:				## Run ruff to format the whole codebase
 lint:				## Run code linter to check code style
 	($(VENV_RUN); python -m ruff check --output-format=full . && python -m ruff format --check .)
 
-test: venv          ## Run tests
+test:               ## Run tests
 	$(VENV_RUN); python -m pytest $(PYTEST_ARGS) $(TEST_PATH)
 
-dist: venv          ## Create distribution package
-	$(VENV_RUN); python setup.py sdist bdist_wheel
+entrypoints:        ## Generate plugin entrypoints for Python package
+	$(VENV_RUN); python -m plux entrypoints
 
-build:              ## Build the extension
-	mkdir -p build
-	cp -r setup.py setup.cfg README.md aws_proxy build/
-	(cd build && python setup.py sdist)
+build: entrypoints  ## Build the extension
+	$(VENV_RUN); python -m build --no-isolation . --outdir build
+	@# make sure that the entrypoints are contained in the dist folder and are non-empty
+	@test -s localstack_extension_aws_proxy.egg-info/entry_points.txt || (echo "Entrypoints were not correctly created! Aborting!" && exit 1)
 
-enable: $(wildcard ./build/dist/localstack_extension_aws_proxy-*.tar.gz)  ## Enable the extension in LocalStack
+enable: $(wildcard ./build/localstack_extension_aws_proxy-*.tar.gz)  ## Enable the extension in LocalStack
 	$(VENV_RUN); \
 		pip uninstall --yes localstack-extension-aws-proxy; \
 		localstack extensions -v install file://$?

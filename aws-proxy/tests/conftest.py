@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from localstack.testing.aws.util import (
     base_aws_client_factory,
@@ -14,6 +16,9 @@ pytest_plugins = [
 
 # binding proxy to 0.0.0.0 to enable testing in CI
 PROXY_BIND_HOST = "0.0.0.0"
+
+# run tests in us-east-1 region by default
+os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
 
 
 @pytest.fixture(scope="session")

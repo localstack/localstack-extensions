@@ -4,9 +4,9 @@ import mimetypes
 import os.path
 from pathlib import Path
 from typing import Dict, List
+from werkzeug.utils import redirect
 
 import yaml
-from flask import redirect
 from localstack.constants import (
     APPLICATION_OCTET_STREAM,
     INTERNAL_RESOURCE_PATH,
