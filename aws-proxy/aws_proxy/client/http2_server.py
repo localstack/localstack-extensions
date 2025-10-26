@@ -106,7 +106,9 @@ def apply_patches():
     def _encode_headers(headers):
         if RETURN_CASE_SENSITIVE_HEADERS:
             return [(key.encode(), value.encode()) for key, value in headers.items()]
-        return [(key.lower().encode(), value.encode()) for key, value in headers.items()]
+        return [
+            (key.lower().encode(), value.encode()) for key, value in headers.items()
+        ]
 
     quart_asgi._encode_headers = quart_asgi.encode_headers = _encode_headers
     quart_app.encode_headers = quart_utils.encode_headers = _encode_headers
@@ -116,7 +118,9 @@ def apply_patches():
         for name, value in headers:
             if name[0] == b":"[0]:
                 raise ValueError("Pseudo headers are not valid")
-            header_name = bytes(name) if RETURN_CASE_SENSITIVE_HEADERS else bytes(name).lower()
+            header_name = (
+                bytes(name) if RETURN_CASE_SENSITIVE_HEADERS else bytes(name).lower()
+            )
             validated_headers.append((header_name.strip(), bytes(value).strip()))
         return validated_headers
 
@@ -212,7 +216,9 @@ def run_server(
                     response.headers.pop("Content-Length", None)
                 result.headers.pop("Server", None)
                 result.headers.pop("Date", None)
-                headers = {k: str(v).replace("\n", r"\n") for k, v in result.headers.items()}
+                headers = {
+                    k: str(v).replace("\n", r"\n") for k, v in result.headers.items()
+                }
                 response.headers.update(headers)
                 # set multi-value headers
                 multi_value_headers = getattr(result, "multi_value_headers", {})

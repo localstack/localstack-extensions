@@ -1,12 +1,38 @@
-[tool.black]
-line_length = 100
-include = '(aws_proxy|example|tests)/.*\.py$'
+# general build configuration
+[build-system]
+requires = ['setuptools>65', 'wheel', 'plux>=1.10', "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
 
-[tool.isort]
-profile = 'black'
-line_length = 100
+[project]
+name = "localstack-extension-aws-proxy"
+readme = "README.md"
+version = "0.2.1"
+description = "LocalStack extension that emulates the Snowflake API"
+authors = [
+        { name = "LocalStack Team", email = "info@localstack.cloud"}
+]
 
-[tool.flake8]
-max-line-length = 100
-ignore = 'E501'
-exclude = './setup.py,.venv*,dist,build'
+dependencies = [
+    "localstack-ext"
+]
+
+[project.optional-dependencies]
+test=[
+    "pytest",
+    "pytest-httpserver",
+    "ruff"
+]
+
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["aws_proxy*"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "**/*.html",
+    "**/*.js",
+    "**/*.png"
+]

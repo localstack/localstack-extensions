@@ -19,7 +19,9 @@ def list_all_resources(
     while not result or last_evaluated_token:
         if max_pages and pages >= max_pages:
             break
-        kwargs = {next_token_attr_name: last_evaluated_token} if last_evaluated_token else {}
+        kwargs = (
+            {next_token_attr_name: last_evaluated_token} if last_evaluated_token else {}
+        )
         result = page_function(kwargs)
         last_evaluated_token = result.get(last_token_attr_name)
         collected_items += result.get(list_attr_name, [])
