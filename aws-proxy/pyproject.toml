@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 name = "localstack-extension-aws-proxy"
 readme = "README.md"
 version = "0.2.1"
-description = "LocalStack extension that emulates the Snowflake API"
+description = "LocalStack extension that proxies AWS resources into your LocalStack instance"
 authors = [
         { name = "LocalStack Team", email = "info@localstack.cloud"}
 ]
