@@ -1,12 +1,48 @@
-[tool.black]
-line_length = 100
-include = '(aws_proxy|example|tests)/.*\.py$'
+# general build configuration
+[build-system]
+requires = ['setuptools>65', 'wheel', 'plux>=1.10', "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
 
-[tool.isort]
-profile = 'black'
-line_length = 100
+[project]
+name = "localstack-extension-aws-proxy"
+readme = "README.md"
+version = "0.2.1"
+description = "LocalStack extension that proxies AWS resources into your LocalStack instance"
+authors = [
+        { name = "LocalStack Team", email = "info@localstack.cloud"}
+]
 
-[tool.flake8]
-max-line-length = 100
-ignore = 'E501'
-exclude = './setup.py,.venv*,dist,build'
+dependencies = [
+    "localstack"
+]
+
+[project.optional-dependencies]
+test=[
+    # couple of dependencies required to import localstack test tools
+    "localstack-core[base-runtime]>4.9",
+    "moto-ext",
+    "quart",
+    # pytest and other test utils
+    "hypercorn",
+    "pytest",
+    "pytest-httpserver",
+    "ruff",
+    # build tools
+    "setuptools",
+    "setuptools_scm",
+    "wheel"
+]
+
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["aws_proxy*"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "**/*.html",
+    "**/*.js",
+    "**/*.png"
+]

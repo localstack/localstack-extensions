@@ -4,16 +4,19 @@ import mimetypes
 import os.path
 from pathlib import Path
 from typing import Dict, List
+from werkzeug.utils import redirect
 
 import yaml
-from flask import redirect
 from localstack.constants import (
     APPLICATION_OCTET_STREAM,
     INTERNAL_RESOURCE_PATH,
     LOCALHOST_HOSTNAME,
 )
 from localstack.http import Request, Response, route
-from localstack.utils.docker_utils import DOCKER_CLIENT, reserve_available_container_port
+from localstack.utils.docker_utils import (
+    DOCKER_CLIENT,
+    reserve_available_container_port,
+)
 from localstack.utils.files import load_file, new_tmp_file, rm_rf
 from localstack.utils.json import parse_json_or_yaml
 from localstack.utils.strings import to_str
@@ -37,7 +40,6 @@ ROUTE_HOST = f"{DOMAIN_NAME}<port:port>"
 
 
 class RequestHandler:
-
     @route(HANDLER_PATH_PROXIES, methods=["POST"])
     def add_proxy(self, request: Request, **kwargs):
         payload = _get_json(request)
@@ -54,11 +56,15 @@ class RequestHandler:
             tmp_file = new_tmp_file()
             container_name = containers[0]["name"]
             try:
-                DOCKER_CLIENT.copy_from_container(container_name, tmp_file, CONTAINER_CONFIG_FILE)
+                DOCKER_CLIENT.copy_from_container(
+                    container_name, tmp_file, CONTAINER_CONFIG_FILE
+                )
                 config = load_file(tmp_file)
                 config = to_str(yaml.dump(json.loads(config)))
             except Exception as e:
-                LOG.debug("Unable to get config from container %s: %s", container_name, e)
+                LOG.debug(
+                    "Unable to get config from container %s: %s", container_name, e
+                )
             rm_rf(tmp_file)
         return {"status": status, "config": config}
 
@@ -109,7 +115,9 @@ def handle_proxies_request(request: AddProxyRequest):
             request["config"] = config = parse_json_or_yaml(config) or {}
 
         def _start(*_):
-            start_aws_auth_proxy_in_container(config, env_vars=env_vars, port=port, quiet=True)
+            start_aws_auth_proxy_in_container(
+                config, env_vars=env_vars, port=port, quiet=True
+            )
 
         start_worker_thread(_start)
 

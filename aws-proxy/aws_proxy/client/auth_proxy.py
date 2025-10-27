@@ -15,7 +15,11 @@ from botocore.model import OperationModel
 from localstack import config as localstack_config
 from localstack.aws.spec import load_service
 from localstack.config import external_service_url
-from localstack.constants import AWS_REGION_US_EAST_1, DOCKER_IMAGE_NAME_PRO, LOCALHOST_HOSTNAME
+from localstack.constants import (
+    AWS_REGION_US_EAST_1,
+    DOCKER_IMAGE_NAME_PRO,
+    LOCALHOST_HOSTNAME,
+)
 from localstack.http import Request
 from localstack.pro.core.bootstrap.licensingv2 import (
     ENV_LOCALSTACK_API_KEY,
@@ -25,7 +29,10 @@ from localstack.utils.aws.aws_responses import requests_response
 from localstack.utils.bootstrap import setup_logging
 from localstack.utils.collections import select_attributes
 from localstack.utils.container_utils.container_client import PortMappings
-from localstack.utils.docker_utils import DOCKER_CLIENT, reserve_available_container_port
+from localstack.utils.docker_utils import (
+    DOCKER_CLIENT,
+    reserve_available_container_port,
+)
 from localstack.utils.files import new_tmp_file, save_file
 from localstack.utils.functions import run_safe
 from localstack.utils.net import get_docker_host_from_container, get_free_tcp_port
@@ -38,8 +45,6 @@ from aws_proxy.client.utils import truncate_content
 from aws_proxy.config import HANDLER_PATH_PROXIES
 from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL
 from aws_proxy.shared.models import AddProxyRequest, ProxyConfig
-
-from .http2_server import run_server
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)
@@ -66,9 +71,14 @@ class AuthProxyAWS(Server):
         super().__init__(port=port)
 
     def do_run(self):
+        # note: keep import here, to avoid runtime errors
+        from .http2_server import run_server
+
         self.register_in_instance()
         bind_host = self.config.get("bind_host") or DEFAULT_BIND_HOST
-        proxy = run_server(port=self.port, bind_addresses=[bind_host], handler=self.proxy_request)
+        proxy = run_server(
+            port=self.port, bind_addresses=[bind_host], handler=self.proxy_request
+        )
         proxy.join()
 
     def proxy_request(self, request: Request, data: bytes) -> Response:
@@ -109,7 +119,9 @@ class AuthProxyAWS(Server):
         # adjust request dict and fix certain edge cases in the request
         self._adjust_request_dict(service_name, request_dict)
 
-        headers_truncated = {k: truncate(to_str(v)) for k, v in dict(aws_request.headers).items()}
+        headers_truncated = {
+            k: truncate(to_str(v)) for k, v in dict(aws_request.headers).items()
+        }
         LOG.debug(
             "Sending request for service %s to AWS: %s %s - %s - %s",
             service_name,
@@ -138,7 +150,9 @@ class AuthProxyAWS(Server):
             return response
         except Exception as e:
             if LOG.isEnabledFor(logging.DEBUG):
-                LOG.exception("Error when making request to AWS service %s: %s", service_name, e)
+                LOG.exception(
+                    "Error when making request to AWS service %s: %s", service_name, e
+                )
             return requests_response("", status_code=400)
 
     def register_in_instance(self):
@@ -224,7 +238,10 @@ class AuthProxyAWS(Server):
         body_str = run_safe(lambda: to_str(req_body)) or ""
 
         # TODO: this custom fix should not be required - investigate and remove!
-        if "<CreateBucketConfiguration" in body_str and "LocationConstraint" not in body_str:
+        if (
+            "<CreateBucketConfiguration" in body_str
+            and "LocationConstraint" not in body_str
+        ):
             region = request_dict["context"]["client_region"]
             if region == AWS_REGION_US_EAST_1:
                 request_dict["body"] = ""
@@ -238,7 +255,9 @@ class AuthProxyAWS(Server):
             account_id = self._query_account_id_from_aws()
             if "QueueUrl" in req_body:
                 queue_name = req_body["QueueUrl"].split("/")[-1]
-                req_body["QueueUrl"] = f"https://queue.amazonaws.com/{account_id}/{queue_name}"
+                req_body["QueueUrl"] = (
+                    f"https://queue.amazonaws.com/{account_id}/{queue_name}"
+                )
             if "QueueOwnerAWSAccountId" in req_body:
                 req_body["QueueOwnerAWSAccountId"] = account_id
         if service_name == "sqs" and request_dict.get("url"):
@@ -246,7 +265,9 @@ class AuthProxyAWS(Server):
             account_id = self._query_account_id_from_aws()
             queue_name = req_json.get("QueueName")
             if account_id and queue_name:
-                request_dict["url"] = f"https://queue.amazonaws.com/{account_id}/{queue_name}"
+                request_dict["url"] = (
+                    f"https://queue.amazonaws.com/{account_id}/{queue_name}"
+                )
                 req_json["QueueOwnerAWSAccountId"] = account_id
                 request_dict["body"] = to_bytes(json.dumps(req_json))
 
@@ -256,7 +277,9 @@ class AuthProxyAWS(Server):
             host = request.headers.get("Host") or ""
             regex = r"^(https?://)?([0-9.]+|localhost)(:[0-9]+)?"
             if re.match(regex, host):
-                request.headers["Host"] = re.sub(regex, rf"\1s3.{LOCALHOST_HOSTNAME}", host)
+                request.headers["Host"] = re.sub(
+                    regex, rf"\1s3.{LOCALHOST_HOSTNAME}", host
+                )
         request.headers.pop("Content-Length", None)
         request.headers.pop("x-localstack-request-url", None)
         request.headers.pop("X-Forwarded-For", None)
@@ -311,7 +334,9 @@ def start_aws_auth_proxy_in_container(
     #  should consider building pre-baked images for the extension in the future. Also,
     #  the new packaged CLI binary can help us gain more stability over time...
 
-    logging.getLogger("localstack.utils.container_utils.docker_cmd_client").setLevel(logging.INFO)
+    logging.getLogger("localstack.utils.container_utils.docker_cmd_client").setLevel(
+        logging.INFO
+    )
     logging.getLogger("localstack.utils.docker_utils").setLevel(logging.INFO)
     logging.getLogger("localstack.utils.run").setLevel(logging.INFO)
 
@@ -328,13 +353,18 @@ def start_aws_auth_proxy_in_container(
     image_name = DOCKER_IMAGE_NAME_PRO
     # add host mapping for localstack.cloud to localhost to prevent the health check from failing
     additional_flags = (
-        repl_config.PROXY_DOCKER_FLAGS + " --add-host=localhost.localstack.cloud:host-gateway"
+        repl_config.PROXY_DOCKER_FLAGS
+        + " --add-host=localhost.localstack.cloud:host-gateway"
     )
     DOCKER_CLIENT.create_container(
         image_name,
         name=container_name,
         entrypoint="",
-        command=["bash", "-c", f"touch {CONTAINER_LOG_FILE}; tail -f {CONTAINER_LOG_FILE}"],
+        command=[
+            "bash",
+            "-c",
+            f"touch {CONTAINER_LOG_FILE}; tail -f {CONTAINER_LOG_FILE}",
+        ],
         ports=ports,
         additional_flags=additional_flags,
     )
@@ -388,7 +418,10 @@ def start_aws_auth_proxy_in_container(
         command = f"{venv_activate}; localstack aws proxy -c {CONTAINER_CONFIG_FILE} -p {port} --host 0.0.0.0 > {CONTAINER_LOG_FILE} 2>&1"
         if use_docker_sdk_command:
             DOCKER_CLIENT.exec_in_container(
-                container_name, command=["bash", "-c", command], env_vars=env_vars, interactive=True
+                container_name,
+                command=["bash", "-c", command],
+                env_vars=env_vars,
+                interactive=True,
             )
         else:
             env_vars_list = []

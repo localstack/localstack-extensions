@@ -1,0 +1,171 @@
+import gzip
+import re
+from urllib.parse import urlparse
+
+import boto3
+import pytest
+from botocore.client import Config
+from botocore.exceptions import ClientError
+from localstack.aws.connect import connect_to
+from localstack.utils.sync import retry
+
+from aws_proxy.shared.models import ProxyConfig
+
+
+def _compare_list_buckets_results(
+    buckets_aws: list, buckets_proxied: list, assert_not_empty=False
+):
+    for bucket in buckets_aws + buckets_proxied:
+        # TODO: tmp fix - seems like this attribute is missing for certain boto3 versions. To be investigated!
+        bucket.pop("BucketArn", None)
+    if assert_not_empty:
+        assert buckets_aws
+    assert buckets_proxied == buckets_aws
+
+
+@pytest.mark.parametrize(
+    "metadata_gzip",
+    [
+        # True,  TODO re-enable once the logic is fixed
+        False
+    ],
+)
+@pytest.mark.parametrize("target_endpoint", ["local_domain", "aws_domain", "default"])
+def test_s3_requests(start_aws_proxy, s3_create_bucket, metadata_gzip, target_endpoint):
+    # start proxy
+    config = ProxyConfig(services={"s3": {"resources": ".*"}})
+    start_aws_proxy(config)
+
+    # create clients
+    if target_endpoint == "default":
+        s3_client = connect_to().s3
+    else:
+        s3_client = connect_to(
+            endpoint_url="http://s3.localhost.localstack.cloud:4566",
+            config=Config(s3={"addressing_style": "virtual"}),
+        ).s3
+
+    if target_endpoint == "aws_domain":
+
+        def _add_header(request, **kwargs):
+            # instrument boto3 client to add custom `Host` header, mimicking a `*.s3.amazonaws.com` request
+            url = urlparse(request.url)
+            match = re.match(r"(.+)\.s3\.localhost\.localstack\.cloud", url.netloc)
+            if match:
+                request.headers.add_header(
+                    "host", f"{match.group(1)}.s3.us-east-1.amazonaws.com"
+                )
+
+        s3_client.meta.events.register_first("before-sign.*.*", _add_header)
+
+    # define S3 client pointing to real AWS
+    s3_client_aws = boto3.client("s3")
+
+    # list buckets to assert that proxy is up and running
+    buckets_proxied = s3_client.list_buckets()["Buckets"]
+    buckets_aws = s3_client_aws.list_buckets()["Buckets"]
+    _compare_list_buckets_results(buckets_aws, buckets_proxied)
+
+    # create bucket
+    bucket = s3_create_bucket()
+    buckets_proxied = s3_client.list_buckets()["Buckets"]
+    buckets_aws = s3_client_aws.list_buckets()["Buckets"]
+    _compare_list_buckets_results(buckets_aws, buckets_proxied, assert_not_empty=True)
+
+    # put object
+    key = "test-key-with-urlencoded-chars-:+"
+    body = b"test 123"
+    kwargs = {}
+    if metadata_gzip:
+        kwargs = {"ContentEncoding": "gzip", "ContentType": "text/plain"}
+        body = gzip.compress(body)
+    s3_client.put_object(Bucket=bucket, Key=key, Body=body, **kwargs)
+
+    # get object
+    result = s3_client.get_object(Bucket=bucket, Key=key)
+    result_body_proxied = result["Body"].read()
+    result = s3_client_aws.get_object(Bucket=bucket, Key=key)
+    result_body_aws = result["Body"].read()
+    assert result_body_proxied == result_body_aws
+
+    for kwargs in [{}, {"Delimiter": "/"}]:
+        # list objects
+        result_aws = s3_client_aws.list_objects(Bucket=bucket, **kwargs)
+        result_proxied = s3_client.list_objects(Bucket=bucket, **kwargs)
+        # TODO: for some reason, the proxied result may contain 'DisplayName', whereas result_aws does not
+        for res in result_proxied["Contents"] + result_aws["Contents"]:
+            res.get("Owner", {}).pop("DisplayName", None)
+        assert result_proxied["Contents"] == result_aws["Contents"]
+
+        # list objects v2
+        result_aws = s3_client_aws.list_objects_v2(Bucket=bucket, **kwargs)
+        result_proxied = s3_client.list_objects_v2(Bucket=bucket, **kwargs)
+        # TODO: for some reason, the proxied result may contain 'Owner', whereas result_aws does not
+        for res in result_proxied["Contents"]:
+            res.pop("Owner", None)
+        assert result_proxied["Contents"] == result_aws["Contents"]
+
+    # delete object
+    s3_client.delete_object(Bucket=bucket, Key=key)
+    with pytest.raises(ClientError) as aws_exc:
+        s3_client_aws.get_object(Bucket=bucket, Key=key)
+    with pytest.raises(ClientError) as exc:
+        s3_client.get_object(Bucket=bucket, Key=key)
+    assert str(exc.value) == str(aws_exc.value)
+
+    # delete bucket
+    s3_client_aws.delete_bucket(Bucket=bucket)
+
+    def _assert_deleted():
+        with pytest.raises(ClientError) as aws_exc:
+            s3_client_aws.head_bucket(Bucket=bucket)
+        assert aws_exc.value
+        # TODO: seems to be broken/flaky - investigate!
+        # with pytest.raises(ClientError) as exc:
+        #     s3_client.head_bucket(Bucket=bucket)
+        # assert str(exc.value) == str(aws_exc.value)
+
+    # run asynchronously, as apparently this can take some time
+    retry(_assert_deleted, retries=5, sleep=5)
+
+
+def test_s3_list_objects_in_different_folders(start_aws_proxy, s3_create_bucket):
+    # start proxy
+    config = ProxyConfig(services={"s3": {"resources": ".*"}})
+    start_aws_proxy(config)
+
+    # create clients
+    s3_client = connect_to().s3
+    s3_client_aws = boto3.client("s3")
+
+    # create bucket
+    bucket = s3_create_bucket()
+    buckets_proxied = s3_client.list_buckets()["Buckets"]
+    buckets_aws = s3_client_aws.list_buckets()["Buckets"]
+    _compare_list_buckets_results(buckets_aws, buckets_proxied, assert_not_empty=True)
+
+    # create a couple of objects under different paths/folders
+    s3_client.put_object(Bucket=bucket, Key="test/foo/bar", Body=b"test")
+    s3_client.put_object(Bucket=bucket, Key="test/foo/baz", Body=b"test")
+    s3_client.put_object(Bucket=bucket, Key="test/foobar", Body=b"test")
+
+    # list objects for prefix test/
+    objects = s3_client_aws.list_objects_v2(Bucket=bucket, Prefix="test/")
+    keys_aws = [obj["Key"] for obj in objects["Contents"]]
+    objects = s3_client.list_objects_v2(Bucket=bucket, Prefix="test/")
+    keys_proxied = [obj["Key"] for obj in objects["Contents"]]
+    assert set(keys_proxied) == set(keys_aws)
+
+    # list objects for prefix test/foo/
+    objects = s3_client_aws.list_objects_v2(Bucket=bucket, Prefix="test/foo/")
+    keys_aws = [obj["Key"] for obj in objects["Contents"]]
+    objects = s3_client.list_objects_v2(Bucket=bucket, Prefix="test/foo/")
+    keys_proxied = [obj["Key"] for obj in objects["Contents"]]
+    assert set(keys_proxied) == set(keys_aws)
+
+    # list objects for prefix test/foo (without trailing slash)
+    objects = s3_client_aws.list_objects_v2(Bucket=bucket, Prefix="test/foo")
+    keys_aws = [obj["Key"] for obj in objects["Contents"]]
+    objects = s3_client.list_objects_v2(Bucket=bucket, Prefix="test/foo")
+    keys_proxied = [obj["Key"] for obj in objects["Contents"]]
+    assert set(keys_proxied) == set(keys_aws)

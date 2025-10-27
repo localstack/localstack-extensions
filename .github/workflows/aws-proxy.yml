@@ -33,6 +33,7 @@ jobs:
           LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
         run: |
           set -e
+          cd aws-proxy
           docker pull localstack/localstack-pro &
           docker pull public.ecr.aws/lambda/python:3.8 &
 
@@ -49,7 +50,6 @@ jobs:
           # build and install extension
           localstack extensions init
           (
-            cd aws-proxy
             make install
             . .venv/bin/activate
             pip install --upgrade --pre localstack localstack-ext

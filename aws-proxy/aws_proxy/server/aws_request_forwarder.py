@@ -32,7 +32,9 @@ class AwsProxyHandler(Handler):
     # maps port numbers to proxy instances
     PROXY_INSTANCES: Dict[int, ProxyInstance] = {}
 
-    def __call__(self, chain: HandlerChain, context: RequestContext, response: Response):
+    def __call__(
+        self, chain: HandlerChain, context: RequestContext, response: Response
+    ):
         proxy = self.select_proxy(context)
         if not proxy:
             return
@@ -63,7 +65,9 @@ class AwsProxyHandler(Handler):
             proxy = self.PROXY_INSTANCES[port]
             proxy_config = proxy.get("config") or {}
             services = proxy_config.get("services") or {}
-            service_name = self._get_canonical_service_name(context.service.service_name)
+            service_name = self._get_canonical_service_name(
+                context.service.service_name
+            )
             service_config = services.get(service_name)
             if not service_config:
                 continue
@@ -100,7 +104,9 @@ class AwsProxyHandler(Handler):
         self, context: RequestContext, resource_name_pattern: str
     ) -> bool:
         try:
-            service_name = self._get_canonical_service_name(context.service.service_name)
+            service_name = self._get_canonical_service_name(
+                context.service.service_name
+            )
             if service_name == "s3":
                 bucket_name = context.service_request.get("Bucket") or ""
                 s3_bucket_arn = arns.s3_bucket_arn(bucket_name)
@@ -113,7 +119,9 @@ class AwsProxyHandler(Handler):
                     queue_name,
                     queue_url,
                     sqs_queue_arn(
-                        queue_name, account_id=context.account_id, region_name=context.region
+                        queue_name,
+                        account_id=context.account_id,
+                        region_name=context.region,
                     ),
                 )
                 for candidate in candidates:
@@ -133,12 +141,16 @@ class AwsProxyHandler(Handler):
             ) from e
         return True
 
-    def forward_request(self, context: RequestContext, proxy: ProxyInstance) -> requests.Response:
+    def forward_request(
+        self, context: RequestContext, proxy: ProxyInstance
+    ) -> requests.Response:
         """Forward the given request to the proxy instance, and return the response."""
         port = proxy["port"]
         request = context.request
         target_host = get_addressable_container_host(default_local_hostname=LOCALHOST)
-        url = f"http://{target_host}:{port}{request.path}?{to_str(request.query_string)}"
+        url = (
+            f"http://{target_host}:{port}{request.path}?{to_str(request.query_string)}"
+        )
 
         # inject Auth header, to ensure we're passing the right region to the proxy (e.g., for Cognito InitiateAuth)
         self._extract_region_from_domain(context)
@@ -156,10 +168,20 @@ class AwsProxyHandler(Handler):
                 data = request.form
             elif request.data:
                 data = request.data
-            LOG.debug("Forward request: %s %s - %s - %s", request.method, url, dict(headers), data)
+            LOG.debug(
+                "Forward request: %s %s - %s - %s",
+                request.method,
+                url,
+                dict(headers),
+                data,
+            )
             # construct response
             result = requests.request(
-                method=request.method, url=url, data=data, headers=dict(headers), stream=True
+                method=request.method,
+                url=url,
+                data=data,
+                headers=dict(headers),
+                stream=True,
             )
             # TODO: ugly hack for now, simply attaching an additional attribute for raw response content
             result.raw_content = result.raw.read()
@@ -173,7 +195,10 @@ class AwsProxyHandler(Handler):
             )
         except requests.exceptions.ConnectionError:
             # remove unreachable proxy
-            LOG.info("Removing unreachable AWS forward proxy due to connection issue: %s", url)
+            LOG.info(
+                "Removing unreachable AWS forward proxy due to connection issue: %s",
+                url,
+            )
             self.PROXY_INSTANCES.pop(port, None)
         return result
 
@@ -186,7 +211,10 @@ class AwsProxyHandler(Handler):
         if operation_name.lower().startswith(("describe", "get", "list", "query")):
             return True
         # service-specific rules
-        if context.service.service_name == "cognito-idp" and operation_name == "InitiateAuth":
+        if (
+            context.service.service_name == "cognito-idp"
+            and operation_name == "InitiateAuth"
+        ):
             return True
         if context.service.service_name == "dynamodb" and operation_name in {
             "Scan",
