@@ -28,6 +28,7 @@ test=[
     "pytest-httpserver",
     "ruff",
     # build tools
+    "build",
     "setuptools",
     "setuptools_scm",
     "wheel"
