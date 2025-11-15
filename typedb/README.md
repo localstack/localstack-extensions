@@ -15,7 +15,7 @@ This repo contains a [LocalStack Extension](https://github.com/localstack/locals
 This extension can be installed directly from this Github repo via:
 
 ```bash
-localstack extensions install "git+https://github.com/localstack/localstack-extensions.git#egg=localstack-typedb&subdirectory=typedb"
+localstack extensions install "git+https://github.com/localstack/localstack-extensions.git#egg=typedb&subdirectory=typedb"
 ```
 
 ## Install local development version

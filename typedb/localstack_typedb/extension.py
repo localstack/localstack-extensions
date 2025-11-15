@@ -13,7 +13,7 @@ ENV_HTTP2_PROXY = "TYPEDB_HTTP2_PROXY"
 
 
 class TypeDbExtension(ProxiedDockerContainerExtension):
-    name = "localstack-typedb"
+    name = "typedb"
 
     HOST = "typedb.<domain>"
     # name of the Docker image to spin up

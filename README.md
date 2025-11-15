@@ -63,7 +63,7 @@ $ localstack extensions install "git+https://github.com/localstack/localstack-ex
 ## Official LocalStack Extensions
 
 Here is the current list of extensions developed by the LocalStack team and their support status.
-You can install the respective extension by calling `localstack install <Install name>`.
+You can install the respective extension by calling `localstack extensions install <Install name>`.
 
 | Extension                                                                                          | Install name | Version | Support status |
 |----------------------------------------------------------------------------------------------------| ------------ |---------| -------------- |
@@ -75,6 +75,7 @@ You can install the respective extension by calling `localstack install <Install
 | [Miniflare](https://github.com/localstack/localstack-extensions/tree/main/miniflare)               | localstack-extension-miniflare | 0.1.0   | Experimental |
 | [Stripe](https://github.com/localstack/localstack-extensions/tree/main/stripe)                     | localstack-extension-stripe | 0.2.0   | Stable |
 | [Terraform Init](https://github.com/localstack/localstack-extensions/tree/main/terraform-init)     | localstack-extension-terraform-init | 0.2.0   | Experimental |
+| [TypeDB](https://github.com/localstack/localstack-extensions/tree/main/typedb)                     | localstack-extension-typedb | 0.1.0   | Experimental |
 
 
 ## Developing Extensions
@@ -168,7 +169,7 @@ class ReadyAnnouncerExtension(Extension):
     name = "my_ready_announcer"
 
     def on_platform_ready(self):
-    	LOG.info("my plugin is loaded and localstack is ready to roll!")
+        LOG.info("my plugin is loaded and localstack is ready to roll!")
 ```
 
 ### Package your Extension
@@ -227,9 +228,9 @@ Commands:
   new      Create a new LocalStack extension from the official extension...
 ```
 
-#### Creating a new extensions
+#### Creating a new extension
 
-First, create a new extensions from a template:
+First, create a new extension from a template:
 
 ```console
  % localstack extensions dev new
