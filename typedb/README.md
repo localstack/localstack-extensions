@@ -3,6 +3,17 @@ TypeDB on LocalStack
 
 This repo contains a [LocalStack Extension](https://github.com/localstack/localstack-extensions) that facilitates developing [TypeDB](https://typedb.com)-based applications locally.
 
+After installing the extension, a TypeDB server instance will become available under `typedb.localhost.localstack.cloud:4566`, allowing you to create and manage TypeDB databases directly from your AWS applications running in LocalStack.
+
+For example, you could create a microservice backed by a Lambda function that connects to a TypeDB database upon invocation. See [here](https://github.com/typedb-osi/typedb-localstack-demo) for a simple example application that makes use of this extension.
+
+## Configuration
+
+The following environment variables can be passed to the LocalStack container (make sure to prefix them with `LOCALSTACK_...` when using the `localstack start` CLI), to steer the behavior of the extension:
+
+* `TYPEDB_FLAGS`: Additional user-defined command args to pass to the TypeDB container.
+* `TYPEDB_HTTP2_PROXY`: Flag to enable/disable HTTP2 proxy for gRPC traffic (use this if you experience network issues, and use the HTTP variant of the TypeDB driver).
+
 ## Prerequisites
 
 * Docker
@@ -20,22 +31,8 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 ## Install local development version
 
-To install the extension into LocalStack in developer mode, you will need Python 3.13, and create a virtual environment in the extensions project.
+Please refer to the docs [here](https://github.com/localstack/localstack-extensions?tab=readme-ov-file#start-localstack-with-the-extension) for instructions on how to start the extension in developer mode.
 
-In the newly generated project, simply run
+## License
 
-```bash
-make install
-```
-
-Then, to enable the extension for LocalStack, run
-
-```bash
-localstack extensions dev enable .
-```
-
-You can then start LocalStack with `EXTENSION_DEV_MODE=1` to load all enabled extensions:
-
-```bash
-EXTENSION_DEV_MODE=1 localstack start
-```
+The code in this repo is available under the Apache 2.0 license.

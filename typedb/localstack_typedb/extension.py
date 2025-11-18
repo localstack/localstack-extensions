@@ -15,6 +15,7 @@ ENV_HTTP2_PROXY = "TYPEDB_HTTP2_PROXY"
 class TypeDbExtension(ProxiedDockerContainerExtension):
     name = "typedb"
 
+    # pattern of the hostname under which the extension is accessible
     HOST = "typedb.<domain>"
     # name of the Docker image to spin up
     DOCKER_IMAGE = "typedb/typedb"
