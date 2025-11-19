@@ -19,7 +19,6 @@ from localstack.utils.sync import retry
 from rolo import route
 from rolo.proxy import Proxy
 from rolo.routing import RuleAdapter, WithHost
-from werkzeug.datastructures import Headers
 
 LOG = logging.getLogger(__name__)
 logging.getLogger("localstack_typedb").setLevel(
@@ -108,15 +107,6 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
         name = f"ls-ext-{self.name}"
         name = re.sub(r"\W", "-", name)
         return name
-
-    def should_proxy_request(self, headers: Headers) -> bool:
-        # determine if this is a gRPC request targeting TypeDB
-        content_type = headers.get("content-type") or ""
-        req_path = headers.get(":path") or ""
-        is_typedb_grpc_request = (
-            "grpc" in content_type and "/typedb.protocol.TypeDB" in req_path
-        )
-        return is_typedb_grpc_request
 
     @cache
     def start_container(self) -> None:

@@ -5,6 +5,7 @@ from localstack.config import is_env_not_false
 from localstack.utils.docker_utils import DOCKER_CLIENT
 from localstack_typedb.utils.docker import ProxiedDockerContainerExtension
 from rolo import Request
+from werkzeug.datastructures import Headers
 
 # environment variable for user-defined command args to pass to TypeDB
 ENV_CMD_FLAGS = "TYPEDB_FLAGS"
@@ -42,6 +43,15 @@ class TypeDbExtension(ProxiedDockerContainerExtension):
         result = DOCKER_CLIENT.inspect_image(self.DOCKER_IMAGE)
         image_command = result["Config"]["Cmd"]
         return image_command
+
+    def should_proxy_request(self, headers: Headers) -> bool:
+        # determine if this is a gRPC request targeting TypeDB
+        content_type = headers.get("content-type") or ""
+        req_path = headers.get(":path") or ""
+        is_typedb_grpc_request = (
+            "grpc" in content_type and "/typedb.protocol.TypeDB" in req_path
+        )
+        return is_typedb_grpc_request
 
     def request_to_port_router(self, request: Request) -> int:
         # TODO add REST API / gRPC routing based on request
