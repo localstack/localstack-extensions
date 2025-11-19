@@ -1,0 +1,44 @@
+name: LocalStack TypeDB Extension Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  LOCALSTACK_DISABLE_EVENTS: "1"
+  LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+
+jobs:
+  integration-tests:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup LocalStack and extension
+        run: |
+          cd typedb
+
+          docker pull localstack/localstack-pro &
+          docker pull typedb/typedb &
+          pip install localstack
+
+          make install
+          make dist
+          localstack extensions -v install file://$(ls ./dist/localstack_extension_typedb-*.tar.gz)
+
+          DEBUG=1 localstack start -d
+          localstack wait
+
+      - name: Run integration tests
+        run: |
+          cd typedb
+          make test
+
+      - name: Print logs
+        if: always()
+        run: |
+          localstack logs
+          localstack stop
