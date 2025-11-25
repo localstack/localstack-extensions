@@ -48,11 +48,8 @@ jobs:
           docker pull localstack/localstack-pro &
           docker pull public.ecr.aws/lambda/python:3.8 &
 
-          # install latest CLI packages (dev releases)
-          pip install --upgrade --pre localstack localstack-ext
-
-          # TODO remove
-          mkdir ~/.localstack; echo '{"token":"test"}' > ~/.localstack/auth.json
+          # install latest CLI packages
+          pip install --upgrade localstack localstack-ext
 
           # install dependencies
           sudo apt-get update
@@ -63,7 +60,6 @@ jobs:
           (
             make install
             . .venv/bin/activate
-            pip install --upgrade --pre localstack localstack-ext
             make build
             make enable
           )

@@ -8,8 +8,6 @@ FRONTEND_FOLDER = aws_proxy/frontend
 COREPACK_EXISTS := $(shell command -v corepack)
 YARN_EXISTS := $(shell command -v yarn)
 
-venv: $(VENV_ACTIVATE)
-
 usage:          ## Show this help
 	@grep -Fh "##" $(MAKEFILE_LIST) | grep -Fv fgrep | sed -e 's/:.*##\s*/##/g' | awk -F'##' '{ printf "%-25s %s\n", $$1, $$2 }'
 
@@ -52,7 +50,7 @@ check-frontend-deps:
 		npm install -g corepack; \
 	fi
 
-install-frontend: venv check-frontend-deps  ## Install dependencies of the frontend
+install-frontend: check-frontend-deps  ## Install dependencies of the frontend
 	cd $(FRONTEND_FOLDER) && yarn install
 
 build-frontend: # Build the React app
