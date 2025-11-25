@@ -25,6 +25,17 @@ jobs:
         with:
           python-version: '3.13'
 
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Enable Corepack and set Yarn version
+        run: |
+          corepack enable
+          corepack prepare yarn@3.2.3 --activate
+        shell: bash
+
       - name: Set up Terraform CLI
         uses: hashicorp/setup-terraform@v2
 

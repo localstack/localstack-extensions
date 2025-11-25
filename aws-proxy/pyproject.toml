@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "localstack-extension-aws-proxy"
 readme = "README.md"
-version = "0.2.1"
+version = "0.2.2"
 description = "LocalStack extension that proxies AWS resources into your LocalStack instance"
 authors = [
         { name = "LocalStack Team", email = "info@localstack.cloud"}
@@ -42,8 +42,4 @@ include-package-data = true
 include = ["aws_proxy*"]
 
 [tool.setuptools.package-data]
-"*" = [
-    "**/*.html",
-    "**/*.js",
-    "**/*.png"
-]
+"*" = ["static/*"]
