@@ -26,10 +26,10 @@ lint:				## Run code linter to check code style
 test:               ## Run tests
 	$(VENV_RUN); python -m pytest $(PYTEST_ARGS) $(TEST_PATH)
 
-entrypoints:        ## Generate plugin entrypoints for Python package
+entrypoints: build-frontend ## Generate plugin entrypoints for Python package
 	$(VENV_RUN); python -m plux entrypoints
 
-build: entrypoints build-frontend ## Build the extension
+build: build-frontend entrypoints ## Build the extension
 	$(VENV_RUN); python -m build --no-isolation . --outdir build
 	@# make sure that the entrypoints are contained in the dist folder and are non-empty
 	@test -s localstack_extension_aws_proxy.egg-info/entry_points.txt || (echo "Entrypoints were not correctly created! Aborting!" && exit 1)

@@ -1,1 +1,2 @@
-exclude aws_proxy/frontend *
+include pyproject.toml
+recursive-exclude aws_proxy/frontend *
