@@ -26,20 +26,23 @@ lint:				## Run code linter to check code style
 test:               ## Run tests
 	$(VENV_RUN); python -m pytest $(PYTEST_ARGS) $(TEST_PATH)
 
-entrypoints: build-frontend ## Generate plugin entrypoints for Python package
-	$(VENV_RUN); python -m plux entrypoints
+entrypoints: install build-frontend ## Generate plugin entrypoints for Python package
+	$(VENV_RUN); pip install --upgrade plux; python -m plux entrypoints --exclude '**/node_modules/**'
 
-build: build-frontend entrypoints ## Build the extension
-	$(VENV_RUN); python -m build --no-isolation . --outdir build
+install-build-deps: venv ## Install build dependencies
+	$(VENV_RUN); pip install --upgrade build setuptools wheel plux setuptools_scm
+
+build: install-build-deps build-frontend entrypoints ## Build the extension
+	$(VENV_RUN); python -m build --no-isolation . --outdir dist
 	@# make sure that the entrypoints are contained in the dist folder and are non-empty
 	@test -s localstack_extension_aws_proxy.egg-info/entry_points.txt || (echo "Entrypoints were not correctly created! Aborting!" && exit 1)
 
-enable: $(wildcard ./build/localstack_extension_aws_proxy-*.tar.gz)  ## Enable the extension in LocalStack
+enable: $(wildcard ./dist/localstack_extension_aws_proxy-*.tar.gz)  ## Enable the extension in LocalStack
 	$(VENV_RUN); \
 		pip uninstall --yes localstack-extension-aws-proxy; \
 		localstack extensions -v install file://$?
 
-publish: clean-dist venv dist
+publish: clean-dist venv build
 	$(VENV_RUN); pip install --upgrade twine; twine upload dist/*
 
 check-frontend-deps:
@@ -62,8 +65,10 @@ build-frontend: # Build the React app
 start-frontend: ## Start the frontend in dev mode (hot reload)
 	cd $(FRONTEND_FOLDER); yarn start
 
-install: install-frontend      ## Install dependencies
+venv:
 	test -d .venv || $(VENV_BIN) .venv
+
+install: install-frontend venv     ## Install dependencies
 	$(VENV_RUN); pip install -e .
 	$(VENV_RUN); pip install -e .[test]
 	touch $(VENV_DIR)/bin/activate
