@@ -1,3 +1,2 @@
-recursive-include aws_proxy *.html
-recursive-include aws_proxy *.js
-recursive-include aws_proxy *.png
+include pyproject.toml
+recursive-exclude aws_proxy/frontend *

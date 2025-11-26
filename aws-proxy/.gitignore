@@ -1,2 +1,5 @@
 *.tfstate*
 .terraform*
+node_modules
+static
+.yarn/

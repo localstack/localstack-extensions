@@ -2,14 +2,22 @@ import logging
 
 from localstack import config
 from localstack.aws.chain import CompositeHandler
-from localstack.extensions.api import Extension, http
+from localstack.extensions.api import http
+from localstack.extensions.patterns.webapp import WebAppExtension
+import typing as t
+
 from localstack.services.internal import get_internal_apis
+
+from aws_proxy.server.request_handler import WebApp
 
 LOG = logging.getLogger(__name__)
 
 
-class AwsProxyExtension(Extension):
+class AwsProxyExtension(WebAppExtension):
     name = "aws-proxy"
+
+    def __init__(self):
+        super().__init__(template_package_path=None)
 
     def on_extension_load(self):
         if config.GATEWAY_SERVER == "twisted":
@@ -21,8 +29,13 @@ class AwsProxyExtension(Extension):
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
         from aws_proxy.server.request_handler import RequestHandler
 
+        super().update_gateway_routes(router)
+
         LOG.info("AWS Proxy: adding routes to activate extension")
         get_internal_apis().add(RequestHandler())
+
+    def collect_routes(self, routes: list[t.Any]):
+        routes.append(WebApp())
 
     def update_request_handlers(self, handlers: CompositeHandler):
         from aws_proxy.server.aws_request_forwarder import AwsProxyHandler

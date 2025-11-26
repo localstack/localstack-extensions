@@ -1,15 +1,10 @@
 import json
 import logging
-import mimetypes
 import os.path
-from pathlib import Path
 from typing import Dict, List
-from werkzeug.utils import redirect
 
 import yaml
 from localstack.constants import (
-    APPLICATION_OCTET_STREAM,
-    INTERNAL_RESOURCE_PATH,
     LOCALHOST_HOSTNAME,
 )
 from localstack.http import Request, Response, route
@@ -29,9 +24,10 @@ from aws_proxy.client.auth_proxy import (
     start_aws_auth_proxy_in_container,
 )
 from aws_proxy.config import HANDLER_PATH_PROXIES
-from aws_proxy.server import ui as web_ui
 from aws_proxy.server.aws_request_forwarder import AwsProxyHandler
 from aws_proxy.shared.models import AddProxyRequest
+
+from . import static
 
 LOG = logging.getLogger(__name__)
 
@@ -75,29 +71,19 @@ class RequestHandler:
             stop_proxy_containers()
         return {}
 
-    @route("/", methods=["GET"], host=ROUTE_HOST)
-    def forward_from_root(self, request: Request, **kwargs):
-        return redirect(f"{INTERNAL_RESOURCE_PATH}/aws-proxy/index.html")
 
-    @route(f"{INTERNAL_RESOURCE_PATH}/aws-proxy", methods=["GET"])
-    def forward_from_extension_root(self, request: Request, **kwargs):
-        return redirect(f"{INTERNAL_RESOURCE_PATH}/aws-proxy/index.html")
+class WebApp:
+    @route("/")
+    def index(self, request: Request, *args, **kwargs):
+        return Response.for_resource(static, "index.html")
 
-    @route("/favicon.png", methods=["GET"], host=ROUTE_HOST)
-    def serve_favicon(self, request: Request, **kwargs):
-        return self.serve_static_file("/favicon.png")
-
-    @route(f"{INTERNAL_RESOURCE_PATH}/aws-proxy/<path:path>", methods=["GET"])
-    def get_web_asset(self, request: Request, path: str, **kwargs):
-        return self.serve_static_file(path)
-
-    def serve_static_file(self, path: str):
-        file_path = os.path.join(os.path.dirname(web_ui.__file__), path.lstrip("/"))
-        if not os.path.exists(file_path):
-            return Response("File not found", 404)
-        mime_type = mimetypes.guess_type(os.path.basename(path))
-        mime_type = mime_type[0] if mime_type else APPLICATION_OCTET_STREAM
-        return Response(Path(file_path).open(mode="rb"), mimetype=mime_type)
+    @route("/<path:path>")
+    def index2(self, request: Request, path: str, **kwargs):
+        try:
+            return Response.for_resource(static, path)
+        except Exception:
+            LOG.debug(f"File {path} not found, serving index.html")
+            return Response.for_resource(static, "index.html")
 
 
 def handle_proxies_request(request: AddProxyRequest):

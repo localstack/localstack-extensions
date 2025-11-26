@@ -1,0 +1,45 @@
+{
+  "name": "aws_proxy",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@localstack/integrations": "1.2.2",
+    "@mui/material": "^5.15.20",
+    "axios": "^1.8.4",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-router-dom": "^6.24.0",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.5"
+  },
+  "devDependencies": {
+    "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
+    "@testing-library/react": "^13.4.0",
+    "@types/node": "^16.18.99",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^17.0.11",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.16.6",
+    "esbuild-envfile-plugin": "^1.0.2",
+    "esbuild-plugin-clean": "^1.0.1",
+    "esbuild-plugin-copy": "^0.3.0",
+    "esbuild-plugin-svgr": "^1.0.0",
+    "live-server": "^1.2.2"
+  },
+  "scripts": {
+    "start": "concurrently --restart-tries -1 --raw \"yarn serve\" \"yarn watch\"",
+    "serve": "live-server --port=3000 --host=0.0.0.0 --no-browser --watch=aws_proxy/server/static/index.html --entry-file=index.html ../server/static",
+    "watch": "node .esbuild --watch",
+    "build": "node .esbuild"
+  },
+  "resolutions": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "@types/react-dom": "^17.0.11",
+    "@mui/material": "^5.15.20"
+  },
+  "packageManager": "yarn@3.2.3"
+}
