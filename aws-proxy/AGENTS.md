@@ -29,3 +29,9 @@ To run a single test via `pytest` (say, `test_my_logic` in `test_s3.py`), use th
 ```
 TEST_PATH=tests/test_s3.py::test_my_logic make test
 ```
+
+When adding new integration tests, consider the following:
+* Include a mix of positive and negative assertions (e., presence and absence of resources).
+* Include a mix of different configuration options, e.g., the `read_only: true` flag can be specified in the proxy service configuration YAML, enabling read-only mode (which should be covered by tests as well).
+* Make sure to either use fixtures (preferred), or reliable cleanups for removing the resources; several fixtures for creating AWS resources are available in the `localstack.testing.pytest.fixtures` module
+* If a test uses multiple resources with interdependencies (e.g., an SQS queue connected to an SNS topic), then the test needs to ensure that both resource types are proxied (i.e., created in real AWS), to avoid a situation where a resource in AWS is attempting to reference a local resource in LocalStack (using account ID `000000000000` in their ARN).

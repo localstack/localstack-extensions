@@ -128,6 +128,11 @@ class AwsProxyHandler(Handler):
                     if re.match(resource_name_pattern, candidate):
                         return True
                 return False
+            if service_name == "sns":
+                topic_arn = context.service_request.get("TopicArn") or ""
+                if not topic_arn:
+                    return False
+                return bool(re.match(resource_name_pattern, topic_arn))
             if service_name == "secretsmanager":
                 secret_id = context.service_request.get("SecretId") or ""
                 secret_arn = secretsmanager_secret_arn(
