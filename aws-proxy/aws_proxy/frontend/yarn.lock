@@ -2479,15 +2479,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@localstack/integrations@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@localstack/integrations@npm:1.2.1"
+"@localstack/integrations@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@localstack/integrations@npm:1.2.2"
   dependencies:
     "@mui/material": ^5.15.13
     "@mui/styles": ^5.15.13
   peerDependencies:
     react: ^17.0.2
-  checksum: 23099d0f9992ffdfcf05d8b7a5a53114c2b1953309bf7aa9eb39ab4fd5e953a5d1e90484594a20c2eb4b9c9e93ac63ff6b6d4bce70c64c400bfae5d80f4a1367
+  checksum: 0af7dfe45b9e4dbf05d0fc7755d14c03105068738d965c987f767c835f52340f19b828ecdba2b9eea855b640cdc2ab1c6bd1c923040ea4dd58cf9670ef9a1e28
   languageName: node
   linkType: hard
 
@@ -4550,7 +4550,7 @@ __metadata:
     "@emotion/react": ^11.11.4
     "@emotion/styled": ^11.11.5
     "@esbuild-plugins/node-modules-polyfill": ^0.1.4
-    "@localstack/integrations": 1.2.1
+    "@localstack/integrations": 1.2.2
     "@mui/material": ^5.15.20
     "@testing-library/react": ^13.4.0
     "@types/node": ^16.18.99
