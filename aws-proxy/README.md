@@ -126,6 +126,8 @@ If you wish to access the deprecated instructions, they can be found [here](http
 
 ## Change Log
 
+* `0.2.2`: Refactor UI to use WebAppExtension pattern
+* `0.2.1`: Restructure project to use pyproject.toml
 * `0.2.0`: Rename extension from `localstack-extension-aws-replicator` to `localstack-extension-aws-proxy`
 * `0.1.25`: Fix dynamodb proxying for read-only mode
 * `0.1.24`: Fix healthcheck probe for proxy container
