@@ -68,6 +68,8 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
         http2_ports: list[int] | None = None,
     ):
         self.image_name = image_name
+        if not container_ports:
+            raise ArgumentError("container_ports is required")
         self.container_ports = container_ports
         self.host = host
         self.path = path
@@ -77,6 +79,8 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
         self.command = command
         self.request_to_port_router = request_to_port_router
         self.http2_ports = http2_ports
+        self.main_port = self.container_ports[0]
+        self.container_host = get_addressable_container_host()
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
         if self.path:
@@ -86,7 +90,7 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
         # note: for simplicity, starting the external container at startup - could be optimized over time ...
         self.start_container()
         # add resource for HTTP/1.1 requests
-        resource = RuleAdapter(ProxyResource(self))
+        resource = RuleAdapter(ProxyResource(self.container_host, self.main_port))
         if self.host:
             resource = WithHost(self.host, [resource])
         router.add(resource)
@@ -94,7 +98,7 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
         # apply patches to serve HTTP/2 requests
         for port in self.http2_ports or []:
             apply_http2_patches_for_grpc_support(
-                get_addressable_container_host(), port, self
+                self.container_host, port, self
             )
 
     def on_platform_shutdown(self):
@@ -127,12 +131,9 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
             if not is_env_true("TYPEDB_DEV_MODE"):
                 raise
 
-        main_port = self.container_ports[0]
-        container_host = get_addressable_container_host()
-
         def _ping_endpoint():
             # TODO: allow defining a custom healthcheck endpoint ...
-            response = requests.get(f"http://{container_host}:{main_port}/")
+            response = requests.get(f"http://{self.container_host}:{self.main_port}/")
             assert response.ok
 
         try:
@@ -157,21 +158,19 @@ class ProxyResource:
     LocalStack Gateway to the target Docker container.
     """
 
-    extension: ProxiedDockerContainerExtension
+    host: str
+    port: int
 
-    def __init__(self, extension: ProxiedDockerContainerExtension):
-        self.extension = extension
+    def __init__(self, host: str, port: int):
+        self.host = host
+        self.port = port
 
     @route("/<path:path>")
     def index(self, request: Request, path: str, *args, **kwargs):
         return self._proxy_request(request, forward_path=f"/{path}")
 
     def _proxy_request(self, request: Request, forward_path: str, *args, **kwargs):
-        self.extension.start_container()
-
-        port = self.extension.container_ports[0]
-        container_host = get_addressable_container_host()
-        base_url = f"http://{container_host}:{port}"
+        base_url = f"http://{self.host}:{self.port}"
         proxy = Proxy(forward_base_url=base_url)
 
         # update content length (may have changed due to content compression)
@@ -179,7 +178,7 @@ class ProxyResource:
             request.headers["Content-Length"] = str(len(request.data))
 
         # make sure we're forwarding the correct Host header
-        request.headers["Host"] = f"localhost:{port}"
+        request.headers["Host"] = f"localhost:{self.port}"
 
         # forward the request to the target
         result = proxy.forward(request, forward_path=forward_path)
