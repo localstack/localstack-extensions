@@ -34,13 +34,8 @@ class TcpForwarder:
     def __init__(self, port: int, host: str = "localhost"):
         self.port = port
         self.host = host
-        self._socket = None
-        self.connect()
-
-    def connect(self):
-        if not self._socket:
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._socket.connect((self.host, self.port))
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.connect((self.host, self.port))
 
     def receive_loop(self, callback):
         while True:
