@@ -1,6 +1,7 @@
 import logging
 import socket
 from abc import abstractmethod
+from typing import Iterable
 
 from h2.frame_buffer import FrameBuffer
 from hpack import Decoder
@@ -125,15 +126,13 @@ def apply_http2_patches_for_grpc_support(
         forwarder.close()
 
 
-def get_headers_from_data_stream(data_list: list[bytes]) -> Headers:
+def get_headers_from_data_stream(data_list: Iterable[bytes]) -> Headers:
     """Get headers from a data stream (list of bytes data), if any headers are contained."""
-    data_combined = b"".join(data_list)
-    frames = parse_http2_stream(data_combined)
-    headers = get_headers_from_frames(frames)
-    return headers
+    stream = b"".join(data_list)
+    return get_headers_from_frames(get_frames_from_http2_stream(stream))
 
 
-def get_headers_from_frames(frames: list[Frame]) -> Headers:
+def get_headers_from_frames(frames: Iterable[Frame]) -> Headers:
     """Parse the given list of HTTP2 frames and return a dict of headers, if any"""
     result = {}
     decoder = Decoder()
@@ -147,7 +146,7 @@ def get_headers_from_frames(frames: list[Frame]) -> Headers:
     return Headers(result)
 
 
-def parse_http2_stream(data: bytes) -> list[Frame]:
+def get_frames_from_http2_stream(data: bytes) -> Iterable[Frame]:
     """Parse the data from an HTTP2 stream into a list of frames"""
     frames = []
     buffer = FrameBuffer(server=True)
@@ -155,7 +154,6 @@ def parse_http2_stream(data: bytes) -> list[Frame]:
     buffer.add_data(data)
     try:
         for frame in buffer:
-            frames.append(frame)
+            yield frame
     except Exception:
         pass
-    return frames
