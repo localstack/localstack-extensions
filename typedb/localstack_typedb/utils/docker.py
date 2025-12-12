@@ -108,9 +108,9 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
     def start_container(self) -> None:
         LOG.debug("Starting extension container %s", self.container_name)
 
-        ports = PortMappings()
+        port_mapping = PortMappings()
         for port in self.container_ports:
-            ports.add(port)
+            port_mapping.add(port)
 
         kwargs = {}
         if self.command:
@@ -122,7 +122,7 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
                 detach=True,
                 remove=True,
                 name=self.container_name,
-                ports=ports,
+                ports=port_mapping,
                 **kwargs,
             )
         except Exception as e:
