@@ -37,11 +37,9 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
     """
 
     name: str
-    """Name of this extension"""
+    """Name of this extension, which must be overridden in a subclass."""
     image_name: str
     """Docker image name"""
-    container_name: str | None
-    """Name of the Docker container spun up by the extension"""
     container_ports: list[int]
     """List of network ports of the Docker container spun up by the extension"""
     host: str | None
@@ -65,7 +63,6 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
         container_ports: list[int],
         host: str | None = None,
         path: str | None = None,
-        container_name: str | None = None,
         command: list[str] | None = None,
         request_to_port_router: Callable[[Request], int] | None = None,
         http2_ports: list[int] | None = None,
@@ -74,7 +71,9 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
         self.container_ports = container_ports
         self.host = host
         self.path = path
-        self.container_name = container_name
+        self.container_name = re.sub(
+            r"\W", "-", f"ls-ext-{self.name}"
+        )
         self.command = command
         self.request_to_port_router = request_to_port_router
         self.http2_ports = http2_ports
@@ -101,17 +100,9 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
     def on_platform_shutdown(self):
         self._remove_container()
 
-    def _get_container_name(self) -> str:
-        if self.container_name:
-            return self.container_name
-        name = f"ls-ext-{self.name}"
-        name = re.sub(r"\W", "-", name)
-        return name
-
     @cache
     def start_container(self) -> None:
-        container_name = self._get_container_name()
-        LOG.debug("Starting extension container %s", container_name)
+        LOG.debug("Starting extension container %s", self.container_name)
 
         ports = PortMappings()
         for port in self.container_ports:
@@ -126,12 +117,12 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
                 self.image_name,
                 detach=True,
                 remove=True,
-                name=container_name,
+                name=self.container_name,
                 ports=ports,
                 **kwargs,
             )
         except Exception as e:
-            LOG.debug("Failed to start container %s: %s", container_name, e)
+            LOG.debug("Failed to start container %s: %s", self.container_name, e)
             # allow running TypeDB in a local server in dev mode, if TYPEDB_DEV_MODE is enabled
             if not is_env_true("TYPEDB_DEV_MODE"):
                 raise
@@ -147,17 +138,16 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
         try:
             retry(_ping_endpoint, retries=40, sleep=1)
         except Exception as e:
-            LOG.info("Failed to connect to container %s: %s", container_name, e)
+            LOG.info("Failed to connect to container %s: %s", self.container_name, e)
             self._remove_container()
             raise
 
-        LOG.debug("Successfully started extension container %s", container_name)
+        LOG.debug("Successfully started extension container %s", self.container_name)
 
     def _remove_container(self):
-        container_name = self._get_container_name()
-        LOG.debug("Stopping extension container %s", container_name)
+        LOG.debug("Stopping extension container %s", self.container_name)
         DOCKER_CLIENT.remove_container(
-            container_name, force=True, check_existence=False
+            self.container_name, force=True, check_existence=False
         )
 
 
