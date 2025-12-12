@@ -29,8 +29,8 @@ logging.basicConfig()
 
 class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
     """
-    Utility class to create a LocalStack Extension backed by a Docker container that exposes a service
-    on a network port (or several ports), with requests being proxied through the LocalStack gateway.
+    Utility class to create a LocalStack Extension which runs a Docker container that exposes a service
+    on one or more ports, with requests being proxied to that container through the LocalStack gateway.
 
     Requests may potentially use HTTP2 with binary content as the protocol (e.g., gRPC over HTTP2).
     To ensure proper routing of requests, subclasses can define the `http2_ports`.
