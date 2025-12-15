@@ -55,6 +55,8 @@ class TcpForwarder:
             pass
 
 
+patched_connection = False
+
 def apply_http2_patches_for_grpc_support(
     target_host: str, target_port: int, request_matcher: ProxyRequestMatcher
 ):
@@ -62,6 +64,10 @@ def apply_http2_patches_for_grpc_support(
     Apply some patches to proxy incoming gRPC requests and forward them to a target port.
     Note: this is a very brute-force approach and needs to be fixed/enhanced over time!
     """
+    LOG.debug(f"Enabling proxying to backend {target_host}:{target_port}")
+    global patched_connection
+    assert not patched_connection, "It is not safe to patch H2Connection twice with this function"
+    patched_connection = True
 
     class ForwardingBuffer:
         """
