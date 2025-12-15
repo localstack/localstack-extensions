@@ -27,7 +27,7 @@ class ProxyRequestMatcher:
 
 
 class TcpForwarder:
-    """Simple helper class for bidirectional forwarding of TPC traffic."""
+    """Simple helper class for bidirectional forwarding of TCP traffic."""
 
     buffer_size: int = 1024
     """Data buffer size for receiving data from upstream socket."""
@@ -46,7 +46,7 @@ class TcpForwarder:
         self._socket.sendall(data)
 
     def close(self):
-        LOG.debug("Closing connection to upstream HTTP2 server on port %s", self.port)
+        LOG.debug(f"Closing connection to upstream HTTP2 server on port {self.port}")
         try:
             self._socket.shutdown(socket.SHUT_RDWR)
             self._socket.close()
