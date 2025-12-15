@@ -28,21 +28,15 @@ class TypeDbExtension(ProxiedDockerContainerExtension):
     def __init__(self):
         command_flags = (os.environ.get(ENV_CMD_FLAGS) or "").strip()
         command_flags = self.DEFAULT_CMD_FLAGS + shlex.split(command_flags)
-        command = self._get_image_command() + command_flags
         http2_ports = [self.TYPEDB_PORT] if is_env_not_false(ENV_HTTP2_PROXY) else []
         super().__init__(
             image_name=self.DOCKER_IMAGE,
             container_ports=[8000, 1729],
             host=self.HOST,
             request_to_port_router=self.request_to_port_router,
-            command=command,
+            command=command_flags,
             http2_ports=http2_ports,
         )
-
-    def _get_image_command(self) -> list[str]:
-        result = DOCKER_CLIENT.inspect_image(self.DOCKER_IMAGE)
-        image_command = result["Config"]["Cmd"]
-        return image_command
 
     def should_proxy_request(self, headers: Headers) -> bool:
         # determine if this is a gRPC request targeting TypeDB
