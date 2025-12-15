@@ -39,11 +39,8 @@ class TcpForwarder:
         self._socket.connect((self.host, self.port))
 
     def receive_loop(self, callback):
-        while True:
-            data = self._socket.recv(self.buffer_size)
+        while data := self._socket.recv(self.buffer_size):
             callback(data)
-            if not data:
-                break
 
     def send(self, data):
         self._socket.sendall(data)
