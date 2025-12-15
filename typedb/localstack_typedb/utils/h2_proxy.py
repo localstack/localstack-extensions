@@ -63,64 +63,56 @@ def apply_http2_patches_for_grpc_support(
     Note: this is a very brute-force approach and needs to be fixed/enhanced over time!
     """
 
+    class ForwardingBuffer:
+        """
+        A buffer atop the HTTP2 client connection, that will hold
+        data until the ProxyRequestMatcher tells us whether to send it
+        to the backend, or leave it to the default handler.
+        """
+        def __init__(self, http_response_stream):
+            self.http_response_stream = http_response_stream
+            LOG.debug(f"Starting TCP forwarder to port {target_port} for new HTTP2 connection")
+            self.backend = TcpForwarder(target_port, host=target_host)
+            self.buffer = []
+            self.proxying = False
+            reactor.getThreadPool().callInThread(self.backend.receive_loop, self.received_from_backend)
+
+        def received_from_backend(self, data):
+            LOG.debug(f"Received {len(data)} bytes from backend")
+            self.http_response_stream.write(data)
+
+        def received_from_http2_client(self, data, default_handler):
+            if self.proxying:
+                assert not self.buffer
+                # Keep sending data to the backend for the lifetime of this connection
+                self.backend.send(data)
+            else:
+                self.buffer.append(data)
+                if headers := get_headers_from_data_stream(self.buffer):
+                    self.proxying = request_matcher.should_proxy_request(headers)
+                    # Now we know what to do with the buffer
+                    buffered_data = b"".join(self.buffer)
+                    self.buffer = []
+                    if self.proxying:
+                        LOG.debug(f"Forwarding {len(buffered_data)} bytes to backend")
+                        self.backend.send(buffered_data)
+                    else:
+                        return default_handler(buffered_data)
+
+        def close(self):
+            self.backend.close()
+
     @patch(H2Connection.connectionMade)
     def _connectionMade(fn, self, *args, **kwargs):
-        def _process(data):
-            LOG.debug("Received data (%s bytes) from upstream HTTP2 server", len(data))
-            self.transport.write(data)
-
-        # TODO: make port configurable
-        self._ls_forwarder = TcpForwarder(target_port, host=target_host)
-        LOG.debug(
-            "Starting TCP forwarder to port %s for new HTTP2 connection", target_port
-        )
-        reactor.getThreadPool().callInThread(self._ls_forwarder.receive_loop, _process)
+        self._ls_forwarding_buffer = ForwardingBuffer(self.transport)
 
     @patch(H2Connection.dataReceived)
     def _dataReceived(fn, self, data, *args, **kwargs):
-        forwarder = getattr(self, "_ls_forwarder", None)
-        should_proxy_request = getattr(self, "_ls_should_proxy_request", None)
-        if not forwarder or should_proxy_request is False:
-            return fn(self, data, *args, **kwargs)
-
-        if should_proxy_request:
-            forwarder.send(data)
-            return
-
-        setattr(self, "_data_received", getattr(self, "_data_received", []))
-        self._data_received.append(data)
-
-        # parse headers from request frames received so far
-        headers = get_headers_from_data_stream(self._data_received)
-        if not headers:
-            # if no headers received yet, then return (method will be called again for next chunk of data)
-            return
-
-        # check if the incoming request should be proxies, based on the request headers
-        self._ls_should_proxy_request = request_matcher.should_proxy_request(headers)
-
-        if not self._ls_should_proxy_request:
-            # if this is not a target request, then call the upstream function
-            result = None
-            for chunk in self._data_received:
-                result = fn(self, chunk, *args, **kwargs)
-            self._data_received = []
-            return result
-
-        # forward data chunks to the target
-        for chunk in self._data_received:
-            LOG.debug(
-                "Forwarding data (%s bytes) from HTTP2 client to server", len(chunk)
-            )
-            forwarder.send(chunk)
-        self._data_received = []
+        self._ls_forwarding_buffer.received_from_http2_client(data, lambda d: fn(d, *args, **kwargs))
 
     @patch(H2Connection.connectionLost)
     def connectionLost(fn, self, *args, **kwargs):
-        forwarder = getattr(self, "_ls_forwarder", None)
-        if not forwarder:
-            return fn(self, *args, **kwargs)
-        forwarder.close()
+        self._ls_forwarding_buffer.close()
 
 
 def get_headers_from_data_stream(data_list: Iterable[bytes]) -> Headers:
