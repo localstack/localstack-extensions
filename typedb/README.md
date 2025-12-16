@@ -35,6 +35,7 @@ Please refer to the docs [here](https://github.com/localstack/localstack-extensi
 
 ## Change Log
 
+* `0.1.1`: Minor fixes in CI setup, exception handling
 * `0.1.0`: Initial version of the extension
 
 ## License
