@@ -16,6 +16,7 @@ LOG = logging.getLogger(__name__)
 
 ProxyRequestMatcher = Callable[[Headers], bool]
 
+
 class TcpForwarder:
     """Simple helper class for bidirectional forwarding of TCP traffic."""
 
@@ -47,6 +48,7 @@ class TcpForwarder:
 
 patched_connection = False
 
+
 def apply_http2_patches_for_grpc_support(
     target_host: str, target_port: int, should_proxy_request: ProxyRequestMatcher
 ):
@@ -56,7 +58,9 @@ def apply_http2_patches_for_grpc_support(
     """
     LOG.debug(f"Enabling proxying to backend {target_host}:{target_port}")
     global patched_connection
-    assert not patched_connection, "It is not safe to patch H2Connection twice with this function"
+    assert not patched_connection, (
+        "It is not safe to patch H2Connection twice with this function"
+    )
     patched_connection = True
 
     class ForwardingBuffer:
@@ -65,13 +69,18 @@ def apply_http2_patches_for_grpc_support(
         data until the ProxyRequestMatcher tells us whether to send it
         to the backend, or leave it to the default handler.
         """
+
         def __init__(self, http_response_stream):
             self.http_response_stream = http_response_stream
-            LOG.debug(f"Starting TCP forwarder to port {target_port} for new HTTP2 connection")
+            LOG.debug(
+                f"Starting TCP forwarder to port {target_port} for new HTTP2 connection"
+            )
             self.backend = TcpForwarder(target_port, host=target_host)
             self.buffer = []
             self.proxying = False
-            reactor.getThreadPool().callInThread(self.backend.receive_loop, self.received_from_backend)
+            reactor.getThreadPool().callInThread(
+                self.backend.receive_loop, self.received_from_backend
+            )
 
         def received_from_backend(self, data):
             LOG.debug(f"Received {len(data)} bytes from backend")
@@ -104,7 +113,9 @@ def apply_http2_patches_for_grpc_support(
 
     @patch(H2Connection.dataReceived)
     def _dataReceived(fn, self, data, *args, **kwargs):
-        self._ls_forwarding_buffer.received_from_http2_client(data, lambda d: fn(d, *args, **kwargs))
+        self._ls_forwarding_buffer.received_from_http2_client(
+            data, lambda d: fn(self, d, *args, **kwargs)
+        )
 
     @patch(H2Connection.connectionLost)
     def connectionLost(fn, self, *args, **kwargs):
@@ -132,12 +143,11 @@ def get_headers_from_frames(frames: Iterable[Frame]) -> Headers:
 
 
 def get_frames_from_http2_stream(data: bytes) -> Iterable[Frame]:
-    """Parse the data from an HTTP2 stream into a list of frames"""
-    frames = []
+    """Parse the data from an HTTP2 stream into an iterable of frames"""
     buffer = FrameBuffer(server=True)
     buffer.max_frame_size = 16384
-    buffer.add_data(data)
     try:
+        buffer.add_data(data)
         for frame in buffer:
             yield frame
     except Exception:

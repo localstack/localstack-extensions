@@ -33,6 +33,10 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 Please refer to the docs [here](https://github.com/localstack/localstack-extensions?tab=readme-ov-file#start-localstack-with-the-extension) for instructions on how to start the extension in developer mode.
 
+## Change Log
+
+* `0.1.0`: Initial version of the extension
+
 ## License
 
 The code in this repo is available under the Apache 2.0 license.

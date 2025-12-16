@@ -1,6 +1,9 @@
 import requests
 from localstack.utils.strings import short_uid
-from localstack_typedb.utils.h2_proxy import get_frames_from_http2_stream, get_headers_from_frames
+from localstack_typedb.utils.h2_proxy import (
+    get_frames_from_http2_stream,
+    get_headers_from_frames,
+)
 from typedb.driver import TypeDB, Credentials, DriverOptions, TransactionType
 
 
@@ -66,8 +69,10 @@ def test_connect_to_db_via_grpc_endpoint():
             results = tx.query(
                 'match $p isa person; fetch {"name": $p.name};'
             ).resolve()
+            results = list(results)
             for json in results:
                 print(json)
+            assert len(results) == 2
 
 
 def test_get_frames_from_http2_stream():
