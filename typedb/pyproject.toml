@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/whummer/localstack-utils"
+Homepage = "https://github.com/localstack/localstack-extensions"
 
 [project.optional-dependencies]
 dev = [
