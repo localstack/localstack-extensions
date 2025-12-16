@@ -1,5 +1,6 @@
 import re
 import logging
+from abc import abstractmethod
 from functools import cache
 from typing import Callable
 import requests
@@ -19,6 +20,7 @@ from localstack.utils.sync import retry
 from rolo import route
 from rolo.proxy import Proxy
 from rolo.routing import RuleAdapter, WithHost
+from werkzeug.datastructures import Headers
 
 LOG = logging.getLogger(__name__)
 logging.getLogger("localstack_typedb").setLevel(
@@ -27,7 +29,7 @@ logging.getLogger("localstack_typedb").setLevel(
 logging.basicConfig()
 
 
-class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
+class ProxiedDockerContainerExtension(Extension):
     """
     Utility class to create a LocalStack Extension which runs a Docker container that exposes a service
     on one or more ports, with requests being proxied to that container through the LocalStack gateway.
@@ -98,8 +100,12 @@ class ProxiedDockerContainerExtension(Extension, ProxyRequestMatcher):
         # apply patches to serve HTTP/2 requests
         for port in self.http2_ports or []:
             apply_http2_patches_for_grpc_support(
-                self.container_host, port, self
+                self.container_host, port, self.should_proxy_request
             )
+
+    @abstractmethod
+    def should_proxy_request(self, headers: Headers) -> bool:
+        """Define whether a request should be proxied, based on request headers."""
 
     def on_platform_shutdown(self):
         self._remove_container()

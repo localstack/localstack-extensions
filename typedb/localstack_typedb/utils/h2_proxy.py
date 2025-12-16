@@ -1,7 +1,6 @@
 import logging
 import socket
-from abc import abstractmethod
-from typing import Iterable
+from typing import Iterable, Callable
 
 from h2.frame_buffer import FrameBuffer
 from hpack import Decoder
@@ -15,16 +14,7 @@ from werkzeug.datastructures import Headers
 LOG = logging.getLogger(__name__)
 
 
-class ProxyRequestMatcher:
-    """
-    Abstract base class that defines a request matcher, for an extension to define which incoming
-    request messages should be proxied to an upstream target (and which ones shouldn't).
-    """
-
-    @abstractmethod
-    def should_proxy_request(self, headers: Headers) -> bool:
-        """Define whether a request should be proxied, based on request headers."""
-
+ProxyRequestMatcher = Callable[[Headers], bool]
 
 class TcpForwarder:
     """Simple helper class for bidirectional forwarding of TCP traffic."""
@@ -58,7 +48,7 @@ class TcpForwarder:
 patched_connection = False
 
 def apply_http2_patches_for_grpc_support(
-    target_host: str, target_port: int, request_matcher: ProxyRequestMatcher
+    target_host: str, target_port: int, should_proxy_request: ProxyRequestMatcher
 ):
     """
     Apply some patches to proxy incoming gRPC requests and forward them to a target port.
@@ -95,7 +85,7 @@ def apply_http2_patches_for_grpc_support(
             else:
                 self.buffer.append(data)
                 if headers := get_headers_from_data_stream(self.buffer):
-                    self.proxying = request_matcher.should_proxy_request(headers)
+                    self.proxying = should_proxy_request(headers)
                     # Now we know what to do with the buffer
                     buffered_data = b"".join(self.buffer)
                     self.buffer = []
