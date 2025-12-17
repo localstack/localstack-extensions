@@ -9,7 +9,6 @@ from localstack import config
 from localstack.config import is_env_true
 from localstack_typedb.utils.h2_proxy import (
     apply_http2_patches_for_grpc_support,
-    ProxyRequestMatcher,
 )
 from localstack.utils.docker_utils import DOCKER_CLIENT
 from localstack.extensions.api import Extension, http
@@ -71,13 +70,11 @@ class ProxiedDockerContainerExtension(Extension):
     ):
         self.image_name = image_name
         if not container_ports:
-            raise ArgumentError("container_ports is required")
+            raise ValueError("container_ports is required")
         self.container_ports = container_ports
         self.host = host
         self.path = path
-        self.container_name = re.sub(
-            r"\W", "-", f"ls-ext-{self.name}"
-        )
+        self.container_name = re.sub(r"\W", "-", f"ls-ext-{self.name}")
         self.command = command
         self.request_to_port_router = request_to_port_router
         self.http2_ports = http2_ports
