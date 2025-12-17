@@ -75,7 +75,7 @@ You can install the respective extension by calling `localstack extensions insta
 | [Miniflare](https://github.com/localstack/localstack-extensions/tree/main/miniflare)               | localstack-extension-miniflare | 0.1.0   | Experimental |
 | [Stripe](https://github.com/localstack/localstack-extensions/tree/main/stripe)                     | localstack-extension-stripe | 0.2.0   | Stable |
 | [Terraform Init](https://github.com/localstack/localstack-extensions/tree/main/terraform-init)     | localstack-extension-terraform-init | 0.2.0   | Experimental |
-| [TypeDB](https://github.com/localstack/localstack-extensions/tree/main/typedb)                     | localstack-extension-typedb | 0.1.2   | Experimental |
+| [TypeDB](https://github.com/localstack/localstack-extensions/tree/main/typedb)                     | localstack-extension-typedb | 0.1.3   | Experimental |
 
 
 ## Developing Extensions
