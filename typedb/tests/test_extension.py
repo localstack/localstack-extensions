@@ -1,4 +1,5 @@
 import requests
+import httpx
 from localstack.utils.strings import short_uid
 from localstack_typedb.utils.h2_proxy import (
     get_frames_from_http2_stream,
@@ -73,6 +74,30 @@ def test_connect_to_db_via_grpc_endpoint():
             for json in results:
                 print(json)
             assert len(results) == 2
+
+
+def test_connect_to_h2_endpoint_non_typedb():
+    url = "https://s3.localhost.localstack.cloud:4566/"
+
+    # make an HTTP/2 request to the LocalStack health endpoint
+    with httpx.Client(http2=True, verify=False, trust_env=False) as client:
+        health_url = f"{url}/_localstack/health"
+        response = client.get(health_url)
+
+    assert response.status_code == 200
+    assert response.http_version == "HTTP/2"
+    assert '"services":' in response.text
+
+    # make an HTTP/2 request to a LocalStack endpoint outside the extension (S3 list buckets)
+    headers = {
+        "Authorization": "AWS4-HMAC-SHA256 Credential=000000000000/20250101/us-east-1/s3/aws4_request, ..."
+    }
+    with httpx.Client(http2=True, verify=False, trust_env=False) as client:
+        response = client.get(url, headers=headers)
+
+    assert response.status_code == 200
+    assert response.http_version == "HTTP/2"
+    assert "<ListAllMyBucketsResult" in response.text
 
 
 def test_get_frames_from_http2_stream():

@@ -70,6 +70,10 @@ def apply_http2_patches_for_grpc_support(
         to the backend, or leave it to the default handler.
         """
 
+        backend: TcpForwarder
+        buffer: list
+        proxying: bool | None
+
         def __init__(self, http_response_stream):
             self.http_response_stream = http_response_stream
             LOG.debug(
@@ -77,7 +81,7 @@ def apply_http2_patches_for_grpc_support(
             )
             self.backend = TcpForwarder(target_port, host=target_host)
             self.buffer = []
-            self.proxying = False
+            self.proxying = None
             reactor.getThreadPool().callInThread(
                 self.backend.receive_loop, self.received_from_backend
             )
@@ -86,23 +90,36 @@ def apply_http2_patches_for_grpc_support(
             LOG.debug(f"Received {len(data)} bytes from backend")
             self.http_response_stream.write(data)
 
-        def received_from_http2_client(self, data, default_handler):
+        def received_from_http2_client(self, data, default_handler: Callable):
+            if self.proxying is False:
+                # Note: Return here only if `proxying` is `False` (a value of `None` indicates
+                # that the headers have not fully been received yet)
+                return default_handler(data)
+
             if self.proxying:
                 assert not self.buffer
                 # Keep sending data to the backend for the lifetime of this connection
                 self.backend.send(data)
-            else:
-                self.buffer.append(data)
-                if headers := get_headers_from_data_stream(self.buffer):
-                    self.proxying = should_proxy_request(headers)
-                    # Now we know what to do with the buffer
-                    buffered_data = b"".join(self.buffer)
-                    self.buffer = []
-                    if self.proxying:
-                        LOG.debug(f"Forwarding {len(buffered_data)} bytes to backend")
-                        self.backend.send(buffered_data)
-                    else:
-                        return default_handler(buffered_data)
+                return
+
+            self.buffer.append(data)
+
+            if not (headers := get_headers_from_data_stream(self.buffer)):
+                # If no headers received yet, then return (method will be called again for next chunk of data)
+                return
+
+            self.proxying = should_proxy_request(headers)
+
+            buffered_data = b"".join(self.buffer)
+            self.buffer = []
+
+            if not self.proxying:
+                # if this is not a target request, then call the default handler
+                default_handler(buffered_data)
+                return
+
+            LOG.debug(f"Forwarding {len(buffered_data)} bytes to backend")
+            self.backend.send(buffered_data)
 
         def close(self):
             self.backend.close()
