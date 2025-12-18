@@ -1,5 +1,6 @@
 import logging
 import socket
+from enum import Enum
 from typing import Iterable, Callable
 
 from h2.frame_buffer import FrameBuffer
@@ -63,6 +64,11 @@ def apply_http2_patches_for_grpc_support(
     )
     patched_connection = True
 
+    class ForwardingState(Enum):
+        UNDECIDED = "undecided"
+        FORWARDING = "forwarding"
+        PASSTHROUGH = "passthrough"
+
     class ForwardingBuffer:
         """
         A buffer atop the HTTP2 client connection, that will hold
@@ -72,7 +78,7 @@ def apply_http2_patches_for_grpc_support(
 
         backend: TcpForwarder
         buffer: list
-        proxying: bool | None
+        state: ForwardingState
 
         def __init__(self, http_response_stream):
             self.http_response_stream = http_response_stream
@@ -81,7 +87,7 @@ def apply_http2_patches_for_grpc_support(
             )
             self.backend = TcpForwarder(target_port, host=target_host)
             self.buffer = []
-            self.proxying = None
+            self.state = ForwardingState.UNDECIDED
             reactor.getThreadPool().callInThread(
                 self.backend.receive_loop, self.received_from_backend
             )
@@ -91,35 +97,30 @@ def apply_http2_patches_for_grpc_support(
             self.http_response_stream.write(data)
 
         def received_from_http2_client(self, data, default_handler: Callable):
-            if self.proxying is False:
-                # Note: Return here only if `proxying` is `False` (a value of `None` indicates
-                # that the headers have not fully been received yet)
-                return default_handler(data)
+            match self.state:
+                case ForwardingState.PASSTHROUGH:
+                    default_handler(data)
+                case ForwardingState.FORWARDING:
+                    assert not self.buffer
+                    # Keep sending data to the backend for the lifetime of this connection
+                    self.backend.send(data)
+                case ForwardingState.UNDECIDED:
+                    self.buffer.append(data)
 
-            if self.proxying:
-                assert not self.buffer
-                # Keep sending data to the backend for the lifetime of this connection
-                self.backend.send(data)
-                return
+                    if headers := get_headers_from_data_stream(self.buffer):
+                        buffered_data = b"".join(self.buffer)
+                        self.buffer = []
 
-            self.buffer.append(data)
-
-            if not (headers := get_headers_from_data_stream(self.buffer)):
-                # If no headers received yet, then return (method will be called again for next chunk of data)
-                return
-
-            self.proxying = should_proxy_request(headers)
-
-            buffered_data = b"".join(self.buffer)
-            self.buffer = []
-
-            if not self.proxying:
-                # if this is not a target request, then call the default handler
-                default_handler(buffered_data)
-                return
-
-            LOG.debug(f"Forwarding {len(buffered_data)} bytes to backend")
-            self.backend.send(buffered_data)
+                        if should_proxy_request(headers):
+                            self.state = ForwardingState.FORWARDING
+                            LOG.debug(
+                                f"Forwarding {len(buffered_data)} bytes to backend"
+                            )
+                            self.backend.send(buffered_data)
+                        else:
+                            self.state = ForwardingState.PASSTHROUGH
+                            # if this is not a target request, then call the default handler
+                            default_handler(buffered_data)
 
         def close(self):
             self.backend.close()
