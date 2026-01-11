@@ -39,6 +39,12 @@ jobs:
       - name: Set up Terraform CLI
         uses: hashicorp/setup-terraform@v2
 
+      - name: Run linter
+        run: |
+          cd aws-proxy
+          make install
+          make lint
+
       - name: Install LocalStack and extension
         env:
           LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
@@ -58,8 +64,6 @@ jobs:
           # build and install extension
           localstack extensions init
           (
-            make install
-            . .venv/bin/activate
             make build
             make enable
           )
@@ -72,12 +76,6 @@ jobs:
           ls -la  /home/runner/.cache/localstack/volume/lib/extensions/python_venv/lib/python3.*/site-packages/aws*
           DEBUG=1 GATEWAY_SERVER=hypercorn localstack start -d
           localstack wait
-
-      - name: Run linter
-        run: |
-          cd aws-proxy
-          (. .venv/bin/activate; pip install --upgrade --pre localstack localstack-ext)
-          make lint
 
       - name: Run integration tests
         env:
