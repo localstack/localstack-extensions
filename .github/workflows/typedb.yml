@@ -1,7 +1,15 @@
 name: LocalStack TypeDB Extension Tests
 
 on:
+  push:
+    paths:
+      - typedb/**
+    branches:
+      - main
   pull_request:
+    paths:
+      - .github/workflows/typedb.yml
+      - typedb/**
   workflow_dispatch:
 
 env:
