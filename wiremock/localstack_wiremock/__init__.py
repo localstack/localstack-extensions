@@ -1,0 +1,1 @@
+name = "localstack_wiremock"

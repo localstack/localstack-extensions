@@ -1,0 +1,57 @@
+name: LocalStack WireMock Extension Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'wiremock/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'wiremock/**'
+  workflow_dispatch:
+
+env:
+  LOCALSTACK_DISABLE_EVENTS: "1"
+  LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+
+jobs:
+  integration-tests:
+    name: Run WireMock Extension Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Set up LocalStack and extension
+        run: |
+          cd wiremock
+
+          docker pull localstack/localstack-pro &
+          docker pull wiremock/wiremock &
+          docker pull public.ecr.aws/lambda/python:3.9 &
+          pip install localstack terraform-local awscli-local[ver1]
+
+          make install
+          make dist
+          localstack extensions -v install file://$(ls ./dist/localstack_wiremock-*.tar.gz)
+
+          DEBUG=1 localstack start -d
+          localstack wait
+
+      - name: Run sample app test
+        run: |
+          cd wiremock
+          make sample
+
+      - name: Print logs
+        if: always()
+        run: |
+          localstack logs
+          localstack stop
