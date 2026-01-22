@@ -53,6 +53,18 @@ class ProxiedDockerContainerExtension(Extension):
     env_vars: dict[str, str] | None = None
     """Optional environment variables to pass to the container."""
 
+    health_check_path: str = "/__admin/health"
+    """Health check endpoint path to verify container is ready."""
+
+    health_check_port: int | None = None
+    """Port to use for health check. If None, uses the first container port."""
+
+    health_check_retries: int = 40
+    """Number of retries for health check."""
+
+    health_check_sleep: float = 1
+    """Sleep time between health check retries in seconds."""
+
     def __init__(
         self,
         image_name: str,
@@ -65,6 +77,10 @@ class ProxiedDockerContainerExtension(Extension):
         http2_ports: list[int] | None = None,
         volumes: list[SimpleVolumeBind] | None = None,
         env_vars: dict[str, str] | None = None,
+        health_check_path: str = "/__admin/health",
+        health_check_port: int | None = None,
+        health_check_retries: int = 40,
+        health_check_sleep: float = 1,
     ):
         self.image_name = image_name
         self.container_ports = container_ports
@@ -76,6 +92,10 @@ class ProxiedDockerContainerExtension(Extension):
         self.http2_ports = http2_ports
         self.volumes = volumes
         self.env_vars = env_vars
+        self.health_check_path = health_check_path
+        self.health_check_port = health_check_port
+        self.health_check_retries = health_check_retries
+        self.health_check_sleep = health_check_sleep
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
         if self.path:
@@ -128,20 +148,29 @@ class ProxiedDockerContainerExtension(Extension):
             LOG.debug("Failed to start container %s: %s", container_name, e)
             raise
 
-        main_port = self.container_ports[0]
+        health_port = self.health_check_port or self.container_ports[0]
         container_host = get_addressable_container_host()
+        health_url = f"http://{container_host}:{health_port}{self.health_check_path}"
 
         def _ping_endpoint():
-            # TODO: allow defining a custom healthcheck endpoint ...
-            response = requests.get(
-                f"http://{container_host}:{main_port}/__admin/health"
-            )
+            LOG.debug("Health check: %s", health_url)
+            response = requests.get(health_url, timeout=5)
             assert response.ok
 
         try:
-            retry(_ping_endpoint, retries=40, sleep=1)
+            retry(
+                _ping_endpoint,
+                retries=self.health_check_retries,
+                sleep=self.health_check_sleep,
+            )
         except Exception as e:
             LOG.info("Failed to connect to container %s: %s", container_name, e)
+            # Log container output for debugging
+            try:
+                logs = DOCKER_CLIENT.get_container_logs(container_name)
+                LOG.info("Container logs for %s:\n%s", container_name, logs)
+            except Exception:
+                pass
             self._remove_container()
             raise
 

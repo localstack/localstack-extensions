@@ -1,22 +1,16 @@
 #!/bin/bash
 
-echo "Downloading WireMock stub definitions..."
+# Import stubs into OSS WireMock (for WireMock Runner, use setup-wiremock-runner.sh)
 
-# Define the URL for the stub definitions and the temporary file path
-STUBS_URL="https://library.wiremock.org/catalog/api/p/personio.de/personio-de-personnel/personio.de-personnel-stubs.json"
+STUBS_URL="${STUBS_URL:-https://library.wiremock.org/catalog/api/p/personio.de/personio-de-personnel/personio.de-personnel-stubs.json}"
 TMP_STUBS_FILE="/tmp/personio-stubs.json"
+WIREMOCK_URL="${WIREMOCK_URL:-http://wiremock.localhost.localstack.cloud:4566}"
 
-# Define the WireMock server URL
-WIREMOCK_URL="http://localhost:8080"
-
-# Download the stub definitions
+echo "Downloading stubs from ${STUBS_URL}..."
 curl -s -o "$TMP_STUBS_FILE" "$STUBS_URL"
 
-echo "Download complete. Stubs saved to $TMP_STUBS_FILE"
-echo "Importing stubs into WireMock..."
-
-# Send a POST request to WireMock's import endpoint with the downloaded file
-curl -v -X POST -H "Content-Type: application/json" --data-binary "@$TMP_STUBS_FILE" "$WIREMOCK_URL/__admin/mappings/import"
+echo "Importing stubs into WireMock at ${WIREMOCK_URL}..."
+curl -v -X POST -H "Content-Type: application/json" --data-binary "@$TMP_STUBS_FILE" "${WIREMOCK_URL}/__admin/mappings/import"
 
 echo ""
-echo "WireMock stub import request sent."
+echo "Verify stubs at: ${WIREMOCK_URL}/__admin/mappings"
