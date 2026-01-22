@@ -47,8 +47,11 @@ class ProxiedDockerContainerExtension(Extension):
     http2_ports: list[int] | None
     """List of ports for which HTTP2 proxy forwarding into the container should be enabled."""
 
-    volumes: list[SimpleVolumeBind] | None = (None,)
+    volumes: list[SimpleVolumeBind] | None = None
     """Optional volumes to mount into the container host."""
+
+    env_vars: dict[str, str] | None = None
+    """Optional environment variables to pass to the container."""
 
     def __init__(
         self,
@@ -61,6 +64,7 @@ class ProxiedDockerContainerExtension(Extension):
         request_to_port_router: Callable[[Request], int] | None = None,
         http2_ports: list[int] | None = None,
         volumes: list[SimpleVolumeBind] | None = None,
+        env_vars: dict[str, str] | None = None,
     ):
         self.image_name = image_name
         self.container_ports = container_ports
@@ -71,6 +75,7 @@ class ProxiedDockerContainerExtension(Extension):
         self.request_to_port_router = request_to_port_router
         self.http2_ports = http2_ports
         self.volumes = volumes
+        self.env_vars = env_vars
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
         if self.path:
@@ -106,6 +111,8 @@ class ProxiedDockerContainerExtension(Extension):
         kwargs = {}
         if self.command:
             kwargs["command"] = self.command
+        if self.env_vars:
+            kwargs["env_vars"] = self.env_vars
 
         try:
             DOCKER_CLIENT.run_container(

@@ -34,7 +34,7 @@ resource "null_resource" "package_lambda" {
       rm -rf "${path.module}/build"
       mkdir -p "${path.module}/build"
       cp "${path.module}/src/handler.py" "${path.module}/build/"
-      pip install -r "${path.module}/src/requirements.txt" -t "${path.module}/build"
+      pip3 install -r "${path.module}/src/requirements.txt" -t "${path.module}/build"
     EOT
     interpreter = ["/bin/bash", "-c"]
   }
