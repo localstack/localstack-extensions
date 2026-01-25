@@ -134,7 +134,32 @@ class AwsProxyHandler(Handler):
                     secret_id, account_id=context.account_id, region_name=context.region
                 )
                 return bool(re.match(resource_name_pattern, secret_arn))
-            # TODO: add more resource patterns
+            if service_name == "cloudwatch":
+                # CloudWatch alarm ARN format: arn:aws:cloudwatch:{region}:{account}:alarm:{alarm_name}
+                alarm_name = context.service_request.get("AlarmName") or ""
+                alarm_names = context.service_request.get("AlarmNames") or []
+                if alarm_name:
+                    alarm_names = [alarm_name]
+                if alarm_names:
+                    for name in alarm_names:
+                        alarm_arn = f"arn:aws:cloudwatch:{context.region}:{context.account_id}:alarm:{name}"
+                        if re.match(resource_name_pattern, alarm_arn):
+                            return True
+                    return False
+                # For metric operations without alarm names, check if pattern is generic
+                return bool(re.match(resource_name_pattern, ".*"))
+            if service_name == "logs":
+                # CloudWatch Logs ARN format: arn:aws:logs:{region}:{account}:log-group:{name}:*
+                log_group_name = context.service_request.get("logGroupName") or ""
+                log_group_prefix = (
+                    context.service_request.get("logGroupNamePrefix") or ""
+                )
+                name = log_group_name or log_group_prefix
+                if name:
+                    log_group_arn = f"arn:aws:logs:{context.region}:{context.account_id}:log-group:{name}:*"
+                    return bool(re.match(resource_name_pattern, log_group_arn))
+                # No log group name specified - check if pattern is generic
+                return bool(re.match(resource_name_pattern, ".*"))
         except re.error as e:
             raise Exception(
                 "Error evaluating regular expression - please verify proxy configuration"
@@ -261,6 +286,9 @@ class AwsProxyHandler(Handler):
 
     @classmethod
     def _get_canonical_service_name(cls, service_name: str) -> str:
-        if service_name == "sqs-query":
-            return "sqs"
-        return service_name
+        # Map internal/signing service names to boto3 client names
+        mapping = {
+            "sqs-query": "sqs",
+            "monitoring": "cloudwatch",
+        }
+        return mapping.get(service_name, service_name)
