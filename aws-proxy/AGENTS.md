@@ -52,3 +52,9 @@ When adding new integration tests, consider the following:
 * Make sure to either use fixtures (preferred), or reliable cleanups for removing the resources; several fixtures for creating AWS resources are available in the `localstack.testing.pytest.fixtures` module
 * If a test uses multiple resources with interdependencies (e.g., an SQS queue connected to an SNS topic), then the test needs to ensure that both resource types are proxied (i.e., created in real AWS), to avoid a situation where a resource in AWS is attempting to reference a local resource in LocalStack (using account ID `000000000000` in their ARN).
 * When waiting for the creation status of a resource, use the `localstack.utils.sync.retry(..)` utility function, rather than a manual `for` loop.
+
+## Fixing or Enhancing Logic in the Proxy
+
+Notes:
+* The AWS proxy is running as a LocalStack Extension, and the tests are currently set up in a way that they assume the container to be running with the Extension in dev mode. Hence, in order to make actual changes to the proxy logic, we'll need to restart the LocalStack main container. You can either ask me (the user) to restart the container whenever you're making changes in the core logic, or alternatively remove the `localstack-main` container, and then run `EXTENSION_DEV_MODE=1 DEBUG=1 localstack start -d` again to restart the container, which may reveal some error logs, stack traces, etc.
+* If the proxy raises errors or something seems off, you can grab and parse the output of the LocalStack container via `localstack logs`.
