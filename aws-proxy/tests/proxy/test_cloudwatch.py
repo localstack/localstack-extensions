@@ -3,7 +3,6 @@ import time
 from datetime import datetime, timezone
 
 import boto3
-import pytest
 from localstack.aws.connect import connect_to
 from localstack.utils.strings import short_uid
 from localstack.utils.sync import retry
@@ -144,9 +143,6 @@ def test_cloudwatch_alarm_operations(start_aws_proxy, cleanups):
     assert alarms_aws_2["MetricAlarms"][0]["AlarmName"] == alarm_name_2
 
 
-@pytest.mark.xfail(
-    reason="CloudWatch Query protocol: form data stream consumed before proxy receives request"
-)
 def test_cloudwatch_readonly_operations(start_aws_proxy, cleanups):
     """Test CloudWatch operations in read-only proxy mode."""
     alarm_name = f"test-readonly-alarm-{short_uid()}"
@@ -206,9 +202,6 @@ def test_cloudwatch_readonly_operations(start_aws_proxy, cleanups):
     assert len(alarms_aws_new["MetricAlarms"]) == 0
 
 
-@pytest.mark.xfail(
-    reason="CloudWatch Query protocol: form data consumed before resource matching check"
-)
 def test_cloudwatch_resource_name_matching(start_aws_proxy, cleanups):
     """Test that proxy forwards requests for specific CloudWatch alarms matching ARN pattern."""
     alarm_name_match = f"proxy-alarm-{short_uid()}"

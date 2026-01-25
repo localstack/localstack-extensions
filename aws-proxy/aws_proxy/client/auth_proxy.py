@@ -1,3 +1,4 @@
+# Note/disclosure: This file has been partially modified by an AI agent.
 import json
 import logging
 import os
@@ -179,6 +180,19 @@ class AuthProxyAWS(Server):
                 "Unable to register auth proxy - is LocalStack running with the extension enabled?"
             )
             raise
+
+    def deregister_from_instance(self):
+        """Deregister this proxy from the LocalStack instance."""
+        port = getattr(self, "port", None)
+        if not port:
+            return
+        url = f"{external_service_url()}{HANDLER_PATH_PROXIES}/{port}"
+        LOG.debug("Deregistering proxy from main container via: %s", url)
+        try:
+            response = requests.delete(url)
+            return response
+        except Exception as e:
+            LOG.debug("Unable to deregister auth proxy: %s", e)
 
     def _parse_aws_request(
         self, request: Request, service_name: str, region_name: str, client

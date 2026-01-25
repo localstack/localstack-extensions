@@ -1,9 +1,12 @@
+# Note/disclosure: This file has been partially modified by an AI agent.
 import json
 import logging
 import re
 from typing import Dict, Optional
+from urllib.parse import urlencode
 
 import requests
+from botocore.serialize import create_serializer
 from localstack.aws.api import RequestContext
 from localstack.aws.chain import Handler, HandlerChain
 from localstack.constants import APPLICATION_JSON, LOCALHOST, LOCALHOST_HOSTNAME
@@ -193,6 +196,12 @@ class AwsProxyHandler(Handler):
                 data = request.form
             elif request.data:
                 data = request.data
+
+            # Fallback: if data is empty and we have parsed service_request,
+            # reconstruct the request body (handles cases where form data was consumed)
+            if not data and context.service_request:
+                data = self._reconstruct_request_body(context, ctype)
+
             LOG.debug(
                 "Forward request: %s %s - %s - %s",
                 request.method,
@@ -292,3 +301,29 @@ class AwsProxyHandler(Handler):
             "monitoring": "cloudwatch",
         }
         return mapping.get(service_name, service_name)
+
+    def _reconstruct_request_body(
+        self, context: RequestContext, content_type: str
+    ) -> bytes:
+        """
+        Reconstruct the request body from the parsed service_request.
+        This is used when the original request body was consumed during parsing.
+        """
+        try:
+            protocol = context.service.protocol
+            if protocol == "query" or "x-www-form-urlencoded" in (content_type or ""):
+                # For Query protocol, serialize using botocore serializer
+                serializer = create_serializer(protocol)
+                operation_model = context.operation
+                serialized = serializer.serialize_to_request(
+                    context.service_request, operation_model
+                )
+                body = serialized.get("body", {})
+                if isinstance(body, dict):
+                    return urlencode(body, doseq=True)
+                return body
+            elif protocol == "json" or protocol == "rest-json":
+                return json.dumps(context.service_request)
+        except Exception as e:
+            LOG.debug("Failed to reconstruct request body: %s", e)
+        return b""
