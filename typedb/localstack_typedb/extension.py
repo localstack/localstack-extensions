@@ -2,7 +2,7 @@ import os
 import shlex
 
 from localstack.config import is_env_not_false
-from localstack.extensions.utils import ProxiedDockerContainerExtension
+from localstack_extensions.utils import ProxiedDockerContainerExtension
 from rolo import Request
 from werkzeug.datastructures import Headers
 

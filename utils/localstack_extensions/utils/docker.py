@@ -7,7 +7,7 @@ import requests
 
 from localstack import config
 from localstack.config import is_env_true
-from localstack.extensions.utils.h2_proxy import (
+from localstack_extensions.utils.h2_proxy import (
     apply_http2_patches_for_grpc_support,
 )
 from localstack.utils.docker_utils import DOCKER_CLIENT
