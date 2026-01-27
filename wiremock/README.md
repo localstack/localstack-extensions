@@ -1,19 +1,19 @@
-WireMock on LocalStack
-========================
+# WireMock on LocalStack
 
 This repo contains a [LocalStack Extension](https://github.com/localstack/localstack-extensions) that facilitates developing [WireMock](https://wiremock.org)-based applications locally.
 
 The extension supports two modes:
+
 - **OSS WireMock**: Uses the open-source `wiremock/wiremock` image (default)
 - **WireMock Runner**: Uses `wiremock/wiremock-runner` with WireMock Cloud integration (requires API token)
 
 ## Prerequisites
 
-* Docker
-* LocalStack Pro (free trial available)
-* `localstack` CLI
-* `make`
-* [WireMock CLI](https://docs.wiremock.io/cli/overview) (for WireMock Runner mode)
+- Docker
+- LocalStack Pro (free trial available)
+- `localstack` CLI
+- `make`
+- [WireMock CLI](https://docs.wiremock.io/cli/overview) (for WireMock Runner mode)
 
 ## Install from GitHub repository
 
@@ -25,7 +25,7 @@ localstack extensions install "git+https://github.com/localstack/localstack-exte
 
 ## Install local development version
 
-To install the extension into localstack in developer mode, you will need Python 3.11, and create a virtual environment in the extensions project.
+To install the extension into LocalStack in developer mode, you will need Python 3.11, and create a virtual environment in the extensions project.
 
 In the newly generated project, simply run
 
@@ -68,6 +68,7 @@ curl -X POST -H "Content-Type: application/json" \
 ### WireMock Runner Mode (Cloud Integration)
 
 To use WireMock Runner with WireMock Cloud, you need:
+
 1. A WireMock Cloud API token
 2. A `.wiremock` directory with your mock API configuration
 
@@ -104,6 +105,7 @@ localstack start
 ```
 
 **Environment Variables:**
+
 - `WIREMOCK_API_TOKEN`: Your WireMock Cloud API token (required for runner mode)
 - `WIREMOCK_CONFIG_DIR`: Path to the directory containing your `.wiremock` folder (required for runner mode)
 
@@ -111,7 +113,8 @@ Note: When using the LocalStack CLI, prefix environment variables with `LOCALSTA
 
 ## Sample Application
 
-See the `sample-app/` directory for a complete example using Terraform that demonstrates:
+See the `sample-app-runner/` directory for a complete example using Terraform that demonstrates:
+
 - Creating an API Gateway
 - Lambda function that calls WireMock stubs
 - Integration testing with mocked external APIs
