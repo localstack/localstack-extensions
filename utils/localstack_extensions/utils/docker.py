@@ -5,7 +5,6 @@ from functools import cache
 from typing import Callable
 import requests
 
-from localstack import config
 from localstack.config import is_env_true
 from localstack_extensions.utils.h2_proxy import (
     apply_http2_patches_for_grpc_support,

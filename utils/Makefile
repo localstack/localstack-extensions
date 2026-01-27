@@ -28,8 +28,8 @@ dist: venv      ## Create distribution package
 publish: clean-dist venv dist   ## Publish package to PyPI
 	$(VENV_RUN); pip install --upgrade twine; twine upload dist/*
 
-format: venv    ## Run ruff to format the code
-	$(VENV_RUN); python -m ruff format .; make lint
+format: venv    ## Run ruff to format and fix the code
+	$(VENV_RUN); python -m ruff format .; python -m ruff check --fix .
 
 lint: venv      ## Run ruff to lint the code
 	$(VENV_RUN); python -m ruff check --output-format=full .
