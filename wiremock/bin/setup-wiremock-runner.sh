@@ -13,7 +13,7 @@ echo "=== WireMock Runner Setup ==="
 
 # Check prerequisites
 if ! command -v wiremock &> /dev/null; then
-    echo "Error: WireMock CLI not installed. Run: npm install -g wiremock"
+    echo "Error: WireMock CLI not installed. Run: npm install -g @wiremock/cli"
     exit 1
 fi
 
