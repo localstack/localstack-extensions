@@ -41,7 +41,7 @@ pip install "git+https://github.com/localstack/localstack-extensions.git#egg=loc
 ### Creating a Docker-based Extension
 
 ```python
-from localstack_extensions_utils.docker import ProxiedDockerContainerExtension
+from localstack.extensions.utils import ProxiedDockerContainerExtension
 from werkzeug.datastructures import Headers
 
 class MyExtension(ProxiedDockerContainerExtension):

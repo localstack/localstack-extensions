@@ -1,8 +1,8 @@
-from localstack_extensions_utils.docker import (
+from localstack.extensions.utils.docker import (
     ProxiedDockerContainerExtension,
     ProxyResource,
 )
-from localstack_extensions_utils.h2_proxy import (
+from localstack.extensions.utils.h2_proxy import (
     TcpForwarder,
     apply_http2_patches_for_grpc_support,
     get_headers_from_data_stream,

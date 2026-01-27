@@ -35,3 +35,6 @@ dev = [
     "pytest",
     "ruff",
 ]
+
+[tool.setuptools.packages.find]
+include = ["localstack*"]
