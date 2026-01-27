@@ -1,0 +1,9 @@
+.venv
+dist
+build
+**/*.egg-info
+.eggs
+.terraform*
+terraform.tfstate*
+*.zip
+.wiremock

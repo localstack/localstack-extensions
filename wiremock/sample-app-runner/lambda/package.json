@@ -1,0 +1,12 @@
+{
+  "name": "chat-handler",
+  "version": "1.0.0",
+  "description": "Lambda handler for WireMock OpenAI chat backend",
+  "main": "index.js",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^20.11.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.3.0"
+  }
+}
