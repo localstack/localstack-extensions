@@ -42,7 +42,7 @@ sample:		    ## Deploy sample app
 	echo "Creating stubs in WireMock ..."
 	bin/create-stubs.sh
 	echo "Deploying sample app into LocalStack via Terraform ..."
-	(cd sample-app; tflocal init; tflocal apply -auto-approve)
+	(cd sample-app-oss; tflocal init; tflocal apply -auto-approve)
 	apiId=$$(awslocal apigateway get-rest-apis | jq -r '.items[0].id'); \
 	    endpoint=https://$$apiId.execute-api.us-east-1.localhost.localstack.cloud/dev/time-off; \
 	    echo "Invoking local API Gateway endpoint: $$endpoint"; \
