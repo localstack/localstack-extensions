@@ -48,7 +48,7 @@ jobs:
       - name: Run sample app test
         run: |
           cd wiremock
-          make sample
+          make sample-oss
 
       - name: Print logs
         if: always()

@@ -48,11 +48,13 @@ sample-oss:		    ## Deploy sample app (OSS mode)
 	    echo "Invoking local API Gateway endpoint: $$endpoint"; \
 	    curl -k -v $$endpoint | grep time_off_date
 
-sample-runner:		## Deploy sample app (Runner mode)
+sample-runner-setup:		## Set up the mock APIs for WireMock Cloud (Runner mode)
 	echo "Creating stubs in WireMock ..."
 	bin/setup-wiremock-runner.sh
+
+sample-runner:		## Deploy sample app (Runner mode)
 	echo "Deploying sample app into LocalStack via CDK ..."
-	(cd sample-app-runner; cdklocal bootstrap; cdklocal deploy)
+	(cd sample-app-runner; npm install; cdklocal bootstrap; cdklocal deploy)
 	apiId=$$(awslocal apigateway get-rest-apis | jq -r '.items[0].id'); \
 	    endpoint=https://$$apiId.execute-api.us-east-1.localhost.localstack.cloud/dev/models; \
 	    echo "Invoking local API Gateway endpoint: $$endpoint"; \
