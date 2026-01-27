@@ -38,7 +38,7 @@ format:		    ## Run ruff to format the whole codebase
 test:		    ## Run integration tests (requires LocalStack running with the Extension installed)
 	$(VENV_RUN); pytest tests $(PYTEST_ARGS)
 
-sample:		    ## Deploy sample app
+sample-oss:		    ## Deploy sample app (OSS mode)
 	echo "Creating stubs in WireMock ..."
 	bin/create-stubs.sh
 	echo "Deploying sample app into LocalStack via Terraform ..."
@@ -47,6 +47,16 @@ sample:		    ## Deploy sample app
 	    endpoint=https://$$apiId.execute-api.us-east-1.localhost.localstack.cloud/dev/time-off; \
 	    echo "Invoking local API Gateway endpoint: $$endpoint"; \
 	    curl -k -v $$endpoint | grep time_off_date
+
+sample-runner:		## Deploy sample app (Runner mode)
+	echo "Creating stubs in WireMock ..."
+	bin/setup-wiremock-runner.sh
+	echo "Deploying sample app into LocalStack via CDK ..."
+	(cd sample-app-runner; cdklocal bootstrap; cdklocal deploy)
+	apiId=$$(awslocal apigateway get-rest-apis | jq -r '.items[0].id'); \
+	    endpoint=https://$$apiId.execute-api.us-east-1.localhost.localstack.cloud/dev/models; \
+	    echo "Invoking local API Gateway endpoint: $$endpoint"; \
+	    curl -k -v $$endpoint
 
 clean-dist: clean
 	rm -rf dist/
