@@ -57,7 +57,7 @@ localstack start
 
 The WireMock server will be available at `http://wiremock.localhost.localstack.cloud:4566`.
 
-You can import stubs using the WireMock Admin API:
+You can import stubs using the WireMock Admin API (assuming a `stubs.json` exists in the local working directory):
 
 ```bash
 curl -X POST -H "Content-Type: application/json" \
