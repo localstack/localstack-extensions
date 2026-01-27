@@ -1,7 +1,7 @@
 import requests
 import httpx
 from localstack.utils.strings import short_uid
-from localstack_typedb.utils.h2_proxy import (
+from localstack_extensions_utils import (
     get_frames_from_http2_stream,
     get_headers_from_frames,
 )

@@ -7,7 +7,7 @@ import requests
 
 from localstack import config
 from localstack.config import is_env_true
-from localstack_typedb.utils.h2_proxy import (
+from localstack_extensions_utils.h2_proxy import (
     apply_http2_patches_for_grpc_support,
 )
 from localstack.utils.docker_utils import DOCKER_CLIENT
@@ -22,10 +22,6 @@ from rolo.routing import RuleAdapter, WithHost
 from werkzeug.datastructures import Headers
 
 LOG = logging.getLogger(__name__)
-logging.getLogger("localstack_typedb").setLevel(
-    logging.DEBUG if config.DEBUG else logging.INFO
-)
-logging.basicConfig()
 
 
 class ProxiedDockerContainerExtension(Extension):
@@ -130,8 +126,8 @@ class ProxiedDockerContainerExtension(Extension):
             )
         except Exception as e:
             LOG.debug("Failed to start container %s: %s", self.container_name, e)
-            # allow running TypeDB in a local server in dev mode, if TYPEDB_DEV_MODE is enabled
-            if not is_env_true("TYPEDB_DEV_MODE"):
+            # allow running the container in a local server in dev mode
+            if not is_env_true(f"{self.name.upper().replace('-', '_')}_DEV_MODE"):
                 raise
 
         def _ping_endpoint():

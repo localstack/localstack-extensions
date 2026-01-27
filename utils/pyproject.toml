@@ -3,18 +3,25 @@ requires = ["setuptools", "wheel", "plux>=1.3.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "localstack-extension-typedb"
-version = "0.1.3"
-description = "LocalStack Extension: TypeDB on LocalStack"
+name = "localstack-extensions-utils"
+version = "0.1.0"
+description = "Utility library for LocalStack Extensions"
 readme = {file = "README.md", content-type = "text/markdown; charset=UTF-8"}
 requires-python = ">=3.10"
 authors = [
-    { name = "LocalStack + TypeDB team"}
+    { name = "LocalStack Team" }
 ]
-keywords = ["LocalStack", "TypeDB"]
+keywords = ["LocalStack", "Extensions", "Utils"]
 classifiers = []
 dependencies = [
-    "localstack-extensions-utils",
+    "httpx",
+    "h2",
+    "hpack",
+    "hyperframe",
+    "priority",
+    "requests",
+    "rolo",
+    "twisted",
 ]
 
 [project.urls]
@@ -24,14 +31,7 @@ Homepage = "https://github.com/localstack/localstack-extensions"
 dev = [
     "boto3",
     "build",
-    "jsonpatch",
     "localstack",
     "pytest",
-    "rolo",
     "ruff",
-    "twisted",
-    "typedb-driver",
 ]
-
-[project.entry-points."localstack.extensions"]
-localstack_typedb = "localstack_typedb.extension:TypeDbExtension"
