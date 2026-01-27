@@ -80,7 +80,7 @@ def test_create_table_and_insert():
 
 
 def test_paradedb_pg_search_extension():
-    """Test ParadeDB's pg_search extension for full-text search."""
+    """Test ParadeDB's pg_search extension for full-text search using v2 API."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -109,31 +109,30 @@ def test_paradedb_pg_search_extension():
         """)
         conn.commit()
 
-        # Create BM25 search index using ParadeDB
+        # Create BM25 search index using ParadeDB v2 API (CREATE INDEX syntax)
         cursor.execute(f"""
-            CALL paradedb.create_bm25(
-                index_name => '{index_name}',
-                table_name => '{table_name}',
-                key_field => 'id',
-                text_fields => paradedb.field('name') || paradedb.field('description')
-            );
+            CREATE INDEX {index_name} ON {table_name}
+            USING bm25 (id, name, description)
+            WITH (key_field='id');
         """)
         conn.commit()
 
-        # Search for products containing 'wireless'
+        # Search for products containing 'wireless' using ||| operator (disjunction/OR)
         cursor.execute(f"""
             SELECT id, name, description
-            FROM {index_name}.search('description:wireless');
+            FROM {table_name}
+            WHERE description ||| 'wireless';
         """)
         results = cursor.fetchall()
 
         assert len(results) >= 1
         assert any("Headphones" in row[1] for row in results)
 
-        # Search for products containing 'laptop'
+        # Search for products containing 'laptop' in name or description
         cursor.execute(f"""
             SELECT id, name, description
-            FROM {index_name}.search('name:laptop OR description:laptop');
+            FROM {table_name}
+            WHERE name ||| 'laptop' OR description ||| 'laptop';
         """)
         results = cursor.fetchall()
 
@@ -141,16 +140,16 @@ def test_paradedb_pg_search_extension():
         assert any("Laptop" in row[1] for row in results)
 
     finally:
-        # Cleanup
-        cursor.execute(f"CALL paradedb.drop_bm25('{index_name}');")
+        # Cleanup - drop index first, then table
+        cursor.execute(f"DROP INDEX IF EXISTS {index_name};")
         cursor.execute(f"DROP TABLE IF EXISTS {table_name};")
         conn.commit()
         cursor.close()
         conn.close()
 
 
-def test_paradedb_hybrid_search():
-    """Test ParadeDB's hybrid search capabilities."""
+def test_paradedb_search_with_scoring():
+    """Test ParadeDB's BM25 search with relevance scoring."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -179,21 +178,19 @@ def test_paradedb_hybrid_search():
         """)
         conn.commit()
 
-        # Create search index
+        # Create search index using v2 API
         cursor.execute(f"""
-            CALL paradedb.create_bm25(
-                index_name => '{index_name}',
-                table_name => '{table_name}',
-                key_field => 'id',
-                text_fields => paradedb.field('title') || paradedb.field('content')
-            );
+            CREATE INDEX {index_name} ON {table_name}
+            USING bm25 (id, title, content)
+            WITH (key_field='id');
         """)
         conn.commit()
 
-        # Search for programming-related documents
+        # Search for programming-related documents with scoring
         cursor.execute(f"""
-            SELECT id, title, paradedb.score(id) as score
-            FROM {index_name}.search('content:programming')
+            SELECT id, title, pdb.score(id) as score
+            FROM {table_name}
+            WHERE content ||| 'programming'
             ORDER BY score DESC;
         """)
         results = cursor.fetchall()
@@ -205,7 +202,65 @@ def test_paradedb_hybrid_search():
 
     finally:
         # Cleanup
-        cursor.execute(f"CALL paradedb.drop_bm25('{index_name}');")
+        cursor.execute(f"DROP INDEX IF EXISTS {index_name};")
+        cursor.execute(f"DROP TABLE IF EXISTS {table_name};")
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+
+def test_paradedb_conjunction_search():
+    """Test ParadeDB's conjunction (AND) search using &&& operator."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    table_name = f"items_{short_uid()}"
+    index_name = f"{table_name}_idx"
+
+    try:
+        # Create table
+        cursor.execute(f"""
+            CREATE TABLE {table_name} (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT
+            );
+        """)
+        conn.commit()
+
+        # Insert sample data
+        cursor.execute(f"""
+            INSERT INTO {table_name} (name, description) VALUES
+            ('Running Shoes', 'Lightweight running shoes for marathon training'),
+            ('Walking Shoes', 'Comfortable walking shoes for daily use'),
+            ('Running Gear', 'Essential gear for running enthusiasts'),
+            ('Basketball Shoes', 'High-top basketball shoes with ankle support');
+        """)
+        conn.commit()
+
+        # Create BM25 index
+        cursor.execute(f"""
+            CREATE INDEX {index_name} ON {table_name}
+            USING bm25 (id, name, description)
+            WITH (key_field='id');
+        """)
+        conn.commit()
+
+        # Search using conjunction (AND) - must contain both 'running' AND 'shoes'
+        cursor.execute(f"""
+            SELECT id, name, description
+            FROM {table_name}
+            WHERE name &&& 'running shoes';
+        """)
+        results = cursor.fetchall()
+
+        assert len(results) >= 1
+        # Should match "Running Shoes" but not "Running Gear" or "Walking Shoes"
+        assert any("Running Shoes" in row[1] for row in results)
+
+    finally:
+        # Cleanup
+        cursor.execute(f"DROP INDEX IF EXISTS {index_name};")
         cursor.execute(f"DROP TABLE IF EXISTS {table_name};")
         conn.commit()
         cursor.close()
