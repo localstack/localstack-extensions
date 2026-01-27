@@ -83,7 +83,7 @@ First, create a Mock API in WireMock Cloud, then pull the configuration locally:
 
 ```bash
 # Install WireMock CLI if not already installed
-npm install -g wiremock
+npm install -g @wiremock/cli
 
 # Login with your API token
 wiremock login
