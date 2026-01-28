@@ -40,25 +40,23 @@ conn = psycopg2.connect(
 ParadeDB includes the **pg_search** extension, for both search and
 analytics workloads.
 
-Example using pg_search:
+Example of BM25 scoring, from the excellent [quickstart guide](https://docs.paradedb.com/documentation/getting-started/quickstart):
+
 ```sql
--- Create a table with search index
-CREATE TABLE products (
-    id SERIAL PRIMARY KEY,
-    name TEXT,
-    description TEXT
+CALL paradedb.create_bm25_test_table(
+  schema_name => 'public',
+  table_name => 'mock_items'
 );
 
--- Create a BM25 search index
-CALL paradedb.create_bm25(
-    index_name => 'products_idx',
-    table_name => 'products',
-    key_field => 'id',
-    text_fields => paradedb.field('name') || paradedb.field('description')
-);
+CREATE INDEX search_idx ON mock_items
+USING bm25 (id, description, category, rating, in_stock, created_at, metadata, weight_range)
+WITH (key_field='id');
 
--- Search with BM25 scoring
-SELECT * FROM products.search('description:electronics');
+SELECT description, pdb.score(id)
+FROM mock_items
+WHERE description ||| 'running shoes' AND rating > 2
+ORDER BY score DESC
+LIMIT 5;
 ```
 
 ## Configuration
