@@ -37,11 +37,8 @@ conn = psycopg2.connect(
 
 ## ParadeDB Features
 
-ParadeDB includes several powerful extensions:
-
-- **pg_search**: Full-text search with BM25 ranking
-- **pg_analytics**: DuckDB-powered analytics for OLAP workloads
-- **pg_lakehouse**: Query data lakes (S3, Delta Lake, Iceberg) directly
+ParadeDB includes the **pg_search** extension, for both search and
+analytics workloads.
 
 Example using pg_search:
 ```sql
