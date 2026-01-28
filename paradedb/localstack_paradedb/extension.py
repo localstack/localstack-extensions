@@ -27,7 +27,9 @@ class ParadeDbExtension(DatabaseDockerContainerExtension):
     def __init__(self):
         # Get configuration from environment variables
         postgres_user = os.environ.get(ENV_POSTGRES_USER, DEFAULT_POSTGRES_USER)
-        postgres_password = os.environ.get(ENV_POSTGRES_PASSWORD, DEFAULT_POSTGRES_PASSWORD)
+        postgres_password = os.environ.get(
+            ENV_POSTGRES_PASSWORD, DEFAULT_POSTGRES_PASSWORD
+        )
         postgres_db = os.environ.get(ENV_POSTGRES_DB, DEFAULT_POSTGRES_DB)
         postgres_port = int(os.environ.get(ENV_POSTGRES_PORT, DEFAULT_POSTGRES_PORT))
 
@@ -53,14 +55,16 @@ class ParadeDbExtension(DatabaseDockerContainerExtension):
     def get_connection_info(self) -> dict:
         """Return connection information for ParadeDB."""
         info = super().get_connection_info()
-        info.update({
-            "database": self.postgres_db,
-            "user": self.postgres_user,
-            "password": self.postgres_password,
-            "port": self.postgres_port,
-            "connection_string": (
-                f"postgresql://{self.postgres_user}:{self.postgres_password}"
-                f"@{self.container_host}:{self.postgres_port}/{self.postgres_db}"
-            ),
-        })
+        info.update(
+            {
+                "database": self.postgres_db,
+                "user": self.postgres_user,
+                "password": self.postgres_password,
+                "port": self.postgres_port,
+                "connection_string": (
+                    f"postgresql://{self.postgres_user}:{self.postgres_password}"
+                    f"@{self.container_host}:{self.postgres_port}/{self.postgres_db}"
+                ),
+            }
+        )
         return info
