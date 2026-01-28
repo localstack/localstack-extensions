@@ -9,11 +9,13 @@ LOG = logging.getLogger(__name__)
 ENV_POSTGRES_USER = "PARADEDB_POSTGRES_USER"
 ENV_POSTGRES_PASSWORD = "PARADEDB_POSTGRES_PASSWORD"
 ENV_POSTGRES_DB = "PARADEDB_POSTGRES_DB"
+ENV_POSTGRES_PORT = "PARADEDB_POSTGRES_PORT"
 
 # Default values
 DEFAULT_POSTGRES_USER = "myuser"
 DEFAULT_POSTGRES_PASSWORD = "mypassword"
 DEFAULT_POSTGRES_DB = "mydatabase"
+DEFAULT_POSTGRES_PORT = 5432
 
 
 class ParadeDbExtension(DatabaseDockerContainerExtension):
@@ -21,14 +23,13 @@ class ParadeDbExtension(DatabaseDockerContainerExtension):
 
     # Name of the Docker image to spin up
     DOCKER_IMAGE = "paradedb/paradedb"
-    # Default port for PostgreSQL
-    POSTGRES_PORT = 5432
 
     def __init__(self):
         # Get configuration from environment variables
         postgres_user = os.environ.get(ENV_POSTGRES_USER, DEFAULT_POSTGRES_USER)
         postgres_password = os.environ.get(ENV_POSTGRES_PASSWORD, DEFAULT_POSTGRES_PASSWORD)
         postgres_db = os.environ.get(ENV_POSTGRES_DB, DEFAULT_POSTGRES_DB)
+        postgres_port = int(os.environ.get(ENV_POSTGRES_PORT, DEFAULT_POSTGRES_PORT))
 
         # Environment variables to pass to the container
         env_vars = {
@@ -39,7 +40,7 @@ class ParadeDbExtension(DatabaseDockerContainerExtension):
 
         super().__init__(
             image_name=self.DOCKER_IMAGE,
-            container_ports=[self.POSTGRES_PORT],
+            container_ports=[postgres_port],
             env_vars=env_vars,
         )
 
@@ -47,6 +48,7 @@ class ParadeDbExtension(DatabaseDockerContainerExtension):
         self.postgres_user = postgres_user
         self.postgres_password = postgres_password
         self.postgres_db = postgres_db
+        self.postgres_port = postgres_port
 
     def get_connection_info(self) -> dict:
         """Return connection information for ParadeDB."""
@@ -55,10 +57,10 @@ class ParadeDbExtension(DatabaseDockerContainerExtension):
             "database": self.postgres_db,
             "user": self.postgres_user,
             "password": self.postgres_password,
-            "port": self.POSTGRES_PORT,
+            "port": self.postgres_port,
             "connection_string": (
                 f"postgresql://{self.postgres_user}:{self.postgres_password}"
-                f"@{self.container_host}:{self.POSTGRES_PORT}/{self.postgres_db}"
+                f"@{self.container_host}:{self.postgres_port}/{self.postgres_db}"
             ),
         })
         return info
