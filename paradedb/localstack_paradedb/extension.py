@@ -11,9 +11,9 @@ ENV_POSTGRES_PASSWORD = "PARADEDB_POSTGRES_PASSWORD"
 ENV_POSTGRES_DB = "PARADEDB_POSTGRES_DB"
 
 # Default values
-DEFAULT_POSTGRES_USER = "postgres"
-DEFAULT_POSTGRES_PASSWORD = "postgres"
-DEFAULT_POSTGRES_DB = "postgres"
+DEFAULT_POSTGRES_USER = "myuser"
+DEFAULT_POSTGRES_PASSWORD = "mypassword"
+DEFAULT_POSTGRES_DB = "mydatabase"
 
 
 class ParadeDbExtension(DatabaseDockerContainerExtension):

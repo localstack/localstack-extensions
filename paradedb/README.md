@@ -13,13 +13,13 @@ Once the extension is running, you can connect to ParadeDB using any PostgreSQL 
 
 - **Host**: `localhost` (or the Docker host if running in a container)
 - **Port**: `5432` (mapped from the container)
-- **Database**: `postgres`
-- **Username**: `postgres`
-- **Password**: `postgres`
+- **Database**: `mydatabase`
+- **Username**: `myuser`
+- **Password**: `mypassword`
 
 Example connection using `psql`:
 ```bash
-psql -h localhost -p 5432 -U postgres -d postgres
+psql -h localhost -p 5432 -U myuser -d mydatabase
 ```
 
 Example connection using Python:
@@ -29,9 +29,9 @@ import psycopg2
 conn = psycopg2.connect(
     host="localhost",
     port=5432,
-    database="postgres",
-    user="postgres",
-    password="postgres"
+    database="mydatabase",
+    user="myuser",
+    password="mypassword"
 )
 ```
 
@@ -68,9 +68,9 @@ SELECT * FROM products.search('description:electronics');
 
 The following environment variables can be passed to the LocalStack container to configure the extension:
 
-* `PARADEDB_POSTGRES_USER`: PostgreSQL username (default: `postgres`)
-* `PARADEDB_POSTGRES_PASSWORD`: PostgreSQL password (default: `postgres`)
-* `PARADEDB_POSTGRES_DB`: Default database name (default: `postgres`)
+* `PARADEDB_POSTGRES_USER`: PostgreSQL username (default: `myuser`)
+* `PARADEDB_POSTGRES_PASSWORD`: PostgreSQL password (default: `mypassword`)
+* `PARADEDB_POSTGRES_DB`: Default database name (default: `mydatabase`)
 
 ## Prerequisites
 

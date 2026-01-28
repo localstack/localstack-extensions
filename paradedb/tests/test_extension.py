@@ -5,9 +5,9 @@ from localstack.utils.strings import short_uid
 # Connection details for ParadeDB
 HOST = "localhost"
 PORT = 5432
-USER = "postgres"
-PASSWORD = "postgres"
-DATABASE = "postgres"
+USER = "myuser"
+PASSWORD = "mypassword"
+DATABASE = "mydatabase"
 
 
 def get_connection():
