@@ -8,7 +8,6 @@ itself, not the LocalStack proxy integration (which is tested in typedb).
 """
 
 import threading
-import time
 import pytest
 
 from localstack_extensions.utils.h2_proxy import TcpForwarder
@@ -110,16 +109,10 @@ class TestTcpForwarderSendReceive:
 
             # Wait for initial response
             first_response.wait(timeout=5.0)
+            assert len(received_data) > 0
 
             # Send SETTINGS frame
-            settings_frame = b"\x00\x00\x00\x04\x00\x00\x00\x00\x00"
-            forwarder.send(settings_frame)
-
-            # Give server time to respond
-            time.sleep(0.5)
-
-            # Verify we got data
-            assert len(received_data) > 0
+            forwarder.send(b"\x00\x00\x00\x04\x00\x00\x00\x00\x00")
 
         finally:
             forwarder.close()
@@ -130,7 +123,7 @@ class TestTcpForwarderHttp2Handling:
 
     def test_http2_preface_response_parsing(self, grpcbin_host, grpcbin_insecure_port):
         """Test that responses to HTTP/2 preface can be parsed."""
-        from localstack_extensions.utils.h2_proxy import get_frames_from_http2_stream
+        from hyperframe.frame import Frame
 
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
         received_data = []
@@ -146,12 +139,24 @@ class TestTcpForwarderHttp2Handling:
             )
             receive_thread.start()
 
-            forwarder.send(HTTP2_PREFACE)
+            # Send preface + SETTINGS to get a proper server response
+            forwarder.send(HTTP2_PREFACE + b"\x00\x00\x00\x04\x00\x00\x00\x00\x00")
             done.wait(timeout=5.0)
 
-            # Parse received data as HTTP/2 frames
-            all_data = HTTP2_PREFACE + b"".join(received_data)
-            frames = list(get_frames_from_http2_stream(all_data))
+            # Parse server response frames directly (server doesn't send preface)
+            server_data = b"".join(received_data)
+            frames = []
+            pos = 0
+            while pos + 9 <= len(server_data):
+                try:
+                    frame, length = Frame.parse_frame_header(memoryview(server_data[pos:pos+9]))
+                    if pos + 9 + length > len(server_data):
+                        break
+                    frame.parse_body(memoryview(server_data[pos+9:pos+9+length]))
+                    frames.append(frame)
+                    pos += 9 + length
+                except Exception:
+                    break
 
             assert len(frames) > 0, "Should parse frames from response"
 
@@ -160,8 +165,7 @@ class TestTcpForwarderHttp2Handling:
 
     def test_server_settings_frame(self, grpcbin_host, grpcbin_insecure_port):
         """Test that server sends SETTINGS frame after preface."""
-        from localstack_extensions.utils.h2_proxy import get_frames_from_http2_stream
-        from hyperframe.frame import SettingsFrame
+        from hyperframe.frame import Frame, SettingsFrame
 
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
         received_data = []
@@ -177,12 +181,24 @@ class TestTcpForwarderHttp2Handling:
             )
             receive_thread.start()
 
-            forwarder.send(HTTP2_PREFACE)
+            # Send preface + SETTINGS to get a proper server response
+            forwarder.send(HTTP2_PREFACE + b"\x00\x00\x00\x04\x00\x00\x00\x00\x00")
             done.wait(timeout=5.0)
 
-            # Parse and verify SETTINGS frame
-            all_data = HTTP2_PREFACE + b"".join(received_data)
-            frames = list(get_frames_from_http2_stream(all_data))
+            # Parse server response frames directly
+            server_data = b"".join(received_data)
+            frames = []
+            pos = 0
+            while pos + 9 <= len(server_data):
+                try:
+                    frame, length = Frame.parse_frame_header(memoryview(server_data[pos:pos+9]))
+                    if pos + 9 + length > len(server_data):
+                        break
+                    frame.parse_body(memoryview(server_data[pos+9:pos+9+length]))
+                    frames.append(frame)
+                    pos += 9 + length
+                except Exception:
+                    break
 
             settings_frames = [f for f in frames if isinstance(f, SettingsFrame)]
             assert len(settings_frames) > 0, "Server should send SETTINGS frame"

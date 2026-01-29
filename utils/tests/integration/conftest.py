@@ -52,7 +52,7 @@ def grpcbin_container():
     )
     container_id = stdout.decode().strip()
 
-    # Wait for the insecure port to be ready
+    # Wait for the insecure port to be ready with enough retries
     try:
         wait_for_port_open(GRPCBIN_INSECURE_PORT, retries=60, sleep_time=0.5)
     except Exception:
@@ -63,9 +63,9 @@ def grpcbin_container():
             pass
         pytest.fail(f"grpcbin port {GRPCBIN_INSECURE_PORT} did not become available")
 
-    # Give the gRPC server inside the container a moment to fully initialize
-    # The port may be open before the HTTP/2 server is ready to process requests
-    time.sleep(1.0)
+    # Brief delay to allow grpcbin HTTP/2 server to fully initialize
+    # (port open doesn't guarantee HTTP/2 readiness)
+    time.sleep(0.5)
 
     # Provide connection info to tests
     yield {

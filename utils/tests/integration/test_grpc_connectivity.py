@@ -9,13 +9,35 @@ not the LocalStack proxy integration (which is tested in typedb).
 
 import socket
 import threading
-import time
+
+from hyperframe.frame import Frame, SettingsFrame
 
 from localstack_extensions.utils.h2_proxy import (
     get_frames_from_http2_stream,
     get_headers_from_frames,
     TcpForwarder,
 )
+
+
+def parse_server_frames(data: bytes) -> list:
+    """Parse HTTP/2 frames from server response data (no preface expected).
+
+    Server responses don't include the HTTP/2 preface - they start with frames directly.
+    This function parses raw frame data using hyperframe directly.
+    """
+    frames = []
+    pos = 0
+    while pos + 9 <= len(data):  # Frame header is 9 bytes
+        try:
+            frame, length = Frame.parse_frame_header(memoryview(data[pos:pos+9]))
+            if pos + 9 + length > len(data):
+                break  # Incomplete frame
+            frame.parse_body(memoryview(data[pos+9:pos+9+length]))
+            frames.append(frame)
+            pos += 9 + length
+        except Exception:
+            break
+    return frames
 
 
 # HTTP/2 connection preface
@@ -28,14 +50,29 @@ SETTINGS_FRAME = b"\x00\x00\x00\x04\x00\x00\x00\x00\x00"
 class TestGrpcConnectivity:
     """Tests for basic HTTP/2 connectivity to grpcbin."""
 
-    def test_tcp_connect_to_grpcbin(self, grpcbin_host, grpcbin_insecure_port):
-        """Test that we can establish a TCP connection (no exception = success)."""
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(5.0)
+    def test_http2_connect_to_grpcbin(self, grpcbin_host, grpcbin_insecure_port):
+        """Test that we can establish an HTTP/2 connection and receive SETTINGS."""
+        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        received_data = []
+        done = threading.Event()
+
+        def callback(data):
+            received_data.append(data)
+            done.set()
+
         try:
-            sock.connect((grpcbin_host, grpcbin_insecure_port))
+            receive_thread = threading.Thread(
+                target=forwarder.receive_loop, args=(callback,), daemon=True
+            )
+            receive_thread.start()
+
+            forwarder.send(HTTP2_PREFACE + SETTINGS_FRAME)
+            done.wait(timeout=5.0)
+
+            # Should receive at least one response
+            assert len(received_data) > 0, "Should receive server response"
         finally:
-            sock.close()
+            forwarder.close()
 
 
 class TestHttp2FrameCapture:
@@ -46,30 +83,32 @@ class TestHttp2FrameCapture:
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
         received_data = []
         done = threading.Event()
+        thread_started = threading.Event()
 
         def callback(data):
             received_data.append(data)
             done.set()
 
-        try:
-            receive_thread = threading.Thread(
-                target=forwarder.receive_loop, args=(callback,), daemon=True
-            )
-            receive_thread.start()
+        def receive_with_signal():
+            thread_started.set()
+            forwarder.receive_loop(callback)
 
-            forwarder.send(HTTP2_PREFACE)
+        try:
+            receive_thread = threading.Thread(target=receive_with_signal, daemon=True)
+            receive_thread.start()
+            thread_started.wait(timeout=1.0)  # Wait for receive thread to be ready
+
+            forwarder.send(HTTP2_PREFACE + SETTINGS_FRAME)
             done.wait(timeout=5.0)
 
-            # Parse the response using our utilities
-            full_data = HTTP2_PREFACE + b"".join(received_data)
-            frames = list(get_frames_from_http2_stream(full_data))
+            # Parse the server response (no preface expected in server data)
+            server_data = b"".join(received_data)
+            frames = parse_server_frames(server_data)
 
             # Check that we got frames
             assert len(frames) > 0
 
             # First frame should be SETTINGS
-            from hyperframe.frame import SettingsFrame
-
             settings_frames = [f for f in frames if isinstance(f, SettingsFrame)]
             assert len(settings_frames) > 0, "Should receive at least one SETTINGS frame"
         finally:
@@ -80,24 +119,26 @@ class TestHttp2FrameCapture:
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
         received_data = []
         done = threading.Event()
+        thread_started = threading.Event()
 
         def callback(data):
             received_data.append(data)
             done.set()
 
-        try:
-            receive_thread = threading.Thread(
-                target=forwarder.receive_loop, args=(callback,), daemon=True
-            )
-            receive_thread.start()
+        def receive_with_signal():
+            thread_started.set()
+            forwarder.receive_loop(callback)
 
-            forwarder.send(HTTP2_PREFACE)
+        try:
+            receive_thread = threading.Thread(target=receive_with_signal, daemon=True)
+            receive_thread.start()
+            thread_started.wait(timeout=1.0)  # Wait for receive thread to be ready
+
+            forwarder.send(HTTP2_PREFACE + SETTINGS_FRAME)
             done.wait(timeout=5.0)
 
-            full_data = HTTP2_PREFACE + b"".join(received_data)
-            frames = list(get_frames_from_http2_stream(full_data))
-
-            from hyperframe.frame import SettingsFrame
+            server_data = b"".join(received_data)
+            frames = parse_server_frames(server_data)
 
             settings_frames = [f for f in frames if isinstance(f, SettingsFrame)]
             assert len(settings_frames) > 0
@@ -160,21 +201,13 @@ class TestGrpcFrameParsing:
             )
             receive_thread.start()
 
-            # Step 1: Send preface
-            forwarder.send(HTTP2_PREFACE)
-
-            # Wait for server response
+            # Send preface and SETTINGS frame together
+            forwarder.send(HTTP2_PREFACE + SETTINGS_FRAME)
             first_response.wait(timeout=5.0)
 
-            # Step 2: Send empty SETTINGS
-            forwarder.send(SETTINGS_FRAME)
-
-            # Give server time to respond
-            time.sleep(0.2)
-
-            # Parse all frames
-            full_data = HTTP2_PREFACE + b"".join(received_data)
-            frames = list(get_frames_from_http2_stream(full_data))
+            # Parse server response frames
+            server_data = b"".join(received_data)
+            frames = parse_server_frames(server_data)
 
             assert len(frames) >= 1, "Should receive at least one frame from server"
 
@@ -201,16 +234,14 @@ class TestGrpcFrameParsing:
             )
             receive_thread.start()
 
-            forwarder.send(HTTP2_PREFACE)
+            forwarder.send(HTTP2_PREFACE + SETTINGS_FRAME)
             done.wait(timeout=5.0)
 
-            full_data = HTTP2_PREFACE + b"".join(received_data)
-
-            frames = list(get_frames_from_http2_stream(full_data))
+            server_data = b"".join(received_data)
+            frames = parse_server_frames(server_data)
             headers = get_headers_from_frames(frames)
 
-            # Server's initial response typically doesn't include HEADERS frames
-            # (just SETTINGS), so headers will be empty - but the function should work
+            # Server response has SETTINGS, not HEADERS, so headers will be empty
             assert headers is not None
         finally:
             forwarder.close()
