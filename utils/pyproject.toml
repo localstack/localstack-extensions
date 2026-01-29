@@ -48,10 +48,6 @@ include = ["localstack_extensions*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = [
-    "unit: Unit tests (no Docker/LocalStack required)",
-    "integration: Integration tests (Docker required, no LocalStack)",
-]
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]

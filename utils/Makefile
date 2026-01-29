@@ -38,10 +38,10 @@ test: venv      ## Run all tests
 	$(VENV_RUN); python -m pytest tests/ -v
 
 test-unit: venv ## Run unit tests only (no Docker required)
-	$(VENV_RUN); python -m pytest tests/unit/ -v -m unit
+	$(VENV_RUN); python -m pytest tests/unit/ -v
 
 test-integration: venv ## Run integration tests (Docker required)
-	$(VENV_RUN); python -m pytest tests/integration/ -v -m integration
+	$(VENV_RUN); python -m pytest tests/integration/ -v
 
 clean-dist: clean
 	rm -rf dist/
