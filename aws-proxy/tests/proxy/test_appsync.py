@@ -234,6 +234,77 @@ def test_appsync_readonly_mode(
     assert local_api_id not in aws_api_ids
 
 
+def test_appsync_readonly_evaluate_operations(
+    start_aws_proxy, appsync_client_aws, create_graphql_api_aws
+):
+    """Test that EvaluateCode and EvaluateMappingTemplate work in read-only proxy mode.
+
+    These operations are functionally read-only (they evaluate code/templates without
+    modifying state) but don't follow the standard Describe*/Get*/List* naming convention.
+    This test ensures they are correctly identified as read operations.
+    """
+    # Start proxy in read-only mode
+    config = ProxyConfig(services={"appsync": {"resources": ".*", "read_only": True}})
+    start_aws_proxy(config)
+
+    # Create clients
+    appsync_client = connect_to().appsync
+
+    # EvaluateCode - test with a simple APPSYNC_JS function
+    # This should work in read-only mode since it's a read operation
+    code = """
+    export function request(ctx) {
+        return { version: "2018-05-29", payload: ctx.arguments };
+    }
+    export function response(ctx) {
+        return ctx.result;
+    }
+    """
+    context = '{"arguments": {"id": "123", "name": "test"}, "result": {"success": true}}'
+
+    evaluate_code_response = appsync_client.evaluate_code(
+        runtime={"name": "APPSYNC_JS", "runtimeVersion": "1.0.0"},
+        code=code,
+        context=context,
+        function="request",
+    )
+
+    # Verify the response - EvaluateCode should return evaluation result
+    assert "evaluationResult" in evaluate_code_response
+    # The error field should be None or not present for successful evaluation
+    assert evaluate_code_response.get("error") is None
+
+    # Compare with direct AWS call to verify proxy is forwarding correctly
+    evaluate_code_response_aws = appsync_client_aws.evaluate_code(
+        runtime={"name": "APPSYNC_JS", "runtimeVersion": "1.0.0"},
+        code=code,
+        context=context,
+        function="request",
+    )
+    assert evaluate_code_response_aws.get("error") is None
+
+    # EvaluateMappingTemplate - test with a simple VTL template
+    # This should also work in read-only mode
+    template = '{"version": "2018-05-29", "payload": $util.toJson($context.arguments)}'
+    context_vtl = '{"arguments": {"id": "456", "value": "test-value"}}'
+
+    evaluate_template_response = appsync_client.evaluate_mapping_template(
+        template=template,
+        context=context_vtl,
+    )
+
+    # Verify the response
+    assert "evaluationResult" in evaluate_template_response
+    assert evaluate_template_response.get("error") is None
+
+    # Compare with direct AWS call
+    evaluate_template_response_aws = appsync_client_aws.evaluate_mapping_template(
+        template=template,
+        context=context_vtl,
+    )
+    assert evaluate_template_response_aws.get("error") is None
+
+
 def test_appsync_operations_filtering(
     start_aws_proxy, appsync_client_aws, create_graphql_api_aws
 ):
