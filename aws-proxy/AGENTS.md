@@ -32,6 +32,19 @@ To run a single test via `pytest` (say, `test_my_logic` in `test_s3.py`), use th
 TEST_PATH=tests/test_s3.py::test_my_logic make test
 ```
 
+### Read-Only Mode Support
+
+Some services have operations that are functionally read-only (don't modify state) but don't follow the standard naming conventions (`Describe*`, `Get*`, `List*`, `Query*`). When adding tests or support for a new service with `read_only: true` configuration, check the [AWS Service Authorization Reference](https://docs.aws.amazon.com/service-authorization/latest/reference/) for the service and identify any operations that:
+- Are classified as "Read" access level but don't match the standard prefixes
+- Evaluate or simulate something without modifying state (e.g., `Evaluate*`, `Simulate*`, `Test*`, `Check*`, `Validate*`)
+
+If you find such operations, add them to the service-specific rules in `aws_proxy/server/aws_request_forwarder.py` in the `_is_read_request` method. This ensures that read-only proxy configurations correctly forward these operations rather than blocking them.
+
+Example services with non-standard read-only operations:
+- **AppSync**: `EvaluateCode`, `EvaluateMappingTemplate`
+- **IAM**: `SimulateCustomPolicy`, `SimulatePrincipalPolicy`
+- **Cognito**: `InitiateAuth`
+
 When adding new integration tests, consider the following:
 * Include a mix of positive and negative assertions (i.e., presence and absence of resources).
 * Include a mix of different configuration options, e.g., the `read_only: true` flag can be specified in the proxy service configuration YAML, enabling read-only mode (which should be covered by tests as well).
