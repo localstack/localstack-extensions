@@ -260,7 +260,9 @@ def test_appsync_readonly_evaluate_operations(
         return ctx.result;
     }
     """
-    context = '{"arguments": {"id": "123", "name": "test"}, "result": {"success": true}}'
+    context = (
+        '{"arguments": {"id": "123", "name": "test"}, "result": {"success": true}}'
+    )
 
     evaluate_code_response = appsync_client.evaluate_code(
         runtime={"name": "APPSYNC_JS", "runtimeVersion": "1.0.0"},
