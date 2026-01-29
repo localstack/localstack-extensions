@@ -223,6 +223,11 @@ class AwsProxyHandler(Handler):
             "PartiQLSelect",
         }:
             return True
+        if context.service.service_name == "appsync" and operation_name in {
+            "EvaluateCode",
+            "EvaluateMappingTemplate",
+        }:
+            return True
         # TODO: add more rules
         return False
 

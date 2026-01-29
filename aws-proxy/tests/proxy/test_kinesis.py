@@ -158,9 +158,13 @@ def test_kinesis_readonly_operations(start_aws_proxy, cleanups):
     assert stream_name in streams_aws
 
     # Put record to AWS stream using direct AWS client
-    kinesis_client_aws.put_record(
-        StreamName=stream_name, Data=b"test data aws", PartitionKey="partition-1"
-    )
+    # Use retry as stream may need a moment after becoming ACTIVE to accept writes
+    def _put_record():
+        kinesis_client_aws.put_record(
+            StreamName=stream_name, Data=b"test data aws", PartitionKey="partition-1"
+        )
+
+    retry(_put_record, retries=5, sleep=2)
 
     # Get shard iterator and verify data can be read through proxy
     shards = kinesis_client.describe_stream(StreamName=stream_name)[
