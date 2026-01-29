@@ -1,1 +1,0 @@
-# LocalStack Extensions utilities package
