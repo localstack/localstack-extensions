@@ -7,32 +7,14 @@ grpcbin is a neutral gRPC test service that supports various RPC types.
 
 import subprocess
 import time
-import socket
 import pytest
+
+from localstack.utils.net import wait_for_port_open
 
 
 GRPCBIN_IMAGE = "moul/grpcbin"
 GRPCBIN_INSECURE_PORT = 9000  # HTTP/2 without TLS
 GRPCBIN_SECURE_PORT = 9001  # HTTP/2 with TLS
-
-
-def is_port_open(host: str, port: int, timeout: float = 1.0) -> bool:
-    """Check if a port is open and accepting connections."""
-    try:
-        with socket.create_connection((host, port), timeout=timeout):
-            return True
-    except (socket.timeout, socket.error, ConnectionRefusedError, OSError):
-        return False
-
-
-def wait_for_port(host: str, port: int, timeout: float = 30.0) -> bool:
-    """Wait for a port to become available."""
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        if is_port_open(host, port):
-            return True
-        time.sleep(0.5)
-    return False
 
 
 @pytest.fixture(scope="session")
@@ -92,7 +74,9 @@ def grpcbin_container():
     container_id = result.stdout.strip()
 
     # Wait for the insecure port to be ready
-    if not wait_for_port("localhost", GRPCBIN_INSECURE_PORT, timeout=30):
+    try:
+        wait_for_port_open(GRPCBIN_INSECURE_PORT, retries=60, sleep_time=0.5)
+    except Exception:
         # Clean up and fail
         subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
         pytest.fail(f"grpcbin port {GRPCBIN_INSECURE_PORT} did not become available")
