@@ -5,10 +5,11 @@ Provides fixtures for running tests against the grpcbin Docker container.
 grpcbin is a neutral gRPC test service that supports various RPC types.
 """
 
-import subprocess
 import time
 import pytest
 
+from localstack.utils.container_utils.container_client import PortMappings
+from localstack.utils.docker_utils import DOCKER_CLIENT
 from localstack.utils.net import wait_for_port_open
 
 
@@ -30,55 +31,36 @@ def grpcbin_container():
     """
     container_name = "pytest-grpcbin"
 
-    # Check if Docker is available
-    try:
-        subprocess.run(
-            ["docker", "info"],
-            capture_output=True,
-            check=True,
-            timeout=10,
-        )
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
-        pytest.skip("Docker is not available")
-
     # Remove any existing container with the same name
-    subprocess.run(
-        ["docker", "rm", "-f", container_name],
-        capture_output=True,
-        timeout=30,
-    )
+    try:
+        DOCKER_CLIENT.remove_container(container_name)
+    except Exception:
+        pass  # Container may not exist
+
+    # Configure port mappings
+    ports = PortMappings()
+    ports.add(GRPCBIN_INSECURE_PORT)
+    ports.add(GRPCBIN_SECURE_PORT)
 
     # Start the container
-    result = subprocess.run(
-        [
-            "docker",
-            "run",
-            "-d",
-            "--rm",
-            "--name",
-            container_name,
-            "-p",
-            f"{GRPCBIN_INSECURE_PORT}:{GRPCBIN_INSECURE_PORT}",
-            "-p",
-            f"{GRPCBIN_SECURE_PORT}:{GRPCBIN_SECURE_PORT}",
-            GRPCBIN_IMAGE,
-        ],
-        capture_output=True,
-        text=True,
-        timeout=60,
+    stdout, _ = DOCKER_CLIENT.run_container(
+        image_name=GRPCBIN_IMAGE,
+        name=container_name,
+        detach=True,
+        remove=True,
+        ports=ports,
     )
-
-    if result.returncode != 0:
-        pytest.fail(f"Failed to start grpcbin container: {result.stderr}")
-
-    container_id = result.stdout.strip()
+    container_id = stdout.decode().strip()
 
     # Wait for the insecure port to be ready
     try:
         wait_for_port_open(GRPCBIN_INSECURE_PORT, retries=60, sleep_time=0.5)
     except Exception:
         # Clean up and fail
-        subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
+        try:
+            DOCKER_CLIENT.remove_container(container_name)
+        except Exception:
+            pass
         pytest.fail(f"grpcbin port {GRPCBIN_INSECURE_PORT} did not become available")
 
     # Give the gRPC server inside the container a moment to fully initialize
@@ -95,11 +77,10 @@ def grpcbin_container():
     }
 
     # Cleanup: stop and remove the container
-    subprocess.run(
-        ["docker", "rm", "-f", container_name],
-        capture_output=True,
-        timeout=30,
-    )
+    try:
+        DOCKER_CLIENT.remove_container(container_name)
+    except Exception:
+        pass
 
 
 @pytest.fixture
