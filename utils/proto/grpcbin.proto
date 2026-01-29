@@ -1,0 +1,45 @@
+// grpcbin.proto - Service definitions for moul/grpcbin
+// These are the main services exposed by the grpcbin test server
+// Source: https://github.com/moul/grpcbin
+
+syntax = "proto3";
+
+package grpcbin;
+
+option go_package = "grpcbin";
+
+// Empty message for simple requests
+message EmptyMessage {}
+
+// DummyMessage for testing
+message DummyMessage {
+  string f_string = 1;
+  repeated string f_strings = 2;
+  int32 f_int32 = 3;
+  repeated int32 f_int32s = 4;
+  int32 f_enum = 5;
+  DummyMessage f_sub = 6;
+  bool f_bool = 7;
+  int64 f_int64 = 8;
+  repeated int64 f_int64s = 9;
+  double f_double = 10;
+  float f_float = 11;
+}
+
+// GRPCBin service provides various RPC methods for testing
+service GRPCBin {
+  // Index returns an empty response
+  rpc Index (EmptyMessage) returns (EmptyMessage) {}
+
+  // DummyUnary echoes back the request
+  rpc DummyUnary (DummyMessage) returns (DummyMessage) {}
+
+  // DummyServerStream streams back the request multiple times
+  rpc DummyServerStream (DummyMessage) returns (stream DummyMessage) {}
+
+  // DummyClientStream receives multiple messages and returns a summary
+  rpc DummyClientStream (stream DummyMessage) returns (DummyMessage) {}
+
+  // DummyBidirectionalStreamPing echoes back each message
+  rpc DummyBidirectionalStreamPing (stream DummyMessage) returns (stream DummyMessage) {}
+}

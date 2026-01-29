@@ -1,0 +1,24 @@
+// hello.proto - Simple HelloService for grpcbin
+// Source: https://github.com/moul/grpcbin
+
+syntax = "proto3";
+
+package hello;
+
+option go_package = "hello";
+
+// HelloRequest contains the name to greet
+message HelloRequest {
+  string greeting = 1;
+}
+
+// HelloResponse contains the greeting response
+message HelloResponse {
+  string reply = 1;
+}
+
+// HelloService provides a simple greeting RPC
+service HelloService {
+  // SayHello returns a greeting
+  rpc SayHello (HelloRequest) returns (HelloResponse) {}
+}

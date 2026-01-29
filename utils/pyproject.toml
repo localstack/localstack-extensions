@@ -35,6 +35,22 @@ dev = [
     "pytest",
     "ruff",
 ]
+test = [
+    "pytest>=7.0",
+    "pytest-timeout>=2.0",
+    "grpcio>=1.50.0",
+    "grpcio-tools>=1.50.0",
+]
 
 [tool.setuptools.packages.find]
 include = ["localstack_extensions*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "unit: Unit tests (no Docker/LocalStack required)",
+    "integration: Integration tests (Docker required, no LocalStack)",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

@@ -11,7 +11,7 @@ venv: $(VENV_ACTIVATE)
 $(VENV_ACTIVATE): pyproject.toml
 	test -d .venv || $(VENV_BIN) .venv
 	$(VENV_RUN); pip install --upgrade pip setuptools wheel build
-	$(VENV_RUN); pip install -e .[dev]
+	$(VENV_RUN); pip install -e .[dev,test]
 	touch $(VENV_DIR)/bin/activate
 
 clean:          ## Clean up build artifacts and virtual environment
@@ -34,7 +34,23 @@ format: venv    ## Run ruff to format and fix the code
 lint: venv      ## Run ruff to lint the code
 	$(VENV_RUN); python -m ruff check --output-format=full .
 
+test: venv      ## Run all tests
+	$(VENV_RUN); python -m pytest tests/ -v
+
+test-unit: venv ## Run unit tests only (no Docker required)
+	$(VENV_RUN); python -m pytest tests/unit/ -v -m unit
+
+test-integration: venv ## Run integration tests (Docker required)
+	$(VENV_RUN); python -m pytest tests/integration/ -v -m integration
+
+proto: venv     ## Generate Python stubs from .proto files
+	$(VENV_RUN); python -m grpc_tools.protoc \
+		-I./proto \
+		--python_out=./tests/proto \
+		--grpc_python_out=./tests/proto \
+		./proto/*.proto
+
 clean-dist: clean
 	rm -rf dist/
 
-.PHONY: clean clean-dist dist install publish usage venv format lint
+.PHONY: clean clean-dist dist install publish usage venv format lint test test-unit test-integration proto
