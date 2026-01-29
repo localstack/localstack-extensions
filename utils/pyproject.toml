@@ -39,8 +39,6 @@ dev = [
 test = [
     "pytest>=7.0",
     "pytest-timeout>=2.0",
-    "grpcio>=1.50.0",
-    "grpcio-tools>=1.50.0",
     "localstack",
     "jsonpatch",
 ]

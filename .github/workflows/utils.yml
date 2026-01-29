@@ -59,10 +59,8 @@ jobs:
           cd utils
           pip install -e .[dev,test]
 
-      - name: Pull grpcbin image
-        run: docker pull moul/grpcbin
-
       - name: Run integration tests
         run: |
+          docker pull moul/grpcbin &
           cd utils
           make test-integration

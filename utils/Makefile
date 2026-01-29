@@ -43,14 +43,7 @@ test-unit: venv ## Run unit tests only (no Docker required)
 test-integration: venv ## Run integration tests (Docker required)
 	$(VENV_RUN); python -m pytest tests/integration/ -v -m integration
 
-proto: venv     ## Generate Python stubs from .proto files
-	$(VENV_RUN); python -m grpc_tools.protoc \
-		-I./proto \
-		--python_out=./tests/proto \
-		--grpc_python_out=./tests/proto \
-		./proto/*.proto
-
 clean-dist: clean
 	rm -rf dist/
 
-.PHONY: clean clean-dist dist install publish usage venv format lint test test-unit test-integration proto
+.PHONY: clean clean-dist dist install publish usage venv format lint test test-unit test-integration
