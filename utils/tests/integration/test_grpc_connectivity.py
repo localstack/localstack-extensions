@@ -7,13 +7,11 @@ as a neutral HTTP/2 test server - these tests validate the utility functions,
 not the LocalStack proxy integration (which is tested in typedb).
 """
 
-import socket
 import threading
 
 from hyperframe.frame import Frame, SettingsFrame
 
 from localstack_extensions.utils.h2_proxy import (
-    get_frames_from_http2_stream,
     get_headers_from_frames,
     TcpForwarder,
 )
@@ -29,10 +27,10 @@ def parse_server_frames(data: bytes) -> list:
     pos = 0
     while pos + 9 <= len(data):  # Frame header is 9 bytes
         try:
-            frame, length = Frame.parse_frame_header(memoryview(data[pos:pos+9]))
+            frame, length = Frame.parse_frame_header(memoryview(data[pos : pos + 9]))
             if pos + 9 + length > len(data):
                 break  # Incomplete frame
-            frame.parse_body(memoryview(data[pos+9:pos+9+length]))
+            frame.parse_body(memoryview(data[pos + 9 : pos + 9 + length]))
             frames.append(frame)
             pos += 9 + length
         except Exception:
@@ -110,7 +108,9 @@ class TestHttp2FrameCapture:
 
             # First frame should be SETTINGS
             settings_frames = [f for f in frames if isinstance(f, SettingsFrame)]
-            assert len(settings_frames) > 0, "Should receive at least one SETTINGS frame"
+            assert len(settings_frames) > 0, (
+                "Should receive at least one SETTINGS frame"
+            )
         finally:
             forwarder.close()
 
@@ -213,12 +213,16 @@ class TestGrpcFrameParsing:
 
             # Verify frame types
             frame_types = [type(f).__name__ for f in frames]
-            assert "SettingsFrame" in frame_types, f"Expected SettingsFrame, got: {frame_types}"
+            assert "SettingsFrame" in frame_types, (
+                f"Expected SettingsFrame, got: {frame_types}"
+            )
 
         finally:
             forwarder.close()
 
-    def test_headers_extraction_from_raw_traffic(self, grpcbin_host, grpcbin_insecure_port):
+    def test_headers_extraction_from_raw_traffic(
+        self, grpcbin_host, grpcbin_insecure_port
+    ):
         """Test that get_headers_from_frames works with live traffic."""
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
         received_data = []

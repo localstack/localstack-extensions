@@ -82,7 +82,9 @@ class TestTcpForwarderSendReceive:
             assert len(received_data) > 0
             # Response should contain data (at least a SETTINGS frame)
             total_bytes = sum(len(d) for d in received_data)
-            assert total_bytes >= 9, "Should receive at least one frame header (9 bytes)"
+            assert total_bytes >= 9, (
+                "Should receive at least one frame header (9 bytes)"
+            )
 
         finally:
             forwarder.close()
@@ -149,10 +151,14 @@ class TestTcpForwarderHttp2Handling:
             pos = 0
             while pos + 9 <= len(server_data):
                 try:
-                    frame, length = Frame.parse_frame_header(memoryview(server_data[pos:pos+9]))
+                    frame, length = Frame.parse_frame_header(
+                        memoryview(server_data[pos : pos + 9])
+                    )
                     if pos + 9 + length > len(server_data):
                         break
-                    frame.parse_body(memoryview(server_data[pos+9:pos+9+length]))
+                    frame.parse_body(
+                        memoryview(server_data[pos + 9 : pos + 9 + length])
+                    )
                     frames.append(frame)
                     pos += 9 + length
                 except Exception:
@@ -191,10 +197,14 @@ class TestTcpForwarderHttp2Handling:
             pos = 0
             while pos + 9 <= len(server_data):
                 try:
-                    frame, length = Frame.parse_frame_header(memoryview(server_data[pos:pos+9]))
+                    frame, length = Frame.parse_frame_header(
+                        memoryview(server_data[pos : pos + 9])
+                    )
                     if pos + 9 + length > len(server_data):
                         break
-                    frame.parse_body(memoryview(server_data[pos+9:pos+9+length]))
+                    frame.parse_body(
+                        memoryview(server_data[pos + 9 : pos + 9 + length])
+                    )
                     frames.append(frame)
                     pos += 9 + length
                 except Exception:
