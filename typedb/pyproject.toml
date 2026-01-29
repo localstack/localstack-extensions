@@ -14,7 +14,9 @@ authors = [
 keywords = ["LocalStack", "TypeDB"]
 classifiers = []
 dependencies = [
-    "localstack-extensions-utils",
+    # TODO remove
+#    "localstack-extensions-utils",
+    "localstack-extensions-utils @ git+https://github.com/localstack/localstack-extensions.git@extract-utils-package#subdirectory=utils"
 ]
 
 [project.urls]
