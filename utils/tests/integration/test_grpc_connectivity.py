@@ -1,14 +1,10 @@
 """
-Integration tests for gRPC connectivity using grpcbin.
+Integration tests for HTTP/2 frame parsing utilities against a live server.
 
-These tests verify that we can make real gRPC/HTTP2 connections
-to the grpcbin test service and properly capture and parse
-HTTP/2 frames from live traffic.
-
-Note: grpcbin has strict HTTP/2 protocol requirements. Tests that use
-bidirectional I/O with threading (TcpForwarder) work correctly, while
-simple synchronous socket tests may experience connection resets due
-to protocol timing.
+These tests verify that the frame parsing utilities (get_frames_from_http2_stream,
+get_headers_from_frames) work correctly with real HTTP/2 traffic. We use grpcbin
+as a neutral HTTP/2 test server - these tests validate the utility functions,
+not the LocalStack proxy integration (which is tested in typedb).
 """
 
 import socket
@@ -30,16 +26,14 @@ SETTINGS_FRAME = b"\x00\x00\x00\x04\x00\x00\x00\x00\x00"
 
 
 class TestGrpcConnectivity:
-    """Tests for basic gRPC/HTTP2 connectivity to grpcbin."""
+    """Tests for basic HTTP/2 connectivity to grpcbin."""
 
     def test_tcp_connect_to_grpcbin(self, grpcbin_host, grpcbin_insecure_port):
-        """Test that we can establish a TCP connection to grpcbin."""
+        """Test that we can establish a TCP connection (no exception = success)."""
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(5.0)
         try:
             sock.connect((grpcbin_host, grpcbin_insecure_port))
-            # Connection successful if we get here
-            assert True
         finally:
             sock.close()
 
@@ -116,10 +110,10 @@ class TestHttp2FrameCapture:
 
 
 class TestGrpcHeaders:
-    """Tests for extracting gRPC headers from live connections."""
+    """Tests for HTTP/2 handshake completion."""
 
-    def test_grpc_request_headers_structure(self, grpcbin_host, grpcbin_insecure_port):
-        """Test that we can send and receive proper gRPC request structure."""
+    def test_http2_handshake_completes(self, grpcbin_host, grpcbin_insecure_port):
+        """Test that we can complete an HTTP/2 handshake with settings exchange."""
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
         received_data = []
         first_response = threading.Event()
@@ -139,18 +133,10 @@ class TestGrpcHeaders:
 
             # Wait for server's initial frames
             first_response.wait(timeout=5.0)
-            assert len(received_data) > 0
+            assert len(received_data) > 0, "Should receive server SETTINGS"
 
-            # Send SETTINGS ACK
-            settings_ack = b"\x00\x00\x00\x04\x01\x00\x00\x00\x00"  # flags=0x01 (ACK)
-            forwarder.send(settings_ack)
-
-            # Give server time to process
-            time.sleep(0.1)
-
-            # Connection is now established
-            # We've verified we can perform HTTP/2 handshake with grpcbin
-            assert True
+            # Send SETTINGS ACK to complete handshake
+            forwarder.send(b"\x00\x00\x00\x04\x01\x00\x00\x00\x00")  # SETTINGS ACK
         finally:
             forwarder.close()
 

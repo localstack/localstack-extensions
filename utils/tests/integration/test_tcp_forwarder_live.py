@@ -1,8 +1,10 @@
 """
-Integration tests for TcpForwarder against a live grpcbin service.
+Integration tests for TcpForwarder utility against a live HTTP/2 server.
 
-These tests verify that TcpForwarder can establish real TCP connections
-and properly handle bidirectional HTTP/2 traffic.
+These tests verify that the TcpForwarder utility class can establish real
+TCP connections and properly handle bidirectional HTTP/2 traffic. We use
+grpcbin as a neutral HTTP/2 test server - these tests validate the utility
+itself, not the LocalStack proxy integration (which is tested in typedb).
 """
 
 import threading
@@ -46,12 +48,10 @@ class TestTcpForwarderSendReceive:
     """Tests for TcpForwarder send/receive operations with grpcbin."""
 
     def test_send_http2_preface(self, grpcbin_host, grpcbin_insecure_port):
-        """Test sending HTTP/2 preface through TcpForwarder."""
+        """Test sending HTTP/2 preface through TcpForwarder (no exception = success)."""
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
         try:
             forwarder.send(HTTP2_PREFACE)
-            # If we get here without exception, send worked
-            assert True
         finally:
             forwarder.close()
 
@@ -219,19 +219,12 @@ class TestTcpForwarderConcurrency:
     """Tests for concurrent operations in TcpForwarder."""
 
     def test_multiple_sends(self, grpcbin_host, grpcbin_insecure_port):
-        """Test multiple sequential sends."""
+        """Test multiple sequential sends (no exception = success)."""
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
         try:
-            # Send preface first
             forwarder.send(HTTP2_PREFACE)
-            # Then settings
-            settings_frame = b"\x00\x00\x00\x04\x00\x00\x00\x00\x00"
-            forwarder.send(settings_frame)
-            # Then settings ACK
-            settings_ack = b"\x00\x00\x00\x04\x01\x00\x00\x00\x00"
-            forwarder.send(settings_ack)
-            # All sends should succeed
-            assert True
+            forwarder.send(b"\x00\x00\x00\x04\x00\x00\x00\x00\x00")  # SETTINGS
+            forwarder.send(b"\x00\x00\x00\x04\x01\x00\x00\x00\x00")  # SETTINGS ACK
         finally:
             forwarder.close()
 
