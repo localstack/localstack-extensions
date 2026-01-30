@@ -1,57 +1,92 @@
 """
-Integration tests for HTTP/2 frame parsing utilities against a live server.
+Integration tests for HTTP/2 proxy utilities against a live server.
 
-These tests verify that the frame parsing utilities (get_frames_from_http2_stream,
-get_headers_from_frames) work correctly with real HTTP/2 traffic. We use grpcbin
-as a neutral HTTP/2 test server - these tests validate the utility functions,
-not the LocalStack proxy integration (which is tested in typedb).
+These tests verify that the TcpForwarder utility and HTTP/2 frame parsing functions
+work correctly with real HTTP/2 traffic. We use grpcbin as a neutral HTTP/2 test
+server to validate the utility functionality.
 """
 
 import threading
 import pytest
 
-from hyperframe.frame import Frame, SettingsFrame
+from hyperframe.frame import SettingsFrame
 
 from localstack_extensions.utils.h2_proxy import (
     get_headers_from_frames,
     TcpForwarder,
 )
 
+# Import from conftest - pytest automatically loads conftest.py
+from .conftest import HTTP2_PREFACE, SETTINGS_FRAME, parse_server_frames
 
-def parse_server_frames(data: bytes) -> list:
-    """Parse HTTP/2 frames from server response data (no preface expected).
 
-    Server responses don't include the HTTP/2 preface - they start with frames directly.
-    This function parses raw frame data using hyperframe directly.
-    """
-    frames = []
-    pos = 0
-    while pos + 9 <= len(data):  # Frame header is 9 bytes
+class TestTcpForwarderConnection:
+    """Tests for TcpForwarder connection management."""
+
+    def test_connect_to_grpcbin(self, grpcbin_host, grpcbin_insecure_port):
+        """Test that TcpForwarder can connect to grpcbin."""
+        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
         try:
-            frame, length = Frame.parse_frame_header(memoryview(data[pos : pos + 9]))
-            if pos + 9 + length > len(data):
-                break  # Incomplete frame
-            frame.parse_body(memoryview(data[pos + 9 : pos + 9 + length]))
-            frames.append(frame)
-            pos += 9 + length
-        except Exception:
-            break
-    return frames
+            # Connection is made in __init__, so if we get here, it worked
+            assert forwarder.port == grpcbin_insecure_port
+            assert forwarder.host == grpcbin_host
+        finally:
+            forwarder.close()
+
+    def test_connect_and_close(self, grpcbin_host, grpcbin_insecure_port):
+        """Test connect and close cycle."""
+        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        assert forwarder.port == grpcbin_insecure_port
+        forwarder.close()
+        # Verify close succeeded without raising an exception
+
+    def test_multiple_connect_close_cycles(self, grpcbin_host, grpcbin_insecure_port):
+        """Test multiple connect/close cycles."""
+        for _ in range(3):
+            forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+            forwarder.close()
 
 
-# HTTP/2 connection preface
-HTTP2_PREFACE = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+class TestTcpForwarderSendReceive:
+    """Tests for TcpForwarder send/receive operations."""
 
-# Empty SETTINGS frame
-SETTINGS_FRAME = b"\x00\x00\x00\x04\x00\x00\x00\x00\x00"
+    def test_send_and_receive(self, grpcbin_host, grpcbin_insecure_port):
+        """Test sending data and receiving response."""
+        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        received_data = []
+        receive_complete = threading.Event()
 
+        def callback(data):
+            received_data.append(data)
+            receive_complete.set()
 
-class TestGrpcConnectivity:
-    """Tests for basic HTTP/2 connectivity to grpcbin."""
+        try:
+            # Start receive loop in background thread
+            receive_thread = threading.Thread(
+                target=forwarder.receive_loop, args=(callback,), daemon=True
+            )
+            receive_thread.start()
 
-    @pytest.mark.xfail(reason="Flaky test - server sometimes resets connection. Functionality covered by test_capture_settings_frame")
-    def test_http2_connect_to_grpcbin(self, grpcbin_host, grpcbin_insecure_port):
-        """Test that we can establish an HTTP/2 connection and receive SETTINGS."""
+            # Send HTTP/2 preface
+            forwarder.send(HTTP2_PREFACE)
+
+            # Wait for response (with timeout)
+            if not receive_complete.wait(timeout=5.0):
+                pytest.fail("Did not receive response within timeout")
+
+            # Should have received at least one chunk
+            assert len(received_data) > 0
+            # Response should contain data (at least a SETTINGS frame)
+            total_bytes = sum(len(d) for d in received_data)
+            assert total_bytes >= 9, (
+                "Should receive at least one frame header (9 bytes)"
+            )
+
+        finally:
+            forwarder.close()
+
+    def test_bidirectional_http2_exchange(self, grpcbin_host, grpcbin_insecure_port):
+        """Test bidirectional HTTP/2 settings exchange."""
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
         received_data = []
         first_response = threading.Event()
@@ -61,22 +96,85 @@ class TestGrpcConnectivity:
             first_response.set()
 
         try:
+            # Start receive loop
             receive_thread = threading.Thread(
                 target=forwarder.receive_loop, args=(callback,), daemon=True
             )
             receive_thread.start()
 
-            forwarder.send(HTTP2_PREFACE + SETTINGS_FRAME)
+            # Send HTTP/2 preface
+            forwarder.send(HTTP2_PREFACE)
 
-            # Wait for server's response
+            # Wait for initial response
             first_response.wait(timeout=5.0)
-            assert len(received_data) > 0, "Should receive server response"
+            assert len(received_data) > 0
+
+            # Send SETTINGS frame
+            forwarder.send(SETTINGS_FRAME)
+
         finally:
             forwarder.close()
 
 
-class TestHttp2FrameCapture:
-    """Tests for capturing and parsing HTTP/2 frames from live traffic."""
+class TestTcpForwarderErrorHandling:
+    """Tests for error handling in TcpForwarder."""
+
+    def test_connection_to_invalid_port(self, grpcbin_host):
+        """Test connecting to a port that's not listening."""
+        with pytest.raises((ConnectionRefusedError, OSError)):
+            TcpForwarder(port=59999, host=grpcbin_host)
+
+    def test_close_after_failed_connection(self, grpcbin_host, grpcbin_insecure_port):
+        """Test that close works even after error conditions."""
+        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        forwarder.close()
+        # Close again should not raise
+        forwarder.close()
+
+    def test_send_after_close(self, grpcbin_host, grpcbin_insecure_port):
+        """Test sending after close raises appropriate error."""
+        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        forwarder.close()
+
+        with pytest.raises(OSError):
+            forwarder.send(b"data")
+
+
+class TestTcpForwarderConcurrency:
+    """Tests for concurrent operations in TcpForwarder."""
+
+    def test_multiple_sends(self, grpcbin_host, grpcbin_insecure_port):
+        """Test multiple sequential sends (no exception = success)."""
+        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        try:
+            forwarder.send(HTTP2_PREFACE)
+            forwarder.send(SETTINGS_FRAME)
+            forwarder.send(b"\x00\x00\x00\x04\x01\x00\x00\x00\x00")  # SETTINGS ACK
+        finally:
+            forwarder.close()
+
+    def test_concurrent_connections(self, grpcbin_host, grpcbin_insecure_port):
+        """Test multiple concurrent TcpForwarder connections."""
+        forwarders = []
+        try:
+            for _ in range(3):
+                forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+                forwarders.append(forwarder)
+
+            # All connections should be established
+            assert len(forwarders) == 3
+
+            # Send preface to all
+            for forwarder in forwarders:
+                forwarder.send(HTTP2_PREFACE)
+
+        finally:
+            for forwarder in forwarders:
+                forwarder.close()
+
+
+class TestHttp2FrameParsing:
+    """Tests for HTTP/2 frame parsing with live server traffic."""
 
     def test_capture_settings_frame(self, grpcbin_host, grpcbin_insecure_port):
         """Test capturing a SETTINGS frame from grpcbin."""
@@ -151,10 +249,6 @@ class TestHttp2FrameCapture:
         finally:
             forwarder.close()
 
-
-class TestGrpcHeaders:
-    """Tests for HTTP/2 handshake completion."""
-
     def test_http2_handshake_completes(self, grpcbin_host, grpcbin_insecure_port):
         """Test that we can complete an HTTP/2 handshake with settings exchange."""
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
@@ -182,10 +276,6 @@ class TestGrpcHeaders:
             forwarder.send(b"\x00\x00\x00\x04\x01\x00\x00\x00\x00")  # SETTINGS ACK
         finally:
             forwarder.close()
-
-
-class TestGrpcFrameParsing:
-    """Tests for parsing gRPC-specific frame patterns."""
 
     def test_full_connection_sequence(self, grpcbin_host, grpcbin_insecure_port):
         """Test a full HTTP/2 connection sequence with grpcbin."""

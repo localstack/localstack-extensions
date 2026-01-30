@@ -11,6 +11,7 @@ providing realistic test coverage of the Docker container management infrastruct
 import socket
 import pytest
 
+from hyperframe.frame import Frame
 from werkzeug.datastructures import Headers
 from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 
@@ -18,6 +19,10 @@ from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 GRPCBIN_IMAGE = "moul/grpcbin"
 GRPCBIN_INSECURE_PORT = 9000  # HTTP/2 without TLS
 GRPCBIN_SECURE_PORT = 9001  # HTTP/2 with TLS
+
+# HTTP/2 protocol constants
+HTTP2_PREFACE = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+SETTINGS_FRAME = b"\x00\x00\x00\x04\x00\x00\x00\x00\x00"  # Empty SETTINGS frame
 
 
 class GrpcbinExtension(ProxiedDockerContainerExtension):
@@ -93,3 +98,24 @@ def grpcbin_insecure_port(grpcbin_extension):
 def grpcbin_secure_port(grpcbin_extension):
     """Return the secure (HTTP/2 with TLS) port for grpcbin."""
     return GRPCBIN_SECURE_PORT
+
+
+def parse_server_frames(data: bytes) -> list:
+    """Parse HTTP/2 frames from server response data (no preface expected).
+
+    Server responses don't include the HTTP/2 preface - they start with frames directly.
+    This function parses raw frame data using hyperframe directly.
+    """
+    frames = []
+    pos = 0
+    while pos + 9 <= len(data):  # Frame header is 9 bytes
+        try:
+            frame, length = Frame.parse_frame_header(memoryview(data[pos : pos + 9]))
+            if pos + 9 + length > len(data):
+                break  # Incomplete frame
+            frame.parse_body(memoryview(data[pos + 9 : pos + 9 + length]))
+            frames.append(frame)
+            pos += 9 + length
+        except Exception:
+            break
+    return frames

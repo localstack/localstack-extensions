@@ -41,6 +41,8 @@ test = [
     "pytest-timeout>=2.0",
     "localstack",
     "jsonpatch",
+    "grpcio>=1.60.0",
+    "grpcio-tools>=1.60.0",
 ]
 
 [tool.setuptools.packages.find]
