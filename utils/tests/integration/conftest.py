@@ -3,14 +3,16 @@ Integration test fixtures for utils package.
 
 Provides fixtures for running tests against the grpcbin Docker container.
 grpcbin is a neutral gRPC test service that supports various RPC types.
+
+Uses ProxiedDockerContainerExtension to manage the grpcbin container,
+providing realistic test coverage of the Docker container management infrastructure.
 """
 
-import time
+import socket
 import pytest
 
-from localstack.utils.container_utils.container_client import PortMappings
-from localstack.utils.docker_utils import DOCKER_CLIENT
-from localstack.utils.net import wait_for_port_open
+from werkzeug.datastructures import Headers
+from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 
 
 GRPCBIN_IMAGE = "moul/grpcbin"
@@ -18,84 +20,76 @@ GRPCBIN_INSECURE_PORT = 9000  # HTTP/2 without TLS
 GRPCBIN_SECURE_PORT = 9001  # HTTP/2 with TLS
 
 
+class GrpcbinExtension(ProxiedDockerContainerExtension):
+    """
+    Test extension for grpcbin that uses ProxiedDockerContainerExtension.
+
+    This extension demonstrates using ProxiedDockerContainerExtension for
+    a gRPC/HTTP2 service. While grpcbin doesn't use the HTTP gateway routing
+    (it's accessed via direct TCP), this tests the Docker container management
+    capabilities of ProxiedDockerContainerExtension.
+    """
+
+    name = "grpcbin-test"
+
+    def __init__(self):
+        def _tcp_health_check():
+            """Check if grpcbin insecure port is accepting TCP connections."""
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(2.0)
+            try:
+                # Use container_host from the parent class
+                sock.connect((self.container_host, GRPCBIN_INSECURE_PORT))
+                sock.close()
+            except (socket.timeout, socket.error) as e:
+                raise AssertionError(f"Port {GRPCBIN_INSECURE_PORT} not ready: {e}")
+
+        super().__init__(
+            image_name=GRPCBIN_IMAGE,
+            container_ports=[GRPCBIN_INSECURE_PORT, GRPCBIN_SECURE_PORT],
+            health_check_fn=_tcp_health_check,
+        )
+
+    def should_proxy_request(self, headers: Headers) -> bool:
+        """
+        gRPC services use direct TCP connections, not HTTP gateway routing.
+        This method is not used in these tests but is required by the base class.
+        """
+        return False
+
+
 @pytest.fixture(scope="session")
-def grpcbin_container():
+def grpcbin_extension():
     """
-    Start a grpcbin Docker container for testing.
+    Start grpcbin using ProxiedDockerContainerExtension.
 
-    The container exposes:
-    - Port 9000: Insecure gRPC (HTTP/2 without TLS)
-    - Port 9001: Secure gRPC (HTTP/2 with TLS)
-
-    The container is automatically removed after tests complete.
+    This tests the Docker container management capabilities while providing
+    a realistic gRPC/HTTP2 test service for integration tests.
     """
-    container_name = "pytest-grpcbin"
+    extension = GrpcbinExtension()
 
-    # Remove any existing container with the same name
-    try:
-        DOCKER_CLIENT.remove_container(container_name)
-    except Exception:
-        pass  # Container may not exist
+    # Start the container using the extension infrastructure
+    extension.start_container()
 
-    # Configure port mappings
-    ports = PortMappings()
-    ports.add(GRPCBIN_INSECURE_PORT)
-    ports.add(GRPCBIN_SECURE_PORT)
+    yield extension
 
-    # Start the container
-    stdout, _ = DOCKER_CLIENT.run_container(
-        image_name=GRPCBIN_IMAGE,
-        name=container_name,
-        detach=True,
-        remove=True,
-        ports=ports,
-    )
-    container_id = stdout.decode().strip()
-
-    # Wait for the insecure port to be ready with enough retries
-    try:
-        wait_for_port_open(GRPCBIN_INSECURE_PORT, retries=60, sleep_time=0.5)
-    except Exception:
-        # Clean up and fail
-        try:
-            DOCKER_CLIENT.remove_container(container_name)
-        except Exception:
-            pass
-        pytest.fail(f"grpcbin port {GRPCBIN_INSECURE_PORT} did not become available")
-
-    # Brief delay to allow grpcbin HTTP/2 server to fully initialize
-    # (port open doesn't guarantee HTTP/2 readiness)
-    time.sleep(0.5)
-
-    # Provide connection info to tests
-    yield {
-        "container_id": container_id,
-        "container_name": container_name,
-        "host": "localhost",
-        "insecure_port": GRPCBIN_INSECURE_PORT,
-        "secure_port": GRPCBIN_SECURE_PORT,
-    }
-
-    # Cleanup: stop and remove the container
-    try:
-        DOCKER_CLIENT.remove_container(container_name)
-    except Exception:
-        pass
+    # Cleanup
+    extension.on_platform_shutdown()
 
 
 @pytest.fixture
-def grpcbin_host(grpcbin_container):
+def grpcbin_host(grpcbin_extension):
     """Return the host address for the grpcbin container."""
-    return grpcbin_container["host"]
+    return grpcbin_extension.container_host
 
 
 @pytest.fixture
-def grpcbin_insecure_port(grpcbin_container):
+def grpcbin_insecure_port(grpcbin_extension):
     """Return the insecure (HTTP/2 without TLS) port for grpcbin."""
-    return grpcbin_container["insecure_port"]
+    return GRPCBIN_INSECURE_PORT
 
 
 @pytest.fixture
-def grpcbin_secure_port(grpcbin_container):
+def grpcbin_secure_port(grpcbin_extension):
     """Return the secure (HTTP/2 with TLS) port for grpcbin."""
-    return grpcbin_container["secure_port"]
+    return GRPCBIN_SECURE_PORT

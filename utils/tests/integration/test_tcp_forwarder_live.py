@@ -33,8 +33,9 @@ class TestTcpForwarderConnection:
     def test_connect_and_close(self, grpcbin_host, grpcbin_insecure_port):
         """Test connect and close cycle."""
         forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        assert forwarder.port == grpcbin_insecure_port
         forwarder.close()
-        # Should not raise
+        # Verify close succeeded without raising an exception
 
     def test_multiple_connect_close_cycles(self, grpcbin_host, grpcbin_insecure_port):
         """Test multiple connect/close cycles."""
@@ -45,14 +46,6 @@ class TestTcpForwarderConnection:
 
 class TestTcpForwarderSendReceive:
     """Tests for TcpForwarder send/receive operations with grpcbin."""
-
-    def test_send_http2_preface(self, grpcbin_host, grpcbin_insecure_port):
-        """Test sending HTTP/2 preface through TcpForwarder (no exception = success)."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
-        try:
-            forwarder.send(HTTP2_PREFACE)
-        finally:
-            forwarder.close()
 
     def test_send_and_receive(self, grpcbin_host, grpcbin_insecure_port):
         """Test sending data and receiving response."""

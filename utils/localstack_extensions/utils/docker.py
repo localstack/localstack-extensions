@@ -47,6 +47,13 @@ class ProxiedDockerContainerExtension(Extension):
     """Optional path on which to expose the container endpoints."""
     command: list[str] | None
     """Optional command (and flags) to execute in the container."""
+    env_vars: dict[str, str] | None
+    """Optional environment variables to pass to the container."""
+    health_check_fn: Callable[[], None] | None
+    """
+    Optional custom health check function. If not provided, defaults to HTTP GET on main_port.
+    The function should raise an exception if the health check fails.
+    """
 
     request_to_port_router: Callable[[Request], int] | None
     """Callable that returns the target port for a given request, for routing purposes"""
@@ -60,6 +67,8 @@ class ProxiedDockerContainerExtension(Extension):
         host: str | None = None,
         path: str | None = None,
         command: list[str] | None = None,
+        env_vars: dict[str, str] | None = None,
+        health_check_fn: Callable[[], None] | None = None,
         request_to_port_router: Callable[[Request], int] | None = None,
         http2_ports: list[int] | None = None,
     ):
@@ -71,6 +80,8 @@ class ProxiedDockerContainerExtension(Extension):
         self.path = path
         self.container_name = re.sub(r"\W", "-", f"ls-ext-{self.name}")
         self.command = command
+        self.env_vars = env_vars
+        self.health_check_fn = health_check_fn
         self.request_to_port_router = request_to_port_router
         self.http2_ports = http2_ports
         self.main_port = self.container_ports[0]
@@ -113,6 +124,8 @@ class ProxiedDockerContainerExtension(Extension):
         kwargs = {}
         if self.command:
             kwargs["command"] = self.command
+        if self.env_vars:
+            kwargs["env_vars"] = self.env_vars
 
         try:
             DOCKER_CLIENT.run_container(
@@ -129,19 +142,22 @@ class ProxiedDockerContainerExtension(Extension):
             if not is_env_true(f"{self.name.upper().replace('-', '_')}_DEV_MODE"):
                 raise
 
-        def _ping_endpoint():
-            # TODO: allow defining a custom healthcheck endpoint ...
-            response = requests.get(f"http://{self.container_host}:{self.main_port}/")
-            assert response.ok
+        # Use custom health check if provided, otherwise default to HTTP GET
+        health_check = self.health_check_fn or self._default_health_check
 
         try:
-            retry(_ping_endpoint, retries=40, sleep=1)
+            retry(health_check, retries=60, sleep=1)
         except Exception as e:
             LOG.info("Failed to connect to container %s: %s", self.container_name, e)
             self._remove_container()
             raise
 
         LOG.debug("Successfully started extension container %s", self.container_name)
+
+    def _default_health_check(self) -> None:
+        """Default health check: HTTP GET request to the main port."""
+        response = requests.get(f"http://{self.container_host}:{self.main_port}/")
+        assert response.ok
 
     def _remove_container(self):
         LOG.debug("Stopping extension container %s", self.container_name)

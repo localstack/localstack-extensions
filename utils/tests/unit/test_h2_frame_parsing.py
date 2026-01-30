@@ -85,7 +85,6 @@ class TestExtractHeaders:
         frames = list(get_frames_from_http2_stream(self.SAMPLE_HTTP2_DATA))
         headers = get_headers_from_frames(frames)
 
-        assert headers is not None
         assert len(headers) > 0, "Should extract at least one header"
 
     def test_extract_pseudo_headers(self):
@@ -104,7 +103,6 @@ class TestExtractHeaders:
         data_chunks = [self.SAMPLE_HTTP2_DATA[:100], self.SAMPLE_HTTP2_DATA[100:]]
         headers = get_headers_from_data_stream(data_chunks)
 
-        assert headers is not None
         assert headers.get(":scheme") == "https"
         assert headers.get(":method") == "OPTIONS"
 
@@ -143,7 +141,6 @@ class TestEmptyAndInvalidData:
     def test_headers_from_empty_frames(self):
         """Test extracting headers from empty frame list."""
         headers = get_headers_from_frames([])
-        assert headers is not None
         assert len(headers) == 0
 
     def test_headers_from_non_header_frames(self):
@@ -155,19 +152,16 @@ class TestEmptyAndInvalidData:
         frames = list(get_frames_from_http2_stream(data))
         headers = get_headers_from_frames(frames)
 
-        assert headers is not None
         assert len(headers) == 0, "SETTINGS frame should not produce headers"
 
     def test_get_headers_from_empty_data_stream(self):
         """Test get_headers_from_data_stream with empty input."""
         headers = get_headers_from_data_stream([])
-        assert headers is not None
         assert len(headers) == 0
 
     def test_get_headers_from_data_stream_with_empty_chunks(self):
         """Test get_headers_from_data_stream with list of empty chunks."""
         headers = get_headers_from_data_stream([b"", b"", b""])
-        assert headers is not None
         assert len(headers) == 0
 
 
