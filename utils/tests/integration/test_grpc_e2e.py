@@ -9,7 +9,6 @@ We use the Empty service which returns an empty response.
 """
 
 import grpc
-import pytest
 
 
 class TestGrpcEndToEnd:

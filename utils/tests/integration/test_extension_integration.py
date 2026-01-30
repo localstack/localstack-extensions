@@ -21,8 +21,11 @@ class TestProxiedDockerContainerExtension:
         """Test that the container_host is set and accessible."""
         assert grpcbin_extension.container_host is not None
         # container_host should be localhost, localhost.localstack.cloud, or a docker bridge IP
-        assert grpcbin_extension.container_host in ("localhost", "127.0.0.1", "localhost.localstack.cloud") or \
-               grpcbin_extension.container_host.startswith("172.")
+        assert grpcbin_extension.container_host in (
+            "localhost",
+            "127.0.0.1",
+            "localhost.localstack.cloud",
+        ) or grpcbin_extension.container_host.startswith("172.")
 
     def test_extension_ports_are_reachable(self, grpcbin_host, grpcbin_insecure_port):
         """Test that the extension's ports are reachable via TCP."""
