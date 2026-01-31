@@ -1,12 +1,9 @@
 import os
 import socket
-import logging
 
 from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 from werkzeug.datastructures import Headers
 from localstack import config
-
-LOG = logging.getLogger(__name__)
 
 # Environment variables for configuration
 ENV_POSTGRES_USER = "PARADEDB_POSTGRES_USER"
@@ -65,11 +62,26 @@ class ParadeDbExtension(ProxiedDockerContainerExtension):
         """
         Identify PostgreSQL/ParadeDB connections by protocol handshake.
 
-        PostgreSQL startup message format:
+        PostgreSQL can start with either:
+        1. SSL request: protocol code 80877103 (0x04D2162F)
+        2. Startup message: protocol version 3.0 (0x00030000)
+
+        Both use the same format:
         - 4 bytes: message length
-        - 4 bytes: protocol version (3.0 = 0x00030000)
+        - 4 bytes: protocol version/code
         """
-        return len(data) >= 8 and data[4:8] == b"\x00\x03\x00\x00"
+        if len(data) < 8:
+            return False
+
+        # Check for SSL request (80877103 = 0x04D2162F)
+        if data[4:8] == b"\x04\xd2\x16\x2f":
+            return True
+
+        # Check for protocol version 3.0 (0x00030000)
+        if data[4:8] == b"\x00\x03\x00\x00":
+            return True
+
+        return False
 
     def should_proxy_request(self, headers: Headers) -> bool:
         """

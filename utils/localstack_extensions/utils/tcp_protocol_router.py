@@ -12,8 +12,10 @@ from twisted.protocols.portforward import ProxyClient, ProxyClientFactory
 from twisted.web.http import HTTPChannel
 
 from localstack.utils.patch import patch
+from localstack import config
 
 LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.DEBUG if config.DEBUG else logging.INFO)
 
 # Global registry of extensions with TCP matchers
 # List of tuples: (extension_name, matcher_func, backend_host, backend_port)
@@ -31,6 +33,12 @@ class TcpProxyClient(ProxyClient):
         # Set up peer relationship
         server.set_tcp_peer(self)
 
+        # Unregister any existing producer on server transport (HTTPChannel may have one)
+        try:
+            server.transport.unregisterProducer()
+        except Exception:
+            pass  # No producer was registered, which is fine
+
         # Enable flow control
         self.transport.registerProducer(server.transport, True)
         server.transport.registerProducer(self.transport, True)
@@ -38,7 +46,6 @@ class TcpProxyClient(ProxyClient):
         # Send buffered data from detection phase
         if hasattr(self.factory, "initial_data"):
             initial_data = self.factory.initial_data
-            LOG.debug(f"Sending {len(initial_data)} buffered bytes to backend")
             self.transport.write(initial_data)
             del self.factory.initial_data
 
@@ -61,11 +68,7 @@ def patch_gateway_for_tcp_routing():
     global _gateway_patched
 
     if _gateway_patched:
-        LOG.debug("Gateway already patched for TCP routing")
         return
-
-    LOG.debug("Patching LocalStack gateway for TCP protocol detection")
-    peek_bytes_length = 32
 
     # Patch HTTPChannel to use our protocol-detecting version
     @patch(HTTPChannel.__init__)
@@ -76,7 +79,6 @@ def patch_gateway_for_tcp_routing():
         self._detection_buffer = []
         self._detecting = True
         self._tcp_peer = None
-        self._detection_buffer_size = peek_bytes_length
 
     @patch(HTTPChannel.dataReceived)
     def _patched_dataReceived(fn, self, data):
@@ -102,10 +104,6 @@ def patch_gateway_for_tcp_routing():
             for ext_name, matcher, backend_host, backend_port in _tcp_extensions:
                 try:
                     if matcher(buffered_data):
-                        LOG.info(
-                            f"Extension {ext_name} claimed connection, routing to "
-                            f"{backend_host}:{backend_port}"
-                        )
                         # Switch to TCP proxy mode
                         self._detecting = False
                         self.transport.pauseProducing()
@@ -123,14 +121,11 @@ def patch_gateway_for_tcp_routing():
                     continue
 
             # No extension claimed the connection
-            buffer_size = getattr(self, "_detection_buffer_size", peek_bytes_length)
-            if len(buffered_data) >= buffer_size:
-                LOG.debug("No TCP extension matched, using HTTP handler")
-                self._detecting = False
-                # Feed buffered data to HTTP handler
-                for chunk in self._detection_buffer:
-                    fn(self, chunk)
-                self._detection_buffer = []
+            self._detecting = False
+            # Feed buffered data to HTTP handler
+            for chunk in self._detection_buffer:
+                fn(self, chunk)
+            self._detection_buffer = []
 
     @patch(HTTPChannel.connectionLost)
     def _patched_connectionLost(fn, self, reason):
@@ -150,7 +145,6 @@ def patch_gateway_for_tcp_routing():
     HTTPChannel.set_tcp_peer = set_tcp_peer
 
     _gateway_patched = True
-    LOG.info("Gateway patched successfully for TCP protocol routing")
 
 
 def register_tcp_extension(

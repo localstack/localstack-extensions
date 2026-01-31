@@ -170,8 +170,7 @@ class ProxiedDockerContainerExtension(Extension):
         )
 
         LOG.info(
-            f"Registered TCP extension {self.name} -> "
-            f"{self.container_host}:{target_port} on gateway"
+            f"Registered TCP extension {self.name} -> {self.container_host}:{target_port} on gateway"
         )
 
     @abstractmethod
@@ -219,8 +218,6 @@ class ProxiedDockerContainerExtension(Extension):
             LOG.info("Failed to connect to container %s: %s", self.container_name, e)
             self._remove_container()
             raise
-
-        LOG.debug("Successfully started extension container %s", self.container_name)
 
     def _default_health_check(self) -> None:
         """Default health check: HTTP GET request to the main port."""
