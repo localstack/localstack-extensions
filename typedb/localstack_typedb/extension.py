@@ -37,7 +37,7 @@ class TypeDbExtension(ProxiedDockerContainerExtension):
             http2_ports=http2_ports,
         )
 
-    def should_proxy_request(self, headers: Headers) -> bool:
+    def http2_request_matcher(self, headers: Headers) -> bool:
         # determine if this is a gRPC request targeting TypeDB
         content_type = headers.get("content-type") or ""
         req_path = headers.get(":path") or ""

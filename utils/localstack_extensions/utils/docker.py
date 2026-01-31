@@ -124,7 +124,7 @@ class ProxiedDockerContainerExtension(Extension):
         # apply patches to serve HTTP/2 requests
         for port in self.http2_ports or []:
             apply_http2_patches_for_grpc_support(
-                self.container_host, port, self.should_proxy_request
+                self.container_host, port, self.http2_request_matcher
             )
 
         # set up raw TCP proxies with protocol detection
@@ -174,8 +174,8 @@ class ProxiedDockerContainerExtension(Extension):
         )
 
     @abstractmethod
-    def should_proxy_request(self, headers: Headers) -> bool:
-        """Define whether a request should be proxied, based on request headers."""
+    def http2_request_matcher(self, headers: Headers) -> bool:
+        """Define whether an HTTP2 request should be proxied, based on request headers."""
 
     def on_platform_shutdown(self):
         self._remove_container()

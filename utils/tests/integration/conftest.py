@@ -55,7 +55,7 @@ class GrpcbinExtension(ProxiedDockerContainerExtension):
             health_check_fn=_tcp_health_check,
         )
 
-    def should_proxy_request(self, headers: Headers) -> bool:
+    def http2_request_matcher(self, headers: Headers) -> bool:
         """
         gRPC services use direct TCP connections, not HTTP gateway routing.
         This method is not used in these tests but is required by the base class.

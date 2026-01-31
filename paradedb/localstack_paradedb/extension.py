@@ -83,9 +83,9 @@ class ParadeDbExtension(ProxiedDockerContainerExtension):
 
         return False
 
-    def should_proxy_request(self, headers: Headers) -> bool:
+    def http2_request_matcher(self, headers: Headers) -> bool:
         """
-        Define whether a request should be proxied based on request headers.
+        Define whether an HTTP2 request should be proxied based on request headers.
         Not used for TCP connections - see tcp_connection_matcher instead.
         """
         return False

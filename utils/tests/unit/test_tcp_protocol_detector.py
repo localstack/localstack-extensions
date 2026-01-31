@@ -113,7 +113,7 @@ class TestRealWorldUsage:
                 matcher = create_signature_matcher(b"\xde\xad\xbe\xef", offset=4)
                 return matcher(data)
 
-            def should_proxy_request(self, headers: Headers) -> bool:
+            def http2_request_matcher(self, headers: Headers) -> bool:
                 return False
 
         extension = CustomProtocolExtension()
@@ -145,7 +145,7 @@ class TestRealWorldUsage:
                 variant2 = create_prefix_matcher(b"V2:")
                 return combine_matchers(variant1, variant2)(data)
 
-            def should_proxy_request(self, headers: Headers) -> bool:
+            def http2_request_matcher(self, headers: Headers) -> bool:
                 return False
 
         extension = MultiProtocolExtension()
@@ -172,7 +172,7 @@ class TestRealWorldUsage:
                 # Inline custom logic without helper functions
                 return len(data) >= 8 and data.startswith(b"MAGIC") and data[7] == 0x42
 
-            def should_proxy_request(self, headers: Headers) -> bool:
+            def http2_request_matcher(self, headers: Headers) -> bool:
                 return False
 
         extension = InlineMatcherExtension()

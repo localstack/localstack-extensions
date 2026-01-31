@@ -42,8 +42,8 @@ class TestProxiedDockerContainerExtension:
         """Test that the extension properly implements the required abstract methods."""
         from werkzeug.datastructures import Headers
 
-        # should_proxy_request should be callable
-        result = grpcbin_extension.should_proxy_request(Headers())
+        # http2_request_matcher should be callable
+        result = grpcbin_extension.http2_request_matcher(Headers())
         assert result is False, "gRPC services should not proxy through HTTP gateway"
 
     def test_multiple_ports_configured(self, grpcbin_extension):

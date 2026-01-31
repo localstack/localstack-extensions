@@ -64,7 +64,7 @@ patched_connection = False
 
 
 def apply_http2_patches_for_grpc_support(
-    target_host: str, target_port: int, should_proxy_request: ProxyRequestMatcher
+    target_host: str, target_port: int, http2_request_matcher: ProxyRequestMatcher
 ):
     """
     Apply some patches to proxy incoming gRPC requests and forward them to a target port.
@@ -123,7 +123,7 @@ def apply_http2_patches_for_grpc_support(
                         buffered_data = b"".join(self.buffer)
                         self.buffer = []
 
-                        if should_proxy_request(headers):
+                        if http2_request_matcher(headers):
                             self.state = ForwardingState.FORWARDING
                             self.backend.send(buffered_data)
                         else:
