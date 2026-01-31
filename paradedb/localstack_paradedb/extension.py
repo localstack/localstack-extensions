@@ -3,8 +3,8 @@ import socket
 import logging
 
 from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
-from localstack.extensions.api import http
 from werkzeug.datastructures import Headers
+from localstack import config
 
 LOG = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class ParadeDbExtension(ProxiedDockerContainerExtension):
         }
 
         def _tcp_health_check():
-            """Check if PostgreSQL port is accepting connections."""
+            """Check if ParadeDB port is accepting connections."""
             self._check_tcp_port(self.container_host, self.postgres_port)
 
         super().__init__(
@@ -58,21 +58,25 @@ class ParadeDbExtension(ProxiedDockerContainerExtension):
             container_ports=[postgres_port],
             env_vars=env_vars,
             health_check_fn=_tcp_health_check,
+            tcp_ports=[postgres_port],  # Enable TCP proxying through gateway
         )
+
+    def tcp_connection_matcher(self, data: bytes) -> bool:
+        """
+        Identify PostgreSQL/ParadeDB connections by protocol handshake.
+
+        PostgreSQL startup message format:
+        - 4 bytes: message length
+        - 4 bytes: protocol version (3.0 = 0x00030000)
+        """
+        return len(data) >= 8 and data[4:8] == b"\x00\x03\x00\x00"
 
     def should_proxy_request(self, headers: Headers) -> bool:
         """
         Define whether a request should be proxied based on request headers.
-        For database extensions, this is not used as connections are direct TCP.
+        Not used for TCP connections - see tcp_connection_matcher instead.
         """
         return False
-
-    def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
-        """
-        Override to start container without setting up HTTP gateway routes.
-        Database extensions don't need HTTP routing - clients connect directly via TCP.
-        """
-        self.start_container()
 
     def _check_tcp_port(self, host: str, port: int, timeout: float = 2.0) -> None:
         """Check if a TCP port is accepting connections."""
@@ -86,15 +90,21 @@ class ParadeDbExtension(ProxiedDockerContainerExtension):
 
     def get_connection_info(self) -> dict:
         """Return connection information for ParadeDB."""
+        # Clients should connect through the LocalStack gateway
+        gateway_host = "paradedb.localhost.localstack.cloud"
+        gateway_port = config.LOCALSTACK_HOST.port
+
         return {
-            "host": self.container_host,
+            "host": gateway_host,
             "database": self.postgres_db,
             "user": self.postgres_user,
             "password": self.postgres_password,
-            "port": self.postgres_port,
-            "ports": {self.postgres_port: self.postgres_port},
+            "port": gateway_port,
             "connection_string": (
                 f"postgresql://{self.postgres_user}:{self.postgres_password}"
-                f"@{self.container_host}:{self.postgres_port}/{self.postgres_db}"
+                f"@{gateway_host}:{gateway_port}/{self.postgres_db}"
             ),
+            # Also include container connection details for debugging
+            "container_host": self.container_host,
+            "container_port": self.postgres_port,
         }

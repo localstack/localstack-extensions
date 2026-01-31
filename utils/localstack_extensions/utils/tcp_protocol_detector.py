@@ -35,9 +35,7 @@ def create_prefix_matcher(prefix: bytes) -> ConnectionMatcher:
     return matcher
 
 
-def create_signature_matcher(
-    signature: bytes, offset: int = 0
-) -> ConnectionMatcher:
+def create_signature_matcher(signature: bytes, offset: int = 0) -> ConnectionMatcher:
     """
     Create a matcher that matches bytes at a specific offset.
 

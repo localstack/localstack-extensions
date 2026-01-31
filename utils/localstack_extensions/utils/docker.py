@@ -19,8 +19,6 @@ from rolo import route
 from rolo.proxy import Proxy
 from rolo.routing import RuleAdapter, WithHost
 from werkzeug.datastructures import Headers
-from twisted.internet import reactor
-from twisted.protocols.portforward import ProxyFactory
 
 LOG = logging.getLogger(__name__)
 

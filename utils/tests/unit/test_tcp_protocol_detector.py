@@ -2,13 +2,14 @@
 Unit tests for TCP connection matcher helpers.
 """
 
-import pytest
 from localstack_extensions.utils.tcp_protocol_detector import (
     create_prefix_matcher,
     create_signature_matcher,
     create_custom_matcher,
     combine_matchers,
 )
+from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
+from werkzeug.datastructures import Headers
 
 
 class TestMatcherFactories:
@@ -26,13 +27,13 @@ class TestMatcherFactories:
     def test_create_signature_matcher(self):
         """Test creating a signature matcher with offset."""
         # Match signature at offset 4
-        matcher = create_signature_matcher(b"\xAA\xBB", offset=4)
+        matcher = create_signature_matcher(b"\xaa\xbb", offset=4)
 
-        assert matcher(b"\x00\x00\x00\x00\xAA\xBB\xCC")
-        assert matcher(b"\x00\x00\x00\x00\xAA\xBB")
-        assert not matcher(b"\xAA\xBB\xCC")  # Wrong offset
-        assert not matcher(b"\x00\x00\x00\x00\xCC\xDD")  # Wrong signature
-        assert not matcher(b"\x00\x00\x00\x00\xAA")  # Incomplete
+        assert matcher(b"\x00\x00\x00\x00\xaa\xbb\xcc")
+        assert matcher(b"\x00\x00\x00\x00\xaa\xbb")
+        assert not matcher(b"\xaa\xbb\xcc")  # Wrong offset
+        assert not matcher(b"\x00\x00\x00\x00\xcc\xdd")  # Wrong signature
+        assert not matcher(b"\x00\x00\x00\x00\xaa")  # Incomplete
 
     def test_create_custom_matcher(self):
         """Test creating a custom matcher."""
@@ -42,8 +43,8 @@ class TestMatcherFactories:
 
         matcher = create_custom_matcher(my_check)
 
-        assert matcher(b"\x00\x00\x00\x00\x00\xFF")
-        assert matcher(b"\x00\x00\x00\x00\x00\xFF\xFF")
+        assert matcher(b"\x00\x00\x00\x00\x00\xff")
+        assert matcher(b"\x00\x00\x00\x00\x00\xff\xff")
         assert not matcher(b"\x00\x00\x00\x00\x00\x00")
         assert not matcher(b"\x00\x00\x00\x00\x00")  # Too short
 
@@ -88,7 +89,7 @@ class TestMatcherEdgeCases:
         matcher = create_prefix_matcher(b"PREFIX")
 
         # Should match even with lots of extra data
-        assert matcher(b"PREFIX" + b"\xFF" * 1000)
+        assert matcher(b"PREFIX" + b"\xff" * 1000)
 
 
 class TestRealWorldUsage:
@@ -96,8 +97,6 @@ class TestRealWorldUsage:
 
     def test_extension_with_custom_protocol_matcher(self):
         """Test using custom matchers in an extension context."""
-        from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
-        from werkzeug.datastructures import Headers
 
         class CustomProtocolExtension(ProxiedDockerContainerExtension):
             name = "custom"
@@ -111,7 +110,7 @@ class TestRealWorldUsage:
 
             def tcp_connection_matcher(self, data: bytes) -> bool:
                 # Match custom protocol with magic bytes at offset 4
-                matcher = create_signature_matcher(b"\xDE\xAD\xBE\xEF", offset=4)
+                matcher = create_signature_matcher(b"\xde\xad\xbe\xef", offset=4)
                 return matcher(data)
 
             def should_proxy_request(self, headers: Headers) -> bool:
@@ -121,16 +120,14 @@ class TestRealWorldUsage:
         assert hasattr(extension, "tcp_connection_matcher")
 
         # Test the matcher
-        valid_data = b"\x00\x00\x00\x00\xDE\xAD\xBE\xEF\xFF"
+        valid_data = b"\x00\x00\x00\x00\xde\xad\xbe\xef\xff"
         assert extension.tcp_connection_matcher(valid_data)
 
-        invalid_data = b"\x00\x00\x00\x00\xFF\xFF\xFF\xFF"
+        invalid_data = b"\x00\x00\x00\x00\xff\xff\xff\xff"
         assert not extension.tcp_connection_matcher(invalid_data)
 
     def test_extension_with_combined_matchers(self):
         """Test using combined matchers in an extension."""
-        from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
-        from werkzeug.datastructures import Headers
 
         class MultiProtocolExtension(ProxiedDockerContainerExtension):
             name = "multi-protocol"
@@ -160,8 +157,6 @@ class TestRealWorldUsage:
 
     def test_extension_with_inline_matcher(self):
         """Test using an inline matcher function."""
-        from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
-        from werkzeug.datastructures import Headers
 
         class InlineMatcherExtension(ProxiedDockerContainerExtension):
             name = "inline"
@@ -175,11 +170,7 @@ class TestRealWorldUsage:
 
             def tcp_connection_matcher(self, data: bytes) -> bool:
                 # Inline custom logic without helper functions
-                return (
-                    len(data) >= 8
-                    and data.startswith(b"MAGIC")
-                    and data[7] == 0x42
-                )
+                return len(data) >= 8 and data.startswith(b"MAGIC") and data[7] == 0x42
 
             def should_proxy_request(self, headers: Headers) -> bool:
                 return False

@@ -7,7 +7,7 @@ protocols to share a single gateway port.
 """
 
 import logging
-from twisted.internet import protocol, reactor
+from twisted.internet import reactor
 from twisted.protocols.portforward import ProxyClient, ProxyClientFactory
 from twisted.web.http import HTTPChannel
 
@@ -19,99 +19,6 @@ LOG = logging.getLogger(__name__)
 # List of tuples: (extension_name, matcher_func, backend_host, backend_port)
 _tcp_extensions = []
 _gateway_patched = False
-
-
-class ProtocolDetectingChannel(HTTPChannel):
-    """
-    HTTP channel wrapper that detects TCP protocols before HTTP processing.
-
-    This wraps the standard HTTPChannel and intercepts the first dataReceived call
-    to check if it's a known TCP protocol. If so, it morphs into a TCP proxy.
-    Otherwise, it passes through to normal HTTP handling.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self._detection_buffer = []
-        self._detecting = True
-        self._tcp_peer = None
-        self._detection_buffer_size = 512
-
-    def dataReceived(self, data):
-        """Intercept data to detect protocol before HTTP processing."""
-        if not self._detecting:
-            # Already decided - either proxying TCP or processing HTTP
-            if self._tcp_peer:
-                # TCP proxying mode
-                self._tcp_peer.transport.write(data)
-            else:
-                # HTTP mode - pass to parent
-                super().dataReceived(data)
-            return
-
-        # Still detecting - buffer data
-        self._detection_buffer.append(data)
-        buffered_data = b"".join(self._detection_buffer)
-
-        # Try detection once we have enough bytes
-        if len(buffered_data) >= 8:
-            protocol_name = detect_protocol(buffered_data)
-
-            if protocol_name and protocol_name not in ("http", "http2"):
-                # Known TCP protocol (not HTTP) - check if we have a backend
-                backend_info = _protocol_backends.get(protocol_name)
-
-                if backend_info:
-                    LOG.info(
-                        f"Detected {protocol_name} on gateway port, routing to "
-                        f"{backend_info['host']}:{backend_info['port']}"
-                    )
-                    self._switch_to_tcp_proxy(
-                        backend_info["host"], backend_info["port"], buffered_data
-                    )
-                    self._detecting = False
-                    return
-
-            # Not a known TCP protocol, or no backend configured
-            # Check if we've buffered enough
-            if (
-                len(buffered_data) >= self._detection_buffer_size
-                or protocol_name in ("http", "http2")
-            ):
-                LOG.debug(
-                    f"Protocol detected as {protocol_name or 'unknown'}, using HTTP handler"
-                )
-                self._detecting = False
-                # Feed buffered data to HTTP handler
-                for chunk in self._detection_buffer:
-                    super().dataReceived(chunk)
-                self._detection_buffer = []
-
-    def _switch_to_tcp_proxy(self, host, port, initial_data):
-        """Switch this connection to TCP proxy mode."""
-        # Pause reading while we establish backend connection
-        self.transport.pauseProducing()
-
-        # Create backend connection
-        client_factory = ProxyClientFactory()
-        client_factory.server = self
-        client_factory.initial_data = initial_data
-
-        # Connect to backend
-        reactor.connectTCP(host, port, client_factory)
-
-    def set_tcp_peer(self, peer):
-        """Called when backend connection is established."""
-        self._tcp_peer = peer
-        # Resume reading from client
-        self.transport.resumeProducing()
-
-    def connectionLost(self, reason):
-        """Handle connection close."""
-        if self._tcp_peer:
-            self._tcp_peer.transport.loseConnection()
-            self._tcp_peer = None
-        super().connectionLost(reason)
 
 
 class TcpProxyClient(ProxyClient):
@@ -261,7 +168,9 @@ def register_tcp_extension(
         backend_port: Backend port to route to
     """
     _tcp_extensions.append((extension_name, matcher, backend_host, backend_port))
-    LOG.info(f"Registered TCP extension {extension_name} -> {backend_host}:{backend_port}")
+    LOG.info(
+        f"Registered TCP extension {extension_name} -> {backend_host}:{backend_port}"
+    )
 
 
 def unregister_tcp_extension(extension_name: str):
