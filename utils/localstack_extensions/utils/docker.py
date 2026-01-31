@@ -19,6 +19,8 @@ from rolo import route
 from rolo.proxy import Proxy
 from rolo.routing import RuleAdapter, WithHost
 from werkzeug.datastructures import Headers
+from twisted.internet import reactor
+from twisted.protocols.portforward import ProxyFactory
 
 LOG = logging.getLogger(__name__)
 
@@ -30,6 +32,9 @@ class ProxiedDockerContainerExtension(Extension):
 
     Requests may potentially use HTTP2 with binary content as the protocol (e.g., gRPC over HTTP2).
     To ensure proper routing of requests, subclasses can define the `http2_ports`.
+
+    For services requiring raw TCP proxying (e.g., native database protocols), use the `tcp_ports`
+    parameter to enable transparent TCP forwarding to the container.
     """
 
     name: str
@@ -41,7 +46,7 @@ class ProxiedDockerContainerExtension(Extension):
     host: str | None
     """
     Optional host on which to expose the container endpoints.
-    Can be either a static hostname, or a pattern like `<regex("(.+\.)?"):subdomain>myext.<domain>`
+    Can be either a static hostname, or a pattern like `<regex("(.+\\.)?"):subdomain>myext.<domain>`
     """
     path: str | None
     """Optional path on which to expose the container endpoints."""
@@ -59,6 +64,22 @@ class ProxiedDockerContainerExtension(Extension):
     """Callable that returns the target port for a given request, for routing purposes"""
     http2_ports: list[int] | None
     """List of ports for which HTTP2 proxy forwarding into the container should be enabled."""
+    tcp_ports: list[int] | None
+    """
+    List of container ports for raw TCP proxying through the gateway.
+    Enables transparent TCP forwarding for protocols that don't use HTTP (e.g., native DB protocols).
+
+    When tcp_ports is set, the extension must implement tcp_connection_matcher() to identify
+    its traffic by inspecting initial connection bytes.
+    """
+
+    tcp_connection_matcher: Callable[[bytes], bool] | None
+    """
+    Optional function to identify TCP connections belonging to this extension.
+
+    Called with initial connection bytes (up to 512 bytes) to determine if this extension
+    should handle the connection. Return True to claim the connection, False otherwise.
+    """
 
     def __init__(
         self,
@@ -71,6 +92,7 @@ class ProxiedDockerContainerExtension(Extension):
         health_check_fn: Callable[[], None] | None = None,
         request_to_port_router: Callable[[Request], int] | None = None,
         http2_ports: list[int] | None = None,
+        tcp_ports: list[int] | None = None,
     ):
         self.image_name = image_name
         if not container_ports:
@@ -84,6 +106,7 @@ class ProxiedDockerContainerExtension(Extension):
         self.health_check_fn = health_check_fn
         self.request_to_port_router = request_to_port_router
         self.http2_ports = http2_ports
+        self.tcp_ports = tcp_ports
         self.main_port = self.container_ports[0]
         self.container_host = get_addressable_container_host()
 
@@ -105,6 +128,53 @@ class ProxiedDockerContainerExtension(Extension):
             apply_http2_patches_for_grpc_support(
                 self.container_host, port, self.should_proxy_request
             )
+
+        # set up raw TCP proxies with protocol detection
+        if self.tcp_ports:
+            self._setup_tcp_protocol_routing()
+
+    def _setup_tcp_protocol_routing(self):
+        """
+        Set up TCP routing on the LocalStack gateway for this extension.
+
+        This method patches the gateway's HTTP protocol handler to intercept TCP
+        connections and allow this extension to claim them via tcp_connection_matcher().
+        This enables multiple TCP protocols to share the main gateway port (4566).
+
+        Uses monkeypatching to intercept dataReceived() before HTTP processing.
+        """
+        from localstack_extensions.utils.tcp_protocol_router import (
+            patch_gateway_for_tcp_routing,
+            register_tcp_extension,
+        )
+
+        # Get the connection matcher from the extension
+        matcher = getattr(self, "tcp_connection_matcher", None)
+        if not matcher:
+            LOG.warning(
+                f"Extension {self.name} has tcp_ports but no tcp_connection_matcher(). "
+                "TCP routing will not work without a matcher."
+            )
+            return
+
+        # Apply gateway patches (only happens once globally)
+        patch_gateway_for_tcp_routing()
+
+        # Register this extension for TCP routing
+        # Use first port as the default target port
+        target_port = self.tcp_ports[0] if self.tcp_ports else self.main_port
+
+        register_tcp_extension(
+            extension_name=self.name,
+            matcher=matcher,
+            backend_host=self.container_host,
+            backend_port=target_port,
+        )
+
+        LOG.info(
+            f"Registered TCP extension {self.name} -> "
+            f"{self.container_host}:{target_port} on gateway"
+        )
 
     @abstractmethod
     def should_proxy_request(self, headers: Headers) -> bool:
