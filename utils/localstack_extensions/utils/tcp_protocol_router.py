@@ -64,7 +64,8 @@ def patch_gateway_for_tcp_routing():
         LOG.debug("Gateway already patched for TCP routing")
         return
 
-    LOG.info("Patching LocalStack gateway for TCP protocol detection")
+    LOG.debug("Patching LocalStack gateway for TCP protocol detection")
+    peek_bytes_length = 32
 
     # Patch HTTPChannel to use our protocol-detecting version
     @patch(HTTPChannel.__init__)
@@ -75,7 +76,7 @@ def patch_gateway_for_tcp_routing():
         self._detection_buffer = []
         self._detecting = True
         self._tcp_peer = None
-        self._detection_buffer_size = 512
+        self._detection_buffer_size = peek_bytes_length
 
     @patch(HTTPChannel.dataReceived)
     def _patched_dataReceived(fn, self, data):
@@ -122,7 +123,7 @@ def patch_gateway_for_tcp_routing():
                     continue
 
             # No extension claimed the connection
-            buffer_size = getattr(self, "_detection_buffer_size", 512)
+            buffer_size = getattr(self, "_detection_buffer_size", peek_bytes_length)
             if len(buffered_data) >= buffer_size:
                 LOG.debug("No TCP extension matched, using HTTP handler")
                 self._detecting = False
