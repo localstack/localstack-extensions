@@ -12,7 +12,10 @@ from localstack_extensions.utils.h2_proxy import (
 from localstack.utils.docker_utils import DOCKER_CLIENT
 from localstack.extensions.api import Extension, http
 from localstack.http import Request
-from localstack.utils.container_utils.container_client import PortMappings
+from localstack.utils.container_utils.container_client import (
+    PortMappings,
+    SimpleVolumeBind,
+)
 from localstack.utils.net import get_addressable_container_host
 from localstack.utils.sync import retry
 from rolo import route
@@ -52,11 +55,17 @@ class ProxiedDockerContainerExtension(Extension):
     """Optional command (and flags) to execute in the container."""
     env_vars: dict[str, str] | None
     """Optional environment variables to pass to the container."""
+    volumes: list[SimpleVolumeBind] | None
+    """Optional volumes to mount into the container."""
     health_check_fn: Callable[[], None] | None
     """
     Optional custom health check function. If not provided, defaults to HTTP GET on main_port.
     The function should raise an exception if the health check fails.
     """
+    health_check_retries: int
+    """Number of times to retry the health check before giving up."""
+    health_check_sleep: float
+    """Time in seconds to sleep between health check retries."""
 
     request_to_port_router: Callable[[Request], int] | None
     """Callable that returns the target port for a given request, for routing purposes"""
@@ -87,7 +96,10 @@ class ProxiedDockerContainerExtension(Extension):
         path: str | None = None,
         command: list[str] | None = None,
         env_vars: dict[str, str] | None = None,
+        volumes: list[SimpleVolumeBind] | None = None,
         health_check_fn: Callable[[], None] | None = None,
+        health_check_retries: int = 60,
+        health_check_sleep: float = 1.0,
         request_to_port_router: Callable[[Request], int] | None = None,
         http2_ports: list[int] | None = None,
         tcp_ports: list[int] | None = None,
@@ -101,7 +113,10 @@ class ProxiedDockerContainerExtension(Extension):
         self.container_name = re.sub(r"\W", "-", f"ls-ext-{self.name}")
         self.command = command
         self.env_vars = env_vars
+        self.volumes = volumes
         self.health_check_fn = health_check_fn
+        self.health_check_retries = health_check_retries
+        self.health_check_sleep = health_check_sleep
         self.request_to_port_router = request_to_port_router
         self.http2_ports = http2_ports
         self.tcp_ports = tcp_ports
@@ -193,6 +208,8 @@ class ProxiedDockerContainerExtension(Extension):
             kwargs["command"] = self.command
         if self.env_vars:
             kwargs["env_vars"] = self.env_vars
+        if self.volumes:
+            kwargs["volumes"] = self.volumes
 
         try:
             DOCKER_CLIENT.run_container(
@@ -213,7 +230,11 @@ class ProxiedDockerContainerExtension(Extension):
         health_check = self.health_check_fn or self._default_health_check
 
         try:
-            retry(health_check, retries=60, sleep=1)
+            retry(
+                health_check,
+                retries=self.health_check_retries,
+                sleep=self.health_check_sleep,
+            )
         except Exception as e:
             LOG.info("Failed to connect to container %s: %s", self.container_name, e)
             self._remove_container()

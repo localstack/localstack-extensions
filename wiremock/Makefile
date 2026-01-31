@@ -34,6 +34,10 @@ entrypoints: venv   # Generate plugin entrypoints for Python package
 
 format:		    ## Run ruff to format the whole codebase
 	$(VENV_RUN); python -m ruff format .; python -m ruff check --output-format=full --fix .
+
+lint:		    ## Run ruff to lint the codebase
+	$(VENV_RUN); python -m ruff check --output-format=full .
+
 sample-oss:		    ## Deploy sample app (OSS mode)
 	echo "Creating stubs in WireMock ..."
 	bin/create-stubs.sh

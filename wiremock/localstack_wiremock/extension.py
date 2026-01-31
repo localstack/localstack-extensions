@@ -1,9 +1,11 @@
 import logging
 import os
 from pathlib import Path
+import requests
 
 from localstack import config, constants
-from localstack_wiremock.utils.docker import ProxiedDockerContainerExtension
+from localstack.utils.net import get_addressable_container_host
+from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 
 
 LOG = logging.getLogger(__name__)
@@ -71,18 +73,30 @@ class WireMockExtension(ProxiedDockerContainerExtension):
         health_check_port = ADMIN_PORT if api_token else SERVICE_PORT
         self._is_runner_mode = bool(api_token)
 
+        def _health_check():
+            """Custom health check for WireMock."""
+            container_host = get_addressable_container_host()
+            health_url = (
+                f"http://{container_host}:{health_check_port}{health_check_path}"
+            )
+            LOG.debug("Health check: %s", health_url)
+            response = requests.get(health_url, timeout=5)
+            assert response.ok
+
         super().__init__(
             image_name=image_name,
             container_ports=container_ports,
-            container_name=self.CONTAINER_NAME,
             host=self.HOST,
             env_vars=env_vars if env_vars else None,
             volumes=volumes,
-            health_check_path=health_check_path,
-            health_check_port=health_check_port,
+            health_check_fn=_health_check,
             health_check_retries=health_check_retries,
             health_check_sleep=health_check_sleep,
         )
+
+    def http2_request_matcher(self, headers) -> bool:
+        """WireMock uses HTTP/1.1, not HTTP/2."""
+        return False
 
     def on_platform_ready(self):
         url = f"http://wiremock.{constants.LOCALHOST_HOSTNAME}:{config.get_edge_port_http()}"
