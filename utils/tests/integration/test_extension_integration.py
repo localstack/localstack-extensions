@@ -7,6 +7,8 @@ Docker containers in a realistic scenario, using grpcbin as a test service.
 
 import socket
 
+from werkzeug.datastructures import Headers
+
 
 class TestProxiedDockerContainerExtension:
     """Tests for ProxiedDockerContainerExtension using the GrpcbinExtension."""
@@ -27,21 +29,20 @@ class TestProxiedDockerContainerExtension:
             "localhost.localstack.cloud",
         ) or grpcbin_extension.container_host.startswith("172.")
 
-    def test_extension_ports_are_reachable(self, grpcbin_host, grpcbin_insecure_port):
-        """Test that the extension's ports are reachable via TCP."""
+    def test_extension_ports_are_reachable(self, grpcbin_extension_server):
+        """Test that the gateway port is reachable via TCP."""
+        gateway_port = grpcbin_extension_server["port"]
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2.0)
         try:
-            sock.connect((grpcbin_host, grpcbin_insecure_port))
+            sock.connect(("localhost", gateway_port))
             sock.close()
             # Connection successful
         except (socket.timeout, socket.error) as e:
-            raise AssertionError(f"Could not connect to grpcbin port: {e}")
+            raise AssertionError(f"Could not connect to gateway port: {e}")
 
     def test_extension_implements_required_methods(self, grpcbin_extension):
         """Test that the extension properly implements the required abstract methods."""
-        from werkzeug.datastructures import Headers
-
         # http2_request_matcher should be callable
         result = grpcbin_extension.http2_request_matcher(Headers())
         assert result is False, "gRPC services should not proxy through HTTP gateway"

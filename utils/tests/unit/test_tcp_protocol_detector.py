@@ -9,7 +9,6 @@ from localstack_extensions.utils.tcp_protocol_detector import (
     combine_matchers,
 )
 from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
-from werkzeug.datastructures import Headers
 
 
 class TestMatcherFactories:
@@ -113,9 +112,6 @@ class TestRealWorldUsage:
                 matcher = create_signature_matcher(b"\xde\xad\xbe\xef", offset=4)
                 return matcher(data)
 
-            def http2_request_matcher(self, headers: Headers) -> bool:
-                return False
-
         extension = CustomProtocolExtension()
         assert hasattr(extension, "tcp_connection_matcher")
 
@@ -145,9 +141,6 @@ class TestRealWorldUsage:
                 variant2 = create_prefix_matcher(b"V2:")
                 return combine_matchers(variant1, variant2)(data)
 
-            def http2_request_matcher(self, headers: Headers) -> bool:
-                return False
-
         extension = MultiProtocolExtension()
 
         # Should match both variants
@@ -171,9 +164,6 @@ class TestRealWorldUsage:
             def tcp_connection_matcher(self, data: bytes) -> bool:
                 # Inline custom logic without helper functions
                 return len(data) >= 8 and data.startswith(b"MAGIC") and data[7] == 0x42
-
-            def http2_request_matcher(self, headers: Headers) -> bool:
-                return False
 
         extension = InlineMatcherExtension()
         assert extension.tcp_connection_matcher(b"MAGIC\x00\x00\x42")

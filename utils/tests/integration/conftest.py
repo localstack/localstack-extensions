@@ -9,12 +9,18 @@ providing realistic test coverage of the Docker container management infrastruct
 """
 
 import socket
+import threading
+import time
+
 import pytest
-
 from hyperframe.frame import Frame
-from werkzeug.datastructures import Headers
-from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
+from localstack.utils.net import get_free_tcp_port
+from rolo import Router
+from rolo.gateway import Gateway
+from twisted.internet import reactor
+from twisted.web import server as twisted_server
 
+from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 
 GRPCBIN_IMAGE = "moul/grpcbin"
 GRPCBIN_INSECURE_PORT = 9000  # HTTP/2 without TLS
@@ -53,51 +59,75 @@ class GrpcbinExtension(ProxiedDockerContainerExtension):
             image_name=GRPCBIN_IMAGE,
             container_ports=[GRPCBIN_INSECURE_PORT, GRPCBIN_SECURE_PORT],
             health_check_fn=_tcp_health_check,
+            tcp_ports=[GRPCBIN_INSECURE_PORT],  # Enable raw TCP proxying for gRPC/HTTP2
         )
 
-    def http2_request_matcher(self, headers: Headers) -> bool:
-        """
-        gRPC services use direct TCP connections, not HTTP gateway routing.
-        This method is not used in these tests but is required by the base class.
-        """
-        return False
+    def tcp_connection_matcher(self, data: bytes) -> bool:
+        """Detect HTTP/2 connection preface to route gRPC/HTTP2 traffic."""
+        # HTTP/2 connections start with the connection preface
+        if len(data) >= len(HTTP2_PREFACE):
+            return data.startswith(HTTP2_PREFACE)
+        # Also match if we have partial preface data (for early detection)
+        return len(data) > 0 and HTTP2_PREFACE.startswith(data)
 
 
 @pytest.fixture(scope="session")
-def grpcbin_extension():
+def grpcbin_extension_server():
     """
-    Start grpcbin using ProxiedDockerContainerExtension.
+    Start grpcbin using ProxiedDockerContainerExtension with a test gateway server.
 
-    This tests the Docker container management capabilities while providing
-    a realistic gRPC/HTTP2 test service for integration tests.
+    This tests the Docker container management and proxy capabilities by:
+    1. Starting the grpcbin container via the extension
+    2. Setting up a Gateway with the extension's routes and TCP patches
+    3. Serving the Gateway on a test port via Twisted
+    4. Returning server info for end-to-end testing
     """
     extension = GrpcbinExtension()
 
-    # Start the container using the extension infrastructure
-    extension.start_container()
+    # Create router and update with extension routes
+    # This will start the grpcbin container and apply TCP protocol patches
+    router = Router()
+    extension.update_gateway_routes(router)
 
-    yield extension
+    # Create a Gateway with proper TCP support
+    # The TCP patches are applied by update_gateway_routes above
+    gateway = Gateway(router)
+
+    # Start gateway on a test port using Twisted
+    test_port = get_free_tcp_port()
+    site = twisted_server.Site(gateway)
+    listener = reactor.listenTCP(test_port, site)
+
+    # Run reactor in background thread
+    def run_reactor():
+        reactor.run(installSignalHandlers=False)
+
+    reactor_thread = threading.Thread(target=run_reactor, daemon=True)
+    reactor_thread.start()
+
+    # Wait for reactor to start - not ideal, but should work as a simple solution
+    time.sleep(0.5)
+
+    # Return server information for tests
+    server_info = {
+        "port": test_port,
+        "url": f"http://localhost:{test_port}",
+        "extension": extension,
+        "listener": listener,
+    }
+
+    yield server_info
 
     # Cleanup
+    reactor.callFromThread(reactor.stop)
+    time.sleep(0.5)
     extension.on_platform_shutdown()
 
 
-@pytest.fixture
-def grpcbin_host(grpcbin_extension):
-    """Return the host address for the grpcbin container."""
-    return grpcbin_extension.container_host
-
-
-@pytest.fixture
-def grpcbin_insecure_port(grpcbin_extension):
-    """Return the insecure (HTTP/2 without TLS) port for grpcbin."""
-    return GRPCBIN_INSECURE_PORT
-
-
-@pytest.fixture
-def grpcbin_secure_port(grpcbin_extension):
-    """Return the secure (HTTP/2 with TLS) port for grpcbin."""
-    return GRPCBIN_SECURE_PORT
+@pytest.fixture(scope="session")
+def grpcbin_extension(grpcbin_extension_server):
+    """Return the extension instance from the server fixture."""
+    return grpcbin_extension_server["extension"]
 
 
 def parse_server_frames(data: bytes) -> list:

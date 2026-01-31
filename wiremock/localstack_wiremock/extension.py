@@ -94,10 +94,6 @@ class WireMockExtension(ProxiedDockerContainerExtension):
             health_check_sleep=health_check_sleep,
         )
 
-    def http2_request_matcher(self, headers) -> bool:
-        """WireMock uses HTTP/1.1, not HTTP/2."""
-        return False
-
     def on_platform_ready(self):
         url = f"http://wiremock.{constants.LOCALHOST_HOSTNAME}:{config.get_edge_port_http()}"
         mode = "Runner" if self._is_runner_mode else "OSS"

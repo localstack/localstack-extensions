@@ -1,6 +1,5 @@
 import re
 import logging
-from abc import abstractmethod
 from functools import cache
 from typing import Callable
 import requests
@@ -188,9 +187,14 @@ class ProxiedDockerContainerExtension(Extension):
             f"Registered TCP extension {self.name} -> {self.container_host}:{target_port} on gateway"
         )
 
-    @abstractmethod
     def http2_request_matcher(self, headers: Headers) -> bool:
-        """Define whether an HTTP2 request should be proxied, based on request headers."""
+        """
+        Define whether an HTTP2 request should be proxied, based on request headers.
+
+        Default implementation returns False (no HTTP2 proxying).
+        Override this method in subclasses that need HTTP2 proxying.
+        """
+        return False
 
     def on_platform_shutdown(self):
         self._remove_container()

@@ -2,7 +2,6 @@ import os
 import socket
 
 from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
-from werkzeug.datastructures import Headers
 from localstack import config
 
 # Environment variables for configuration
@@ -81,13 +80,6 @@ class ParadeDbExtension(ProxiedDockerContainerExtension):
         if data[4:8] == b"\x00\x03\x00\x00":
             return True
 
-        return False
-
-    def http2_request_matcher(self, headers: Headers) -> bool:
-        """
-        Define whether an HTTP2 request should be proxied based on request headers.
-        Not used for TCP connections - see tcp_connection_matcher instead.
-        """
         return False
 
     def _check_tcp_port(self, host: str, port: int, timeout: float = 2.0) -> None:

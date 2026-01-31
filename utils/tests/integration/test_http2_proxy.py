@@ -23,36 +23,40 @@ from .conftest import HTTP2_PREFACE, SETTINGS_FRAME, parse_server_frames
 class TestTcpForwarderConnection:
     """Tests for TcpForwarder connection management."""
 
-    def test_connect_to_grpcbin(self, grpcbin_host, grpcbin_insecure_port):
+    def test_connect_to_grpcbin(self, grpcbin_extension_server):
         """Test that TcpForwarder can connect to grpcbin."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         try:
             # Connection is made in __init__, so if we get here, it worked
-            assert forwarder.port == grpcbin_insecure_port
-            assert forwarder.host == grpcbin_host
+            assert forwarder.port == gateway_port
+            assert forwarder.host == "localhost"
         finally:
             forwarder.close()
 
-    def test_connect_and_close(self, grpcbin_host, grpcbin_insecure_port):
+    def test_connect_and_close(self, grpcbin_extension_server):
         """Test connect and close cycle."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
-        assert forwarder.port == grpcbin_insecure_port
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
+        assert forwarder.port == gateway_port
         forwarder.close()
         # Verify close succeeded without raising an exception
 
-    def test_multiple_connect_close_cycles(self, grpcbin_host, grpcbin_insecure_port):
+    def test_multiple_connect_close_cycles(self, grpcbin_extension_server):
         """Test multiple connect/close cycles."""
+        gateway_port = grpcbin_extension_server["port"]
         for _ in range(3):
-            forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+            forwarder = TcpForwarder(port=gateway_port, host="localhost")
             forwarder.close()
 
 
 class TestTcpForwarderSendReceive:
     """Tests for TcpForwarder send/receive operations."""
 
-    def test_send_and_receive(self, grpcbin_host, grpcbin_insecure_port):
+    def test_send_and_receive(self, grpcbin_extension_server):
         """Test sending data and receiving response."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         received_data = []
         receive_complete = threading.Event()
 
@@ -85,9 +89,10 @@ class TestTcpForwarderSendReceive:
         finally:
             forwarder.close()
 
-    def test_bidirectional_http2_exchange(self, grpcbin_host, grpcbin_insecure_port):
+    def test_bidirectional_http2_exchange(self, grpcbin_extension_server):
         """Test bidirectional HTTP/2 settings exchange."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         received_data = []
         first_response = threading.Event()
 
@@ -119,21 +124,23 @@ class TestTcpForwarderSendReceive:
 class TestTcpForwarderErrorHandling:
     """Tests for error handling in TcpForwarder."""
 
-    def test_connection_to_invalid_port(self, grpcbin_host):
+    def test_connection_to_invalid_port(self, grpcbin_extension_server):
         """Test connecting to a port that's not listening."""
         with pytest.raises((ConnectionRefusedError, OSError)):
-            TcpForwarder(port=59999, host=grpcbin_host)
+            TcpForwarder(port=59999, host="localhost")
 
-    def test_close_after_failed_connection(self, grpcbin_host, grpcbin_insecure_port):
+    def test_close_after_failed_connection(self, grpcbin_extension_server):
         """Test that close works even after error conditions."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         forwarder.close()
         # Close again should not raise
         forwarder.close()
 
-    def test_send_after_close(self, grpcbin_host, grpcbin_insecure_port):
+    def test_send_after_close(self, grpcbin_extension_server):
         """Test sending after close raises appropriate error."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         forwarder.close()
 
         with pytest.raises(OSError):
@@ -143,9 +150,10 @@ class TestTcpForwarderErrorHandling:
 class TestTcpForwarderConcurrency:
     """Tests for concurrent operations in TcpForwarder."""
 
-    def test_multiple_sends(self, grpcbin_host, grpcbin_insecure_port):
+    def test_multiple_sends(self, grpcbin_extension_server):
         """Test multiple sequential sends (no exception = success)."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         try:
             forwarder.send(HTTP2_PREFACE)
             forwarder.send(SETTINGS_FRAME)
@@ -153,12 +161,13 @@ class TestTcpForwarderConcurrency:
         finally:
             forwarder.close()
 
-    def test_concurrent_connections(self, grpcbin_host, grpcbin_insecure_port):
+    def test_concurrent_connections(self, grpcbin_extension_server):
         """Test multiple concurrent TcpForwarder connections."""
+        gateway_port = grpcbin_extension_server["port"]
         forwarders = []
         try:
             for _ in range(3):
-                forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+                forwarder = TcpForwarder(port=gateway_port, host="localhost")
                 forwarders.append(forwarder)
 
             # All connections should be established
@@ -176,9 +185,10 @@ class TestTcpForwarderConcurrency:
 class TestHttp2FrameParsing:
     """Tests for HTTP/2 frame parsing with live server traffic."""
 
-    def test_capture_settings_frame(self, grpcbin_host, grpcbin_insecure_port):
+    def test_capture_settings_frame(self, grpcbin_extension_server):
         """Test capturing a SETTINGS frame from grpcbin."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         received_data = []
         done = threading.Event()
         thread_started = threading.Event()
@@ -214,9 +224,10 @@ class TestHttp2FrameParsing:
         finally:
             forwarder.close()
 
-    def test_parse_server_settings(self, grpcbin_host, grpcbin_insecure_port):
+    def test_parse_server_settings(self, grpcbin_extension_server):
         """Test parsing the server's SETTINGS values."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         received_data = []
         done = threading.Event()
         thread_started = threading.Event()
@@ -249,9 +260,10 @@ class TestHttp2FrameParsing:
         finally:
             forwarder.close()
 
-    def test_http2_handshake_completes(self, grpcbin_host, grpcbin_insecure_port):
+    def test_http2_handshake_completes(self, grpcbin_extension_server):
         """Test that we can complete an HTTP/2 handshake with settings exchange."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         received_data = []
         first_response = threading.Event()
 
@@ -277,9 +289,10 @@ class TestHttp2FrameParsing:
         finally:
             forwarder.close()
 
-    def test_full_connection_sequence(self, grpcbin_host, grpcbin_insecure_port):
+    def test_full_connection_sequence(self, grpcbin_extension_server):
         """Test a full HTTP/2 connection sequence with grpcbin."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         received_data = []
         first_response = threading.Event()
 
@@ -312,11 +325,10 @@ class TestHttp2FrameParsing:
         finally:
             forwarder.close()
 
-    def test_headers_extraction_from_raw_traffic(
-        self, grpcbin_host, grpcbin_insecure_port
-    ):
+    def test_headers_extraction_from_raw_traffic(self, grpcbin_extension_server):
         """Test that get_headers_from_frames works with live traffic."""
-        forwarder = TcpForwarder(port=grpcbin_insecure_port, host=grpcbin_host)
+        gateway_port = grpcbin_extension_server["port"]
+        forwarder = TcpForwarder(port=gateway_port, host="localhost")
         received_data = []
         done = threading.Event()
 

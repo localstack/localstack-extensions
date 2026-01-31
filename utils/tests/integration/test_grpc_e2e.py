@@ -14,10 +14,11 @@ import grpc
 class TestGrpcEndToEnd:
     """End-to-end tests making actual gRPC calls to grpcbin."""
 
-    def test_grpc_empty_call(self, grpcbin_host, grpcbin_insecure_port):
-        """Test making a gRPC call to grpcbin's Empty service."""
-        # Create a channel to grpcbin
-        channel = grpc.insecure_channel(f"{grpcbin_host}:{grpcbin_insecure_port}")
+    def test_grpc_empty_call(self, grpcbin_extension_server):
+        """Test making a gRPC call to grpcbin's Empty service via the gateway."""
+        # Create a channel to grpcbin through the gateway
+        gateway_port = grpcbin_extension_server["port"]
+        channel = grpc.insecure_channel(f"localhost:{gateway_port}")
 
         try:
             # Use grpc.channel_ready_future to verify connection
@@ -43,9 +44,10 @@ class TestGrpcEndToEnd:
         finally:
             channel.close()
 
-    def test_grpc_index_call(self, grpcbin_host, grpcbin_insecure_port):
+    def test_grpc_index_call(self, grpcbin_extension_server):
         """Test calling grpcbin's Index service which returns server info."""
-        channel = grpc.insecure_channel(f"{grpcbin_host}:{grpcbin_insecure_port}")
+        gateway_port = grpcbin_extension_server["port"]
+        channel = grpc.insecure_channel(f"localhost:{gateway_port}")
 
         try:
             # Verify channel is ready
@@ -68,9 +70,10 @@ class TestGrpcEndToEnd:
         finally:
             channel.close()
 
-    def test_grpc_concurrent_calls(self, grpcbin_host, grpcbin_insecure_port):
+    def test_grpc_concurrent_calls(self, grpcbin_extension_server):
         """Test making multiple concurrent gRPC calls."""
-        channel = grpc.insecure_channel(f"{grpcbin_host}:{grpcbin_insecure_port}")
+        gateway_port = grpcbin_extension_server["port"]
+        channel = grpc.insecure_channel(f"localhost:{gateway_port}")
 
         try:
             # Verify channel is ready
@@ -97,9 +100,10 @@ class TestGrpcEndToEnd:
         finally:
             channel.close()
 
-    def test_grpc_connection_reuse(self, grpcbin_host, grpcbin_insecure_port):
+    def test_grpc_connection_reuse(self, grpcbin_extension_server):
         """Test that a single gRPC channel can handle multiple sequential calls."""
-        channel = grpc.insecure_channel(f"{grpcbin_host}:{grpcbin_insecure_port}")
+        gateway_port = grpcbin_extension_server["port"]
+        channel = grpc.insecure_channel(f"localhost:{gateway_port}")
 
         try:
             # Verify channel is ready
