@@ -4,6 +4,7 @@ import pytest
 from botocore.exceptions import ClientError
 from localstack.aws.connect import connect_to
 from localstack.utils.strings import short_uid
+from localstack.utils.sync import retry
 
 
 def test_kms_key_operations(start_aws_proxy, cleanups):
@@ -89,15 +90,19 @@ def test_kms_key_alias_operations(start_aws_proxy, cleanups):
     cleanups.append(lambda: kms_client_aws.delete_alias(AliasName=alias_name))
 
     # assert that local call for alias operations is proxied
-    aliases_aws = kms_client_aws.list_aliases(KeyId=key_id_aws)["Aliases"]
-    aliases_local = kms_client.list_aliases(KeyId=key_id_aws)["Aliases"]
+    # use retry to handle AWS eventual consistency
+    def check_aliases():
+        aliases_aws = kms_client_aws.list_aliases(KeyId=key_id_aws)["Aliases"]
+        aliases_local = kms_client.list_aliases(KeyId=key_id_aws)["Aliases"]
 
-    # filter for our specific alias
-    alias_aws = [a for a in aliases_aws if a["AliasName"] == alias_name][0]
-    alias_local = [a for a in aliases_local if a["AliasName"] == alias_name][0]
+        # filter for our specific alias
+        alias_aws = [a for a in aliases_aws if a["AliasName"] == alias_name][0]
+        alias_local = [a for a in aliases_local if a["AliasName"] == alias_name][0]
 
-    assert alias_local["AliasName"] == alias_aws["AliasName"]
-    assert alias_local["TargetKeyId"] == alias_aws["TargetKeyId"]
+        assert alias_local["AliasName"] == alias_aws["AliasName"]
+        assert alias_local["TargetKeyId"] == alias_aws["TargetKeyId"]
+
+    retry(check_aliases, retries=5, sleep=1)
 
     # test encryption with alias via local client
     plaintext = b"test with alias"

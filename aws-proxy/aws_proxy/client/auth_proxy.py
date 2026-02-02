@@ -12,7 +12,10 @@ from urllib.parse import urlparse, urlunparse
 import boto3
 import requests
 from botocore.awsrequest import AWSPreparedRequest
-from botocore.model import OperationModel
+from botocore.model import OperationModel, ServiceModel
+from botocore.session import get_session as get_botocore_session
+from localstack.aws.protocol.parser import create_parser
+from localstack.aws.spec import load_service
 from localstack import config as localstack_config
 from localstack.config import external_service_url
 from localstack.constants import (
@@ -43,7 +46,7 @@ from requests import Response
 from aws_proxy import config as repl_config
 from aws_proxy.client.utils import truncate_content
 from aws_proxy.config import HANDLER_PATH_PROXIES
-from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL
+from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL, SERVICE_NAME_MAPPING
 from aws_proxy.shared.models import AddProxyRequest, ProxyConfig
 
 LOG = logging.getLogger(__name__)
@@ -51,10 +54,6 @@ LOG.setLevel(logging.INFO)
 if localstack_config.DEBUG:
     LOG.setLevel(logging.DEBUG)
 
-# Mapping from AWS service signing names to boto3 client names
-SERVICE_NAME_MAPPING = {
-    "monitoring": "cloudwatch",
-}
 
 # TODO make configurable
 CLI_PIP_PACKAGE = "localstack-extension-aws-proxy"
@@ -197,13 +196,30 @@ class AuthProxyAWS(Server):
     def _parse_aws_request(
         self, request: Request, service_name: str, region_name: str, client
     ) -> Tuple[OperationModel, AWSPreparedRequest, Dict]:
-        from localstack.aws.protocol.parser import create_parser
+        # Get botocore's service model for making the actual AWS request
+        botocore_service_model = self._get_botocore_service_model(service_name)
 
-        # Use botocore's service model to ensure protocol compatibility
-        # (LocalStack's load_service may return newer protocol versions that don't match the client)
-        service_model = self._get_botocore_service_model(service_name)
-        parser = create_parser(service_model)
-        operation_model, parsed_request = parser.parse(request)
+        # Check if request uses JSON protocol (X-Amz-Target header) while service model
+        # uses RPC v2 CBOR. In this case, we need to parse the request manually since
+        # create_parser would reject the X-Amz-Target header for RPC v2 services.
+        x_amz_target = request.headers.get("X-Amz-Target") or request.headers.get(
+            "X-Amzn-Target"
+        )
+        if x_amz_target and botocore_service_model.protocol == "smithy-rpc-v2-cbor":
+            # Extract operation name from X-Amz-Target (format: "ServiceName.OperationName")
+            operation_name = x_amz_target.split(".")[-1]
+            operation_model = botocore_service_model.operation_model(operation_name)
+            # Parse JSON body
+            parsed_request = json.loads(to_str(request.data)) if request.data else {}
+        else:
+            # Use LocalStack's parser for other protocols
+            localstack_service_model = load_service(service_name)
+            parser = create_parser(localstack_service_model)
+            ls_operation_model, parsed_request = parser.parse(request)
+            operation_model = botocore_service_model.operation_model(
+                ls_operation_model.name
+            )
+
         request_context = {
             "client_region": region_name,
             "has_streaming_input": operation_model.has_streaming_input,
@@ -348,10 +364,7 @@ class AuthProxyAWS(Server):
         load_service() to ensure protocol compatibility, as LocalStack may use newer protocol
         versions (e.g., smithy-rpc-v2-cbor) while clients use older protocols (e.g., query).
         """
-        import botocore.session
-        from botocore.model import ServiceModel
-
-        session = botocore.session.get_session()
+        session = get_botocore_session()
         loader = session.get_component("data_loader")
         api_data = loader.load_service_model(service_name, "service-2")
         return ServiceModel(api_data)

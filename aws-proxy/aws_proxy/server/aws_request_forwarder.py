@@ -25,7 +25,7 @@ try:
 except ImportError:
     from localstack.constants import TEST_AWS_ACCESS_KEY_ID
 
-from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL
+from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL, SERVICE_NAME_MAPPING
 from aws_proxy.shared.models import ProxyInstance, ProxyServiceConfig
 
 LOG = logging.getLogger(__name__)
@@ -295,12 +295,7 @@ class AwsProxyHandler(Handler):
 
     @classmethod
     def _get_canonical_service_name(cls, service_name: str) -> str:
-        # Map internal/signing service names to boto3 client names
-        mapping = {
-            "sqs-query": "sqs",
-            "monitoring": "cloudwatch",
-        }
-        return mapping.get(service_name, service_name)
+        return SERVICE_NAME_MAPPING.get(service_name, service_name)
 
     def _reconstruct_request_body(
         self, context: RequestContext, content_type: str
