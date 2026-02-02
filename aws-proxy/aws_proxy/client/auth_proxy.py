@@ -90,8 +90,10 @@ class AuthProxyAWS(Server):
         if not parsed:
             return requests_response("", status_code=400)
         region_name, service_name = parsed
-        # Map AWS signing names to boto3 client names
-        service_name = SERVICE_NAME_MAPPING.get(service_name, service_name)
+
+        # Map service names based on request context
+        service_name = self._get_service_name(service_name, request.path)
+
         query_string = to_str(request.query_string or "")
 
         LOG.debug(
@@ -348,6 +350,18 @@ class AuthProxyAWS(Server):
         if len(parts) < 5:
             return
         return parts[2], parts[3]
+
+    def _get_service_name(self, service_name: str, path: str) -> str:
+        """Map AWS signing service names to boto3 client names based on request context."""
+        # Map AWS signing names to boto3 client names
+        service_name = SERVICE_NAME_MAPPING.get(service_name, service_name)
+        # API Gateway v2 uses 'apigateway' as signing name but needs 'apigatewayv2' client
+        if service_name == "apigateway" and path.startswith("/v2/"):
+            return "apigatewayv2"
+        # CloudWatch uses 'monitoring' as signing name
+        if service_name == "monitoring":
+            return "cloudwatch"
+        return service_name
 
     @cache
     def _query_account_id_from_aws(self) -> str:
