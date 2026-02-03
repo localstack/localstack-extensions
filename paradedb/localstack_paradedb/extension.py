@@ -8,7 +8,6 @@ from localstack import config
 ENV_POSTGRES_USER = "PARADEDB_POSTGRES_USER"
 ENV_POSTGRES_PASSWORD = "PARADEDB_POSTGRES_PASSWORD"
 ENV_POSTGRES_DB = "PARADEDB_POSTGRES_DB"
-ENV_POSTGRES_PORT = "PARADEDB_POSTGRES_PORT"
 
 # Default values
 DEFAULT_POSTGRES_USER = "myuser"
@@ -30,7 +29,7 @@ class ParadeDbExtension(ProxiedDockerContainerExtension):
             ENV_POSTGRES_PASSWORD, DEFAULT_POSTGRES_PASSWORD
         )
         postgres_db = os.environ.get(ENV_POSTGRES_DB, DEFAULT_POSTGRES_DB)
-        postgres_port = int(os.environ.get(ENV_POSTGRES_PORT, DEFAULT_POSTGRES_PORT))
+        postgres_port = DEFAULT_POSTGRES_PORT
 
         # Store configuration for connection info
         self.postgres_user = postgres_user
