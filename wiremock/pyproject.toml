@@ -15,9 +15,7 @@ keywords = ["LocalStack", "WireMock"]
 classifiers = []
 dependencies = [
     "priority",
-    # TODO remove / replace prior to merge!
-#    "localstack-extensions-utils",
-    "localstack-extensions-utils @ git+https://github.com/localstack/localstack-extensions.git@extract-utils-package#subdirectory=utils"
+    "localstack-extensions-utils"
 ]
 
 [project.urls]

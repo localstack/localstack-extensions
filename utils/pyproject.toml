@@ -14,9 +14,9 @@ authors = [
 keywords = ["LocalStack", "Extensions", "Utils"]
 classifiers = []
 dependencies = [
-    "httpx",
     "h2",
     "hpack",
+    "httpx",
     "hyperframe",
     "priority",
     "requests",
@@ -31,18 +31,18 @@ Homepage = "https://github.com/localstack/localstack-extensions"
 dev = [
     "boto3",
     "build",
-    "localstack",
     "jsonpatch",
+    "localstack",
     "pytest",
     "ruff",
 ]
 test = [
-    "pytest>=7.0",
-    "pytest-timeout>=2.0",
-    "localstack",
-    "jsonpatch",
     "grpcio>=1.60.0",
     "grpcio-tools>=1.60.0",
+    "jsonpatch",
+    "localstack",
+    "pytest>=7.0",
+    "pytest-timeout>=2.0",
 ]
 
 [tool.setuptools.packages.find]
