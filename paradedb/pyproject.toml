@@ -13,7 +13,9 @@ authors = [
 ]
 keywords = ["LocalStack", "ParadeDB", "PostgreSQL", "Search", "Analytics"]
 classifiers = []
-dependencies = []
+dependencies = [
+    "localstack-extensions-utils"
+]
 
 [project.urls]
 Homepage = "https://github.com/localstack/localstack-extensions"

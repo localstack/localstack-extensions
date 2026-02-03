@@ -39,6 +39,7 @@ jobs:
           pip install localstack terraform-local awscli-local[ver1]
 
           make install
+          make lint
           make dist
           localstack extensions -v install file://$(ls ./dist/localstack_wiremock-*.tar.gz)
 

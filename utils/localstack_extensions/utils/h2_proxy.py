@@ -29,16 +29,29 @@ class TcpForwarder:
         self.host = host
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect((self.host, self.port))
+        self._closed = False
 
     def receive_loop(self, callback):
-        while data := self._socket.recv(self.buffer_size):
+        while data := self.recv(self.buffer_size):
             callback(data)
+
+    def recv(self, length):
+        try:
+            return self._socket.recv(length)
+        except OSError as e:
+            if self._closed:
+                return None
+            else:
+                raise e
 
     def send(self, data):
         self._socket.sendall(data)
 
     def close(self):
+        if self._closed:
+            return
         LOG.debug(f"Closing connection to upstream HTTP2 server on port {self.port}")
+        self._closed = True
         try:
             self._socket.shutdown(socket.SHUT_RDWR)
             self._socket.close()
@@ -51,7 +64,7 @@ patched_connection = False
 
 
 def apply_http2_patches_for_grpc_support(
-    target_host: str, target_port: int, should_proxy_request: ProxyRequestMatcher
+    target_host: str, target_port: int, http2_request_matcher: ProxyRequestMatcher
 ):
     """
     Apply some patches to proxy incoming gRPC requests and forward them to a target port.
@@ -93,7 +106,6 @@ def apply_http2_patches_for_grpc_support(
             )
 
         def received_from_backend(self, data):
-            LOG.debug(f"Received {len(data)} bytes from backend")
             self.http_response_stream.write(data)
 
         def received_from_http2_client(self, data, default_handler: Callable):
@@ -111,11 +123,8 @@ def apply_http2_patches_for_grpc_support(
                         buffered_data = b"".join(self.buffer)
                         self.buffer = []
 
-                        if should_proxy_request(headers):
+                        if http2_request_matcher(headers):
                             self.state = ForwardingState.FORWARDING
-                            LOG.debug(
-                                f"Forwarding {len(buffered_data)} bytes to backend"
-                            )
                             self.backend.send(buffered_data)
                         else:
                             self.state = ForwardingState.PASSTHROUGH

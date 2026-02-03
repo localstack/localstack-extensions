@@ -33,9 +33,6 @@ jobs:
           docker pull localstack/localstack-pro &
           pip install localstack localstack-ext
 
-          # TODO remove
-          mkdir ~/.localstack; echo '{"token":"test"}' > ~/.localstack/auth.json
-
           branchName=${GITHUB_HEAD_REF##*/}
           if [ "$branchName" = "" ]; then branchName=main; fi
           echo "Installing from branch name $branchName"

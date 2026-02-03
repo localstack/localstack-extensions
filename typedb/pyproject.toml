@@ -14,9 +14,7 @@ authors = [
 keywords = ["LocalStack", "TypeDB"]
 classifiers = []
 dependencies = [
-    "httpx",
-    "h2",
-    "priority",
+    "localstack-extensions-utils"
 ]
 
 [project.urls]

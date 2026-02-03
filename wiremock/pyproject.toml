@@ -14,7 +14,8 @@ authors = [
 keywords = ["LocalStack", "WireMock"]
 classifiers = []
 dependencies = [
-    "priority"
+    "priority",
+    "localstack-extensions-utils"
 ]
 
 [project.urls]

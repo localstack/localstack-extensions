@@ -34,7 +34,7 @@ entrypoints: venv   ## Generate plugin entrypoints for Python package
 	$(VENV_RUN); python -m plux entrypoints
 
 format:		    ## Run ruff to format the codebase
-	$(VENV_RUN); python -m ruff format .; make lint
+	$(VENV_RUN); python -m ruff format .; python -m ruff check --fix .
 
 lint:		    ## Run ruff to lint the codebase
 	$(VENV_RUN); python -m ruff check --output-format=full .

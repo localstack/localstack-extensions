@@ -3,8 +3,9 @@ from localstack.utils.strings import short_uid
 
 
 # Connection details for ParadeDB
-HOST = "localhost"
-PORT = 5432
+# Connect through LocalStack gateway with TCP proxying
+HOST = "paradedb.localhost.localstack.cloud"
+PORT = 4566
 USER = "myuser"
 PASSWORD = "mypassword"
 DATABASE = "mydatabase"
