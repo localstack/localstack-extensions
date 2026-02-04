@@ -1,19 +1,23 @@
-.PHONY: install deploy init seed destroy clean help web-ui test-search get-api-url
+.PHONY: install deploy init seed destroy clean help web-ui test-search get-api-url download-data
+
+DATASET_URL := https://docs.aws.amazon.com/opensearch-service/latest/developerguide/samples/sample-movies.zip
+DATA_DIR := data
 
 help:
 	@echo "ParadeDB Movie Search Sample App"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make install    - Install all dependencies"
-	@echo "  make deploy     - Deploy CDK stack to LocalStack"
-	@echo "  make init       - Initialize database schema and BM25 index"
-	@echo "  make seed       - Load movie data from S3 into ParadeDB"
-	@echo "  make web-ui     - Run the Web UI on localhost port 3000"
-	@echo "  make destroy    - Tear down the stack"
-	@echo "  make clean      - Remove build artifacts"
+	@echo "  make install       - Install all dependencies"
+	@echo "  make download-data - Download AWS sample movies dataset"
+	@echo "  make deploy        - Deploy CDK stack to LocalStack"
+	@echo "  make init          - Initialize database schema and BM25 index"
+	@echo "  make seed          - Load movie data from S3 into ParadeDB"
+	@echo "  make web-ui        - Run the Web UI on localhost port 3000"
+	@echo "  make destroy       - Tear down the stack"
+	@echo "  make clean         - Remove build artifacts"
 	@echo ""
 	@echo "Quick start:"
-	@echo "  make install && make deploy && make init && make seed && make web-ui"
+	@echo "  make install && make download-data && make deploy && make init && make seed && make web-ui"
 
 install:
 	@echo "Installing CDK dependencies..."
@@ -21,6 +25,18 @@ install:
 	@echo "Installing Lambda dependencies..."
 	cd lambda && npm install
 	@echo "Done!"
+
+download-data:
+	@echo "Downloading AWS sample movies dataset..."
+	@mkdir -p $(DATA_DIR)
+	@curl -sL $(DATASET_URL) -o $(DATA_DIR)/sample-movies.zip
+	@echo "Extracting dataset..."
+	@unzip -o $(DATA_DIR)/sample-movies.zip -d $(DATA_DIR)/
+	@echo "Pre-processing bulk file (removing index instructions)..."
+	@grep -v '^{ "index"' $(DATA_DIR)/sample-movies.bulk > $(DATA_DIR)/movies.bulk
+	@rm -rf $(DATA_DIR)/sample-movies.zip $(DATA_DIR)/sample-movies.bulk $(DATA_DIR)/__MACOSX
+	@echo "Dataset ready: $(DATA_DIR)/movies.bulk"
+	@wc -l $(DATA_DIR)/movies.bulk | awk '{print "Total movies: " $$1}'
 
 deploy:
 	@echo "Deploying MovieSearchStack to LocalStack..."
@@ -74,7 +90,7 @@ destroy:
 	@echo "Stack destroyed!"
 
 clean:
-	rm -rf node_modules lambda/node_modules cdk.out dist
+	rm -rf node_modules lambda/node_modules cdk.out dist data/movies.bulk
 	@echo "Cleaned!"
 
 get-api-url:

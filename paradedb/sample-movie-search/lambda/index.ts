@@ -2,6 +2,21 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { Pool } from "pg";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
+interface Movie {
+  id: string;
+  title: string;
+  year?: number;
+  genres?: string[];
+  rating?: number;
+  directors?: string[];
+  actors?: string[];
+  plot?: string;
+  release_date?: string;
+  rank?: number;
+  running_time_secs?: number;
+  image_url?: string;
+}
+
 const pool = new Pool({
   host: process.env.PARADEDB_HOST || "paradedb.localhost.localstack.cloud",
   port: parseInt(process.env.PARADEDB_PORT || "5432"),
@@ -70,6 +85,9 @@ export async function searchHandler(
         rating,
         directors,
         actors,
+        image_url,
+        running_time_secs,
+        plot,
         pdb.snippet(plot, start_tag => '<mark>', end_tag => '</mark>') as highlight,
         pdb.score(id) as score
       FROM movies
@@ -94,10 +112,13 @@ export async function searchHandler(
         title: row.title,
         year: row.year,
         genres: row.genres,
-        rating: parseFloat(row.rating),
+        rating: row.rating ? parseFloat(row.rating) : null,
         directors: row.directors,
         actors: row.actors,
+        image_url: row.image_url,
+        running_time_secs: row.running_time_secs,
         highlight: row.highlight,
+        plot: row.plot,
       })),
       total,
       limit,
@@ -122,7 +143,8 @@ export async function movieDetailHandler(
     console.log(`Fetching movie: ${movieId}`);
 
     const query = `
-      SELECT id, title, year, genres, rating, directors, actors, plot
+      SELECT id, title, year, genres, rating, directors, actors, plot,
+             image_url, release_date, rank, running_time_secs
       FROM movies
       WHERE id = $1
     `;
@@ -139,10 +161,14 @@ export async function movieDetailHandler(
       title: movie.title,
       year: movie.year,
       genres: movie.genres,
-      rating: parseFloat(movie.rating),
+      rating: movie.rating ? parseFloat(movie.rating) : null,
       directors: movie.directors,
       actors: movie.actors,
       plot: movie.plot,
+      image_url: movie.image_url,
+      release_date: movie.release_date,
+      rank: movie.rank,
+      running_time_secs: movie.running_time_secs,
     });
   } catch (error) {
     console.error("Movie detail error:", error);
@@ -165,7 +191,11 @@ export async function initHandler(): Promise<APIGatewayProxyResult> {
         rating NUMERIC(3,1),
         directors TEXT[],
         actors TEXT[],
-        plot TEXT
+        plot TEXT,
+        image_url TEXT,
+        release_date TIMESTAMPTZ,
+        rank INTEGER,
+        running_time_secs INTEGER
       )
     `);
 
@@ -210,7 +240,7 @@ export async function seedHandler(): Promise<APIGatewayProxyResult> {
 
     const command = new GetObjectCommand({
       Bucket: DATA_BUCKET,
-      Key: "movies.json",
+      Key: "movies.bulk",
     });
 
     const response = await s3Client.send(command);
@@ -220,41 +250,71 @@ export async function seedHandler(): Promise<APIGatewayProxyResult> {
       return errorResponse(500, "Failed to read movie data from S3");
     }
 
-    const movies = JSON.parse(bodyString);
-    console.log(`Loaded ${movies.length} movies from S3`);
+    const lines = bodyString.trim().split("\n");
+    const movies: Movie[] = [];
+
+    for (const line of lines) {
+      if (line.trim()) {
+        try {
+          const movie = JSON.parse(line) as Movie;
+          movies.push(movie);
+        } catch (e) {
+          console.warn(`Skipping invalid JSON line: ${line.substring(0, 50)}...`);
+        }
+      }
+    }
+
+    console.log(`Parsed ${movies.length} movies from bulk file`);
 
     await client.query("DELETE FROM movies");
 
     let inserted = 0;
-    for (const movie of movies) {
-      await client.query(
-        `
-        INSERT INTO movies (id, title, year, genres, rating, directors, actors, plot)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        ON CONFLICT (id) DO UPDATE SET
-          title = EXCLUDED.title,
-          year = EXCLUDED.year,
-          genres = EXCLUDED.genres,
-          rating = EXCLUDED.rating,
-          directors = EXCLUDED.directors,
-          actors = EXCLUDED.actors,
-          plot = EXCLUDED.plot
-      `,
-        [
-          movie.id,
-          movie.title,
-          movie.year,
-          movie.genres,
-          movie.rating,
-          movie.directors,
-          movie.actors,
-          movie.plot,
-        ]
-      );
-      inserted++;
+    const batchSize = 100;
+
+    for (let i = 0; i < movies.length; i += batchSize) {
+      const batch = movies.slice(i, i + batchSize);
+
+      for (const movie of batch) {
+        await client.query(
+          `
+          INSERT INTO movies (id, title, year, genres, rating, directors, actors, plot,
+                              image_url, release_date, rank, running_time_secs)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          ON CONFLICT (id) DO UPDATE SET
+            title = EXCLUDED.title,
+            year = EXCLUDED.year,
+            genres = EXCLUDED.genres,
+            rating = EXCLUDED.rating,
+            directors = EXCLUDED.directors,
+            actors = EXCLUDED.actors,
+            plot = EXCLUDED.plot,
+            image_url = EXCLUDED.image_url,
+            release_date = EXCLUDED.release_date,
+            rank = EXCLUDED.rank,
+            running_time_secs = EXCLUDED.running_time_secs
+          `,
+          [
+            movie.id,
+            movie.title,
+            movie.year || null,
+            movie.genres || [],
+            movie.rating || null,
+            movie.directors || [],
+            movie.actors || [],
+            movie.plot || null,
+            movie.image_url || null,
+            movie.release_date || null,
+            movie.rank || null,
+            movie.running_time_secs || null,
+          ]
+        );
+        inserted++;
+      }
+
+      console.log(`Inserted ${inserted}/${movies.length} movies...`);
     }
 
-    console.log(`Inserted ${inserted} movies`);
+    console.log(`Seeding complete: ${inserted} movies`);
 
     return successResponse({
       message: "Data seeded successfully",

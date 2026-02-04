@@ -107,8 +107,8 @@ export class MovieSearchStack extends cdk.Stack {
       handler: "index.seedHandler",
       code: getLambdaCode(),
       environment: paradeDbEnv,
-      timeout: cdk.Duration.seconds(120),
-      memorySize: 512,
+      timeout: cdk.Duration.minutes(10),
+      memorySize: 1024,
     });
 
     dataBucket.grantRead(seedHandler);

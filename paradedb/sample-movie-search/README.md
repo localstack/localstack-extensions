@@ -11,6 +11,16 @@ This sample app deploys a serverless movie search application using:
 - **Amazon S3** - Stores movie dataset
 - **ParadeDB** - Full-text search engine (runs as LocalStack extension)
 
+### Dataset
+
+Uses the official [AWS OpenSearch sample movies dataset](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/samples/sample-movies.zip) containing **5,000 movies** with metadata including:
+
+- Title, year, genres, rating
+- Directors and actors
+- Plot descriptions
+- Movie poster images
+- Runtime duration
+
 ### Features Demonstrated
 
 | Feature | Description |
@@ -18,6 +28,7 @@ This sample app deploys a serverless movie search application using:
 | **BM25 Ranking** | Industry-standard relevance scoring |
 | **Fuzzy Matching** | Handles typos (e.g., "Godfater" finds "Godfather") |
 | **Highlighting** | Returns matched text with highlighted terms |
+| **Movie Posters** | Rich UI with movie poster images |
 
 ### API Endpoints
 
@@ -48,19 +59,15 @@ localstack extensions install localstack-extension-paradedb
 localstack start
 ```
 
-### 2. Install Dependencies
+### 2. Install Dependencies and Download Dataset
 
 ```bash
 cd paradedb/sample-movie-search
 make install
+make download-data
 ```
 
-Or manually:
-
-```bash
-npm install
-cd lambda && npm install
-```
+The `download-data` target downloads the AWS sample movies dataset (~5000 movies) and preprocesses it for ParadeDB ingestion.
 
 ### 3. Deploy the Stack
 
@@ -110,19 +117,19 @@ make seed
 
 ```bash
 # Basic search
-curl "https://<api-id>.execute-api.localhost.localstack.cloud:4566/dev/search?q=redemption"
+curl "https://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/search?q=redemption"
 
 # With pagination
-curl "https://<api-id>.execute-api.localhost.localstack.cloud:4566/dev/search?q=dark%20knight&limit=5&offset=0"
+curl "https://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/search?q=dark%20knight&limit=5&offset=0"
 
 # Fuzzy search (handles typos)
-curl "https://<api-id>.execute-api.localhost.localstack.cloud:4566/dev/search?q=godfater"
+curl "https://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/search?q=godfater"
 ```
 
 ### Get Movie Details
 
 ```bash
-curl "https://<api-id>.execute-api.localhost.localstack.cloud:4566/dev/movies/tt0111161"
+curl "https://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/movies/tt0111161"
 ```
 
 ### Example Response
@@ -131,60 +138,75 @@ curl "https://<api-id>.execute-api.localhost.localstack.cloud:4566/dev/movies/tt
 {
   "success": true,
   "data": {
-    "results": [
-      {
-        "id": "tt0111161",
-        "title": "The Shawshank Redemption",
-        "year": 1994,
-        "genres": ["Drama"],
-        "rating": 9.3,
-        "directors": ["Frank Darabont"],
-        "actors": ["Tim Robbins", "Morgan Freeman", "Bob Gunton"],
-        "highlight": "...finding solace and eventual <mark>redemption</mark> through acts of common decency."
-      }
+    "id": "tt0111161",
+    "title": "The Shawshank Redemption",
+    "year": 1994,
+    "genres": [
+      "Crime",
+      "Drama"
     ],
-    "total": 1,
-    "limit": 10,
-    "offset": 0
+    "rating": 9.3,
+    "directors": [
+      "Frank Darabont"
+    ],
+    "actors": [
+      "Tim Robbins",
+      "Morgan Freeman",
+      "Bob Gunton"
+    ],
+    "plot": "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",
+    "image_url": "https://m.media-amazon.com/images/M/MV5BODU4MjU4NjIwNl5BMl5BanBnXkFtZTgwMDU2MjEyMDE@._V1_SX400_.jpg",
+    "release_date": "1994-09-10T00:00:00.000Z",
+    "rank": 80,
+    "running_time_secs": 8520
   }
 }
 ```
 
 ## Web UI
 
-A minimal web UI is included in the `web/` directory. To use it:
+A web UI with movie posters is included in the `web/` directory.
 
-1. Open `web/index.html` in a browser
-2. Set the API URL by opening the browser console and running:
+### Quick Start
 
-```javascript
-setApiUrl('https://<api-id>.execute-api.localhost.localstack.cloud:4566/dev')
+```bash
+make web-ui
 ```
 
-3. Start searching!
+This starts a local web server at http://localhost:3000. The UI automatically connects to the API Gateway at `http://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev`.
+
+### Features
+
+- Movie poster images from Amazon
+- Runtime display (e.g., "2h 22m")
+- Genre tags
+- Director and cast information
+- Search result highlighting
+- Pagination
 
 ## How It Works
 
-1. **Deployment**: CDK creates Lambda functions, API Gateway, and S3 bucket with movie data
+1. **Dataset Preparation**: Download and preprocess the AWS OpenSearch sample movies dataset
 
-2. **Initialization**: The init Lambda creates the movies table and ParadeDB BM25 index:
+2. **Deployment**: CDK creates Lambda functions, API Gateway, and S3 bucket with movie data (bulk format)
+
+3. **Initialization**: The init Lambda creates the movies table and ParadeDB BM25 index:
    ```sql
-   CALL paradedb.create_bm25(
-     index_name => 'movies_search_idx',
-     table_name => 'movies',
-     key_field => 'id',
-     text_fields => paradedb.field('title') || paradedb.field('plot')
-   );
+   CREATE INDEX movies_search_idx ON movies
+   USING bm25 (id, title, plot)
+   WITH (key_field = 'id');
    ```
 
-3. **Data Loading**: The seed Lambda reads `movies.json` from S3 and inserts into ParadeDB
+4. **Data Loading**: The seed Lambda reads `movies.bulk` from S3 (newline-delimited JSON) and inserts 5000 movies into ParadeDB
 
-4. **Search**: Queries use ParadeDB's BM25 search with fuzzy matching:
+5. **Search**: Queries use ParadeDB's BM25 search with fuzzy matching:
    ```sql
-   SELECT *, paradedb.snippet(plot) as highlight
+   SELECT id, title, year, genres, rating, directors, actors, image_url, running_time_secs,
+          pdb.snippet(plot, start_tag => '<mark>', end_tag => '</mark>') as highlight,
+          pdb.score(id) as score
    FROM movies
-   WHERE id @@@ paradedb.parse('title:query~1 OR plot:query~1')
-   ORDER BY paradedb.score(id) DESC
+   WHERE title ||| $1::pdb.fuzzy(1) OR plot ||| $1::pdb.fuzzy(1)
+   ORDER BY score DESC
    ```
 
 ## References
