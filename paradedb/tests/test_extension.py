@@ -167,7 +167,9 @@ def test_mixed_tcp_and_http_traffic():
     )
 
     caller_identity = sts_client.get_caller_identity()
-    assert "Account" in caller_identity, "STS HTTP API should work alongside ParadeDB TCP"
+    assert "Account" in caller_identity, (
+        "STS HTTP API should work alongside ParadeDB TCP"
+    )
     assert "Arn" in caller_identity, "STS should return valid caller identity"
 
     # Finally, verify ParadeDB still works after HTTP requests
@@ -175,6 +177,8 @@ def test_mixed_tcp_and_http_traffic():
     cursor = conn.cursor()
     cursor.execute("SELECT 'tcp_works_after_http' as verification;")
     result = cursor.fetchone()
-    assert result[0] == "tcp_works_after_http", "ParadeDB should still work after HTTP requests"
+    assert result[0] == "tcp_works_after_http", (
+        "ParadeDB should still work after HTTP requests"
+    )
     cursor.close()
     conn.close()

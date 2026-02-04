@@ -2,7 +2,6 @@ import os
 import socket
 
 from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
-from localstack.extensions.api import http
 from localstack import config
 
 # Environment variables for configuration
@@ -57,21 +56,22 @@ class ParadeDbExtension(ProxiedDockerContainerExtension):
             tcp_ports=[postgres_port],  # Enable TCP proxying through gateway
         )
 
-    def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
-        """
-        Override to set up only TCP routing without HTTP proxy.
-
-        ParadeDB uses the native PostgreSQL wire protocol (not HTTP), so we
-        only need TCP protocol routing - not HTTP proxying. Adding an HTTP
-        proxy without a host restriction would cause all HTTP requests to be
-        forwarded to the PostgreSQL container, breaking other services.
-        """
-        # Start the container
-        self.start_container()
-
-        # Set up only TCP protocol routing (skip HTTP proxy from base class)
-        if self.tcp_ports:
-            self._setup_tcp_protocol_routing()
+    # TODO: uncomment
+    # def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
+    #     """
+    #     Override to set up only TCP routing without HTTP proxy.
+    #
+    #     ParadeDB uses the native PostgreSQL wire protocol (not HTTP), so we
+    #     only need TCP protocol routing - not HTTP proxying. Adding an HTTP
+    #     proxy without a host restriction would cause all HTTP requests to be
+    #     forwarded to the PostgreSQL container, breaking other services.
+    #     """
+    #     # Start the container
+    #     self.start_container()
+    #
+    #     # Set up only TCP protocol routing (skip HTTP proxy from base class)
+    #     if self.tcp_ports:
+    #         self._setup_tcp_protocol_routing()
 
     def tcp_connection_matcher(self, data: bytes) -> bool:
         """
