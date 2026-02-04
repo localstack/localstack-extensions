@@ -579,11 +579,12 @@ def test_logs_readonly_insights_query(start_aws_proxy, cleanups):
     )
 
     # start_query and get_query_results through local client (proxied)
-    # should work in read-only mode - use retry to wait for query completion
+    # Retry the entire query cycle if it completes with no results (events not indexed yet)
     def _run_insights_query():
         start_time = int((time.time() - 300) * 1000)  # 5 minutes ago
         end_time = int((time.time() + 60) * 1000)  # 1 minute from now
 
+        # start_query - should work in read-only mode
         query_response = logs_client.start_query(
             logGroupName=log_group_name,
             startTime=start_time,
@@ -591,17 +592,22 @@ def test_logs_readonly_insights_query(start_aws_proxy, cleanups):
             queryString="fields @timestamp, @message | limit 10",
         )
         query_id = query_response["queryId"]
-        assert query_id is not None
 
-        # get_query_results - poll until complete
-        results = logs_client.get_query_results(queryId=query_id)
-        if results["status"] not in ["Complete", "Failed", "Cancelled"]:
-            raise AssertionError(f"Query not complete yet: {results['status']}")
-        if results["status"] != "Complete" or len(results["results"]) < 1:
+        # poll get_query_results until complete
+        for _ in range(30):
+            results = logs_client.get_query_results(queryId=query_id)
+            if results["status"] in ["Complete", "Failed", "Cancelled"]:
+                break
+            time.sleep(1)
+
+        if results["status"] != "Complete":
+            raise AssertionError(f"Query failed with status: {results['status']}")
+        if len(results["results"]) < 1:
+            # Query completed but no results - events may not be indexed yet, retry
             raise AssertionError("Query completed but no results found yet")
         return results
 
-    results = retry(_run_insights_query, retries=30, sleep=2)
+    results = retry(_run_insights_query, retries=10, sleep=5)
     assert results["status"] == "Complete"
     assert len(results["results"]) >= 1
 
