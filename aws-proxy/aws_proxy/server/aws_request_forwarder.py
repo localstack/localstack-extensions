@@ -161,6 +161,15 @@ class AwsProxyHandler(Handler):
                 if name:
                     log_group_arn = f"arn:aws:logs:{context.region}:{context.account_id}:log-group:{name}:*"
                     return bool(re.match(resource_name_pattern, log_group_arn))
+                # Operations that don't have a log group name but should still be proxied
+                # (e.g., GetQueryResults uses queryId, not logGroupName)
+                operation_name = context.operation.name if context.operation else ""
+                if operation_name in {
+                    "GetQueryResults",
+                    "StopQuery",
+                    "DescribeQueries",
+                }:
+                    return True
                 # No log group name specified - check if pattern is generic
                 return bool(re.match(resource_name_pattern, ".*"))
         except re.error as e:
