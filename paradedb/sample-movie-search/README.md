@@ -175,14 +175,7 @@ make web-ui
 
 This starts a local web server at http://localhost:3000. The UI automatically connects to the API Gateway at `http://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev`.
 
-### Features
-
-- Movie poster images from Amazon
-- Runtime display (e.g., "2h 22m")
-- Genre tags
-- Director and cast information
-- Search result highlighting
-- Pagination
+<img width="2880" height="1402" alt="image" src="https://gist.github.com/user-attachments/assets/63986bfe-709b-4bde-bac8-4df2b15bd41a" />
 
 ## How It Works
 
