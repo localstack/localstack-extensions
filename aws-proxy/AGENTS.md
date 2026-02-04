@@ -40,10 +40,13 @@ Some services have operations that are functionally read-only (don't modify stat
 
 If you find such operations, add them to the service-specific rules in `aws_proxy/server/aws_request_forwarder.py` in the `_is_read_request` method. This ensures that read-only proxy configurations correctly forward these operations rather than blocking them.
 
+**IMPORTANT**: This step is mandatory when adding a new service. Failure to identify non-standard read-only operations will cause `read_only: true` configurations to incorrectly block legitimate read requests.
+
 Example services with non-standard read-only operations:
 - **AppSync**: `EvaluateCode`, `EvaluateMappingTemplate`
 - **IAM**: `SimulateCustomPolicy`, `SimulatePrincipalPolicy`
 - **Cognito**: `InitiateAuth`
+- **DynamoDB**: `Scan`, `BatchGetItem`, `PartiQLSelect`
 
 When adding new integration tests, consider the following:
 * Include a mix of positive and negative assertions (i.e., presence and absence of resources).
@@ -52,3 +55,10 @@ When adding new integration tests, consider the following:
 * Make sure to either use fixtures (preferred), or reliable cleanups for removing the resources; several fixtures for creating AWS resources are available in the `localstack.testing.pytest.fixtures` module
 * If a test uses multiple resources with interdependencies (e.g., an SQS queue connected to an SNS topic), then the test needs to ensure that both resource types are proxied (i.e., created in real AWS), to avoid a situation where a resource in AWS is attempting to reference a local resource in LocalStack (using account ID `000000000000` in their ARN).
 * When waiting for the creation status of a resource, use the `localstack.utils.sync.retry(..)` utility function, rather than a manual `for` loop.
+* Avoid using `time.sleep()` in tests. Instead, use `localstack.utils.sync.retry(..)` to poll for the expected state. This makes tests more robust and avoids unnecessary delays when resources become available faster than expected.
+
+## Fixing or Enhancing Logic in the Proxy
+
+Notes:
+* The AWS proxy is running as a LocalStack Extension, and the tests are currently set up in a way that they assume the container to be running with the Extension in dev mode. Hence, in order to make actual changes to the proxy logic, we'll need to restart the LocalStack main container. You can either ask me (the user) to restart the container whenever you're making changes in the core logic, or alternatively remove the `localstack-main` container, and then run `EXTENSION_DEV_MODE=1 DEBUG=1 localstack start -d` again to restart the container, which may reveal some error logs, stack traces, etc.
+* If the proxy raises errors or something seems off, you can grab and parse the output of the LocalStack container via `localstack logs`.

@@ -1,3 +1,4 @@
+# Note/disclosure: This file has been partially modified by an AI agent.
 import json
 import logging
 import os.path
@@ -42,6 +43,11 @@ class RequestHandler:
         req = AddProxyRequest(**payload)
         result = handle_proxies_request(req)
         return result or {}
+
+    @route(f"{HANDLER_PATH_PROXIES}/<int:port>", methods=["DELETE"])
+    def delete_proxy(self, request: Request, port: int, **kwargs):
+        removed = AwsProxyHandler.PROXY_INSTANCES.pop(port, None)
+        return {"removed": removed is not None}
 
     @route(f"{HANDLER_PATH_PROXIES}/status", methods=["GET"])
     def get_status(self, request: Request, **kwargs):

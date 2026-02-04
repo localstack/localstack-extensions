@@ -1,9 +1,12 @@
+# Note/disclosure: This file has been partially modified by an AI agent.
 import json
 import logging
 import re
 from typing import Dict, Optional
+from urllib.parse import urlencode
 
 import requests
+from botocore.serialize import create_serializer
 from localstack.aws.api import RequestContext
 from localstack.aws.chain import Handler, HandlerChain
 from localstack.constants import APPLICATION_JSON, LOCALHOST, LOCALHOST_HOSTNAME
@@ -22,7 +25,7 @@ try:
 except ImportError:
     from localstack.constants import TEST_AWS_ACCESS_KEY_ID
 
-from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL
+from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL, SERVICE_NAME_MAPPING
 from aws_proxy.shared.models import ProxyInstance, ProxyServiceConfig
 
 LOG = logging.getLogger(__name__)
@@ -134,7 +137,41 @@ class AwsProxyHandler(Handler):
                     secret_id, account_id=context.account_id, region_name=context.region
                 )
                 return bool(re.match(resource_name_pattern, secret_arn))
-            # TODO: add more resource patterns
+            if service_name == "cloudwatch":
+                # CloudWatch alarm ARN format: arn:aws:cloudwatch:{region}:{account}:alarm:{alarm_name}
+                alarm_name = context.service_request.get("AlarmName") or ""
+                alarm_names = context.service_request.get("AlarmNames") or []
+                if alarm_name:
+                    alarm_names = [alarm_name]
+                if alarm_names:
+                    for name in alarm_names:
+                        alarm_arn = f"arn:aws:cloudwatch:{context.region}:{context.account_id}:alarm:{name}"
+                        if re.match(resource_name_pattern, alarm_arn):
+                            return True
+                    return False
+                # For metric operations without alarm names, check if pattern is generic
+                return bool(re.match(resource_name_pattern, ".*"))
+            if service_name == "logs":
+                # CloudWatch Logs ARN format: arn:aws:logs:{region}:{account}:log-group:{name}:*
+                log_group_name = context.service_request.get("logGroupName") or ""
+                log_group_prefix = (
+                    context.service_request.get("logGroupNamePrefix") or ""
+                )
+                name = log_group_name or log_group_prefix
+                if name:
+                    log_group_arn = f"arn:aws:logs:{context.region}:{context.account_id}:log-group:{name}:*"
+                    return bool(re.match(resource_name_pattern, log_group_arn))
+                # Operations that don't have a log group name but should still be proxied
+                # (e.g., GetQueryResults uses queryId, not logGroupName)
+                operation_name = context.operation.name if context.operation else ""
+                if operation_name in {
+                    "GetQueryResults",
+                    "StopQuery",
+                    "DescribeQueries",
+                }:
+                    return True
+                # No log group name specified - check if pattern is generic
+                return bool(re.match(resource_name_pattern, ".*"))
         except re.error as e:
             raise Exception(
                 "Error evaluating regular expression - please verify proxy configuration"
@@ -168,6 +205,12 @@ class AwsProxyHandler(Handler):
                 data = request.form
             elif request.data:
                 data = request.data
+
+            # Fallback: if data is empty and we have parsed service_request,
+            # reconstruct the request body (handles cases where form data was consumed)
+            if not data and context.service_request:
+                data = self._reconstruct_request_body(context, ctype)
+
             LOG.debug(
                 "Forward request: %s %s - %s - %s",
                 request.method,
@@ -228,6 +271,18 @@ class AwsProxyHandler(Handler):
             "EvaluateMappingTemplate",
         }:
             return True
+        if context.service.service_name == "logs" and operation_name in {
+            "FilterLogEvents",
+            "StartQuery",
+            "GetQueryResults",
+            "TestMetricFilter",
+        }:
+            return True
+        if context.service.service_name == "monitoring" and operation_name in {
+            "BatchGetServiceLevelObjectiveBudgetReport",
+            "BatchGetServiceLevelIndicatorReport",
+        }:
+            return True
         # TODO: add more rules
         return False
 
@@ -261,6 +316,30 @@ class AwsProxyHandler(Handler):
 
     @classmethod
     def _get_canonical_service_name(cls, service_name: str) -> str:
-        if service_name == "sqs-query":
-            return "sqs"
-        return service_name
+        return SERVICE_NAME_MAPPING.get(service_name, service_name)
+
+    def _reconstruct_request_body(
+        self, context: RequestContext, content_type: str
+    ) -> bytes:
+        """
+        Reconstruct the request body from the parsed service_request.
+        This is used when the original request body was consumed during parsing.
+        """
+        try:
+            protocol = context.service.protocol
+            if protocol == "query" or "x-www-form-urlencoded" in (content_type or ""):
+                # For Query protocol, serialize using botocore serializer
+                serializer = create_serializer(protocol)
+                operation_model = context.operation
+                serialized = serializer.serialize_to_request(
+                    context.service_request, operation_model
+                )
+                body = serialized.get("body", {})
+                if isinstance(body, dict):
+                    return urlencode(body, doseq=True)
+                return body
+            elif protocol == "json" or protocol == "rest-json":
+                return json.dumps(context.service_request)
+        except Exception as e:
+            LOG.debug("Failed to reconstruct request body: %s", e)
+        return b""

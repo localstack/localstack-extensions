@@ -1,3 +1,4 @@
+# Note/disclosure: This file has been partially modified by an AI agent.
 import os
 
 import pytest
@@ -51,4 +52,6 @@ def start_aws_proxy():
     yield _start
 
     for proxy in proxies:
+        # Deregister from LocalStack instance before shutting down
+        proxy.deregister_from_instance()
         proxy.shutdown()

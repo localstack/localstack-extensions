@@ -8,7 +8,8 @@ import typing as t
 
 from localstack.services.internal import get_internal_apis
 
-from aws_proxy.server.request_handler import WebApp
+from aws_proxy.server.aws_request_forwarder import AwsProxyHandler
+from aws_proxy.server.request_handler import RequestHandler, WebApp
 
 LOG = logging.getLogger(__name__)
 
@@ -27,8 +28,6 @@ class AwsProxyExtension(WebAppExtension):
             )
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
-        from aws_proxy.server.request_handler import RequestHandler
-
         super().update_gateway_routes(router)
 
         LOG.info("AWS Proxy: adding routes to activate extension")
@@ -38,7 +37,5 @@ class AwsProxyExtension(WebAppExtension):
         routes.append(WebApp())
 
     def update_request_handlers(self, handlers: CompositeHandler):
-        from aws_proxy.server.aws_request_forwarder import AwsProxyHandler
-
         LOG.debug("AWS Proxy: adding AWS proxy handler to the request chain")
         handlers.handlers.append(AwsProxyHandler())
