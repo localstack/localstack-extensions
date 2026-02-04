@@ -40,10 +40,13 @@ Some services have operations that are functionally read-only (don't modify stat
 
 If you find such operations, add them to the service-specific rules in `aws_proxy/server/aws_request_forwarder.py` in the `_is_read_request` method. This ensures that read-only proxy configurations correctly forward these operations rather than blocking them.
 
+**IMPORTANT**: This step is mandatory when adding a new service. Failure to identify non-standard read-only operations will cause `read_only: true` configurations to incorrectly block legitimate read requests.
+
 Example services with non-standard read-only operations:
 - **AppSync**: `EvaluateCode`, `EvaluateMappingTemplate`
 - **IAM**: `SimulateCustomPolicy`, `SimulatePrincipalPolicy`
 - **Cognito**: `InitiateAuth`
+- **DynamoDB**: `Scan`, `BatchGetItem`, `PartiQLSelect`
 
 When adding new integration tests, consider the following:
 * Include a mix of positive and negative assertions (i.e., presence and absence of resources).

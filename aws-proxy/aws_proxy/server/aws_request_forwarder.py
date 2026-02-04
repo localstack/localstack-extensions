@@ -262,6 +262,18 @@ class AwsProxyHandler(Handler):
             "EvaluateMappingTemplate",
         }:
             return True
+        if context.service.service_name == "logs" and operation_name in {
+            "FilterLogEvents",
+            "StartQuery",
+            "GetQueryResults",
+            "TestMetricFilter",
+        }:
+            return True
+        if context.service.service_name == "monitoring" and operation_name in {
+            "BatchGetServiceLevelObjectiveBudgetReport",
+            "BatchGetServiceLevelIndicatorReport",
+        }:
+            return True
         # TODO: add more rules
         return False
 
