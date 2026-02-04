@@ -444,6 +444,168 @@ def test_logs_readonly_operations(start_aws_proxy, cleanups):
     assert len(groups_aws_new["logGroups"]) == 0
 
 
+def test_logs_readonly_filter_log_events(start_aws_proxy, cleanups):
+    """Test that FilterLogEvents works in read-only proxy mode.
+
+    FilterLogEvents is a read operation but doesn't match standard prefixes
+    (Describe*, Get*, List*, Query*). This test verifies it's correctly
+    forwarded when read_only: true is configured.
+    """
+    log_group_name = f"/test/readonly-filter/{short_uid()}"
+    log_stream_name_1 = f"stream-1-{short_uid()}"
+    log_stream_name_2 = f"stream-2-{short_uid()}"
+
+    # start proxy - forwarding requests for CloudWatch Logs in read-only mode
+    config = ProxyConfig(
+        services={
+            "logs": {
+                "resources": [f".*:log-group:{log_group_name}:.*"],
+                "read_only": True,
+            }
+        }
+    )
+    start_aws_proxy(config)
+
+    # create clients
+    logs_client = connect_to().logs
+    logs_client_aws = boto3.client("logs")
+
+    # create log group and streams in AWS
+    logs_client_aws.create_log_group(logGroupName=log_group_name)
+    cleanups.append(
+        lambda: logs_client_aws.delete_log_group(logGroupName=log_group_name)
+    )
+
+    logs_client_aws.create_log_stream(
+        logGroupName=log_group_name, logStreamName=log_stream_name_1
+    )
+    logs_client_aws.create_log_stream(
+        logGroupName=log_group_name, logStreamName=log_stream_name_2
+    )
+
+    # put log events with different messages
+    timestamp = int(time.time() * 1000)
+    logs_client_aws.put_log_events(
+        logGroupName=log_group_name,
+        logStreamName=log_stream_name_1,
+        logEvents=[
+            {"timestamp": timestamp, "message": "ERROR: Something went wrong"},
+            {"timestamp": timestamp + 1, "message": "INFO: Normal operation"},
+        ],
+    )
+    logs_client_aws.put_log_events(
+        logGroupName=log_group_name,
+        logStreamName=log_stream_name_2,
+        logEvents=[
+            {"timestamp": timestamp + 2, "message": "ERROR: Another error"},
+            {"timestamp": timestamp + 3, "message": "DEBUG: Debug info"},
+        ],
+    )
+
+    # filter_log_events through local client (proxied) - should work in read-only mode
+    # This tests that FilterLogEvents is correctly identified as a read operation
+    def _filter_log_events():
+        response = logs_client.filter_log_events(
+            logGroupName=log_group_name,
+            filterPattern="ERROR",
+        )
+        if len(response["events"]) < 2:
+            raise AssertionError("Not all error events found yet")
+        return response
+
+    filtered_local = retry(_filter_log_events, retries=15, sleep=2)
+
+    # verify only ERROR messages are returned
+    assert len(filtered_local["events"]) >= 2
+    for event in filtered_local["events"]:
+        assert "ERROR" in event["message"]
+
+    # compare with AWS client results to confirm proxy forwarded correctly
+    filtered_aws = logs_client_aws.filter_log_events(
+        logGroupName=log_group_name,
+        filterPattern="ERROR",
+    )
+    assert len(filtered_local["events"]) == len(filtered_aws["events"])
+
+    # Verify the events match (same messages from AWS)
+    local_messages = sorted([e["message"] for e in filtered_local["events"]])
+    aws_messages = sorted([e["message"] for e in filtered_aws["events"]])
+    assert local_messages == aws_messages
+
+
+def test_logs_readonly_insights_query(start_aws_proxy, cleanups):
+    """Test that StartQuery and GetQueryResults work in read-only proxy mode.
+
+    StartQuery and GetQueryResults are read operations for CloudWatch Logs Insights
+    but don't match standard prefixes. This test verifies they're correctly
+    forwarded when read_only: true is configured.
+    """
+    log_group_name = f"/test/readonly-insights/{short_uid()}"
+    log_stream_name = f"stream-{short_uid()}"
+
+    # start proxy - forwarding requests for CloudWatch Logs in read-only mode
+    config = ProxyConfig(
+        services={
+            "logs": {
+                "resources": [f".*:log-group:{log_group_name}:.*"],
+                "read_only": True,
+            }
+        }
+    )
+    start_aws_proxy(config)
+
+    # create clients
+    logs_client = connect_to().logs
+    logs_client_aws = boto3.client("logs")
+
+    # create log group and stream in AWS
+    logs_client_aws.create_log_group(logGroupName=log_group_name)
+    cleanups.append(
+        lambda: logs_client_aws.delete_log_group(logGroupName=log_group_name)
+    )
+
+    logs_client_aws.create_log_stream(
+        logGroupName=log_group_name, logStreamName=log_stream_name
+    )
+
+    # put log events
+    timestamp = int(time.time() * 1000)
+    logs_client_aws.put_log_events(
+        logGroupName=log_group_name,
+        logStreamName=log_stream_name,
+        logEvents=[
+            {"timestamp": timestamp, "message": "Test log message for insights query"},
+        ],
+    )
+
+    # start_query and get_query_results through local client (proxied)
+    # should work in read-only mode - use retry to wait for query completion
+    def _run_insights_query():
+        start_time = int((time.time() - 300) * 1000)  # 5 minutes ago
+        end_time = int((time.time() + 60) * 1000)  # 1 minute from now
+
+        query_response = logs_client.start_query(
+            logGroupName=log_group_name,
+            startTime=start_time,
+            endTime=end_time,
+            queryString="fields @timestamp, @message | limit 10",
+        )
+        query_id = query_response["queryId"]
+        assert query_id is not None
+
+        # get_query_results - poll until complete
+        results = logs_client.get_query_results(queryId=query_id)
+        if results["status"] not in ["Complete", "Failed", "Cancelled"]:
+            raise AssertionError(f"Query not complete yet: {results['status']}")
+        if results["status"] != "Complete" or len(results["results"]) < 1:
+            raise AssertionError("Query completed but no results found yet")
+        return results
+
+    results = retry(_run_insights_query, retries=30, sleep=2)
+    assert results["status"] == "Complete"
+    assert len(results["results"]) >= 1
+
+
 def test_logs_resource_name_matching(start_aws_proxy, cleanups):
     """Test that proxy forwards requests for specific log groups matching ARN pattern."""
     log_group_match = f"/proxy/logs/{short_uid()}"

@@ -55,6 +55,7 @@ When adding new integration tests, consider the following:
 * Make sure to either use fixtures (preferred), or reliable cleanups for removing the resources; several fixtures for creating AWS resources are available in the `localstack.testing.pytest.fixtures` module
 * If a test uses multiple resources with interdependencies (e.g., an SQS queue connected to an SNS topic), then the test needs to ensure that both resource types are proxied (i.e., created in real AWS), to avoid a situation where a resource in AWS is attempting to reference a local resource in LocalStack (using account ID `000000000000` in their ARN).
 * When waiting for the creation status of a resource, use the `localstack.utils.sync.retry(..)` utility function, rather than a manual `for` loop.
+* Avoid using `time.sleep()` in tests. Instead, use `localstack.utils.sync.retry(..)` to poll for the expected state. This makes tests more robust and avoids unnecessary delays when resources become available faster than expected.
 
 ## Fixing or Enhancing Logic in the Proxy
 
