@@ -1,0 +1,20 @@
+{
+  "name": "movie-search-lambda",
+  "version": "1.0.0",
+  "description": "Lambda functions for ParadeDB movie search",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild index.ts --bundle --platform=node --target=node22 --outfile=dist/index.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.0",
+    "@aws-sdk/client-s3": "^3.700.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.10",
+    "esbuild": "^0.24.0",
+    "typescript": "~5.6.0"
+  }
+}
