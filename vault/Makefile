@@ -38,6 +38,9 @@ format:		    ## Run ruff to format the whole codebase
 lint:		    ## Run ruff to lint the codebase
 	$(VENV_RUN); python -m ruff check --output-format=full .
 
+test:		    ## Run pytest tests (requires LocalStack running)
+	$(VENV_RUN); python -m pytest tests/ -v
+
 sample-app:		## Deploy sample app with Lambda + Vault
 	@echo "Setting up Vault secrets..."
 	sample-app-extension/bin/setup-vault.sh
@@ -49,4 +52,4 @@ sample-app:		## Deploy sample app with Lambda + Vault
 clean-dist: clean
 	rm -rf dist/
 
-.PHONY: clean clean-dist dist install publish usage venv format lint sample-app
+.PHONY: clean clean-dist dist install publish usage venv format lint test sample-app
