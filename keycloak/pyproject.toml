@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools", "wheel", "plux>=1.3.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "localstack-extension-keycloak"
+version = "0.1.0"
+description = "LocalStack Extension: Keycloak for Identity and Access Management"
+readme = {file = "README.md", content-type = "text/markdown; charset=UTF-8"}
+requires-python = ">=3.10"
+authors = [
+    { name = "LocalStack Team"}
+]
+keywords = ["LocalStack", "Keycloak", "IAM", "OIDC", "Authentication"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "localstack-extensions-utils",
+    "requests",
+    "jsonpatch",
+]
+
+[project.urls]
+Homepage = "https://github.com/localstack/localstack-extensions"
+
+[project.optional-dependencies]
+dev = [
+    "boto3",
+    "build",
+    "localstack",
+    "pytest",
+    "rolo",
+    "ruff",
+]
+
+[project.entry-points."localstack.extensions"]
+localstack_keycloak = "localstack_keycloak.extension:KeycloakExtension"
+
+[tool.setuptools.packages.find]
+include = ["localstack_keycloak*"]
+
+[tool.setuptools.package-data]
+localstack_keycloak = ["resources/*.json"]
