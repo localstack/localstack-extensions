@@ -1,0 +1,12 @@
+# Python
+.venv/
+build/
+dist/
+.eggs/
+*egg-info/
+
+# OS
+.DS_Store
+
+# Ignored Directories
+sample-app-terraform/

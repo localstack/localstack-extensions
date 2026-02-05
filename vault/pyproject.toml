@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools", "wheel", "plux>=1.3.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "localstack-vault"
+version = "0.1.0"
+description = "HashiCorp Vault Extension for LocalStack"
+readme = {file = "README.md", content-type = "text/markdown; charset=UTF-8"}
+requires-python = ">=3.9"
+authors = [
+    { name = "LocalStack Team"}
+]
+keywords = ["LocalStack", "Vault", "HashiCorp", "Secrets"]
+classifiers = []
+dependencies = [
+    "priority",
+    "localstack-extensions-utils",
+    "hvac>=2.0.0",
+    "jsonpatch",
+]
+
+[project.urls]
+Homepage = "https://github.com/localstack/localstack-extensions/tree/main/vault"
+
+[project.optional-dependencies]
+dev = [
+    "boto3",
+    "build",
+    "jsonpatch",
+    "localstack",
+    "pytest",
+    "rolo",
+    "ruff",
+    "twisted",
+]
+
+[project.entry-points."localstack.extensions"]
+localstack-vault = "localstack_vault.extension:VaultExtension"
