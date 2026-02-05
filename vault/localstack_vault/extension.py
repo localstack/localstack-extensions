@@ -6,6 +6,7 @@ import hvac
 import requests
 
 from localstack import config, constants
+from localstack.utils.container_networking import get_main_container_ip
 from localstack.utils.net import get_addressable_container_host
 from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 
@@ -140,7 +141,12 @@ class VaultExtension(ProxiedDockerContainerExtension):
                 LOG.info("Enabled AWS auth method at aws/")
 
             # Configure the AWS auth to use LocalStack's STS endpoint
-            localstack_endpoint = f"http://{get_addressable_container_host()}:{config.get_edge_port_http()}"
+            # Use get_main_container_ip() to get LocalStack's actual container IP
+            # on the Docker network (e.g., 172.17.0.2), which is reachable from
+            # the Vault container. get_addressable_container_host() returns the
+            # Docker gateway IP (172.17.0.1), which may not be accessible.
+            localstack_ip = get_main_container_ip()
+            localstack_endpoint = f"http://{localstack_ip}:{config.get_edge_port_http()}"
 
             client.auth.aws.configure(
                 sts_endpoint=localstack_endpoint,
