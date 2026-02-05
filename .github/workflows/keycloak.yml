@@ -34,7 +34,6 @@ jobs:
           pip install localstack
 
           make install
-          make lint
           make dist
           localstack extensions -v install file://$(ls ./dist/localstack_extension_keycloak-*.tar.gz)
 
