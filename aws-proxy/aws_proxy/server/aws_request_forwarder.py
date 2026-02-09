@@ -283,6 +283,10 @@ class AwsProxyHandler(Handler):
             "BatchGetServiceLevelIndicatorReport",
         }:
             return True
+        if context.service.service_name == "apigatewayv2" and operation_name in {
+            "ExportApi",
+        }:
+            return True
         # TODO: add more rules
         return False
 
