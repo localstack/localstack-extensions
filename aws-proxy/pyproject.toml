@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "localstack-extension-aws-proxy"
 readme = "README.md"
-version = "0.2.2"
+version = "0.2.3"
 description = "LocalStack extension that proxies AWS resources into your LocalStack instance"
 authors = [
         { name = "LocalStack Team", email = "info@localstack.cloud"}

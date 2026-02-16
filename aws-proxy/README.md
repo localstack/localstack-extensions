@@ -126,6 +126,7 @@ If you wish to access the deprecated instructions, they can be found [here](http
 
 ## Change Log
 
+* `0.2.3`: Enhance proxy support and tests for several services (API Gateway v1/v2, CloudWatch, AppSync, Kinesis, KMS, SNS, Cognito-IDP)
 * `0.2.2`: Refactor UI to use WebAppExtension pattern
 * `0.2.1`: Restructure project to use pyproject.toml
 * `0.2.0`: Rename extension from `localstack-extension-aws-replicator` to `localstack-extension-aws-proxy`
