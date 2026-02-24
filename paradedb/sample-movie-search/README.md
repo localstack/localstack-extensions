@@ -117,19 +117,19 @@ make seed
 
 ```bash
 # Basic search
-curl "https://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/search?q=redemption"
+curl "http://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/search?q=redemption"
 
 # With pagination
-curl "https://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/search?q=dark%20knight&limit=5&offset=0"
+curl "http://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/search?q=dark%20knight&limit=5&offset=0"
 
 # Fuzzy search (handles typos)
-curl "https://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/search?q=godfater"
+curl "http://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/search?q=godfater"
 ```
 
 ### Get Movie Details
 
 ```bash
-curl "https://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/movies/tt0111161"
+curl "http://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev/movies/tt0111161"
 ```
 
 ### Example Response

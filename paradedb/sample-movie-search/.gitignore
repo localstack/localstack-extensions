@@ -1,10 +1,10 @@
 # Dependencies
 node_modules/
+lambda/package-lock.json
 
 # Build output
 dist/
 cdk.out/
-*.js
 *.d.ts
 
 # Keep TypeScript source

@@ -12,6 +12,8 @@ help:
 	@echo "  make deploy        - Deploy CDK stack to LocalStack"
 	@echo "  make init          - Initialize database schema and BM25 index"
 	@echo "  make seed          - Load movie data from S3 into ParadeDB"
+	@echo "  make test-search   - Test the search endpoint"
+	@echo "  make get-api-url   - Get the API Gateway URL"
 	@echo "  make web-ui        - Run the Web UI on localhost port 3000"
 	@echo "  make destroy       - Tear down the stack"
 	@echo "  make clean         - Remove build artifacts"

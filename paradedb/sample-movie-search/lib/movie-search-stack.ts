@@ -21,65 +21,64 @@ export class MovieSearchStack extends cdk.Stack {
       destinationBucket: dataBucket,
     });
 
-    const paradeDbEnv = {
+    const lambdaEnv = {
       PARADEDB_HOST: "paradedb.localhost.localstack.cloud",
       PARADEDB_PORT: "4566",
       PARADEDB_DATABASE: "mydatabase",
       PARADEDB_USER: "myuser",
       PARADEDB_PASSWORD: "mypassword",
       DATA_BUCKET: dataBucket.bucketName,
+      S3_ENDPOINT: "http://s3.localhost.localstack.cloud:4566",
     };
 
     const lambdaDir = path.join(__dirname, "../lambda");
-    const getLambdaCode = () => {
-      return lambda.Code.fromAsset(lambdaDir, {
-        bundling: {
-          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
-          command: [
-            "bash",
-            "-c",
-            [
-              "npm install --prefix /asset-input",
-              "npx esbuild /asset-input/index.ts --bundle --platform=node --target=node22 --outfile=/asset-output/index.js",
-            ].join(" && "),
-          ],
-          local: {
-            tryBundle(outputDir: string) {
-              const { spawnSync } = require("child_process");
-              try {
-                const npmResult = spawnSync("npm", ["install"], {
-                  cwd: lambdaDir,
-                  stdio: "inherit",
-                });
-                if (npmResult.status !== 0) return false;
+    const lambdaCode = lambda.Code.fromAsset(lambdaDir, {
+      bundling: {
+        image: lambda.Runtime.NODEJS_22_X.bundlingImage,
+        command: [
+          "bash",
+          "-c",
+          [
+            "npm install --prefix /asset-input",
+            "npx esbuild /asset-input/index.ts --bundle --platform=node --target=node22 --outfile=/asset-output/index.js",
+          ].join(" && "),
+        ],
+        local: {
+          tryBundle(outputDir: string) {
+            const { spawnSync } = require("child_process");
+            try {
+              const npmResult = spawnSync("npm", ["install"], {
+                cwd: lambdaDir,
+                stdio: "inherit",
+              });
+              if (npmResult.status !== 0) return false;
 
-                const esbuildResult = spawnSync(
-                  "npx",
-                  [
-                    "esbuild",
-                    "index.ts",
-                    "--bundle",
-                    "--platform=node",
-                    "--target=node22",
-                    `--outfile=${outputDir}/index.js`,
-                  ],
-                  { cwd: lambdaDir, stdio: "inherit" }
-                );
-                return esbuildResult.status === 0;
-              } catch {
-                return false;
-              }
-            },
+              const esbuildResult = spawnSync(
+                "npx",
+                [
+                  "esbuild",
+                  "index.ts",
+                  "--bundle",
+                  "--platform=node",
+                  "--target=node22",
+                  `--outfile=${outputDir}/index.js`,
+                ],
+                { cwd: lambdaDir, stdio: "inherit" }
+              );
+              return esbuildResult.status === 0;
+            } catch {
+              return false;
+            }
           },
         },
-      });
-    };
+      },
+    });
 
     const searchHandler = new lambda.Function(this, "SearchHandler", {
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: "index.searchHandler",
-      code: getLambdaCode(),
-      environment: paradeDbEnv,
+      code: lambdaCode,
+      environment: lambdaEnv,
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
     });
@@ -87,8 +86,8 @@ export class MovieSearchStack extends cdk.Stack {
     const movieDetailHandler = new lambda.Function(this, "MovieDetailHandler", {
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: "index.movieDetailHandler",
-      code: getLambdaCode(),
-      environment: paradeDbEnv,
+      code: lambdaCode,
+      environment: lambdaEnv,
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
     });
@@ -96,8 +95,8 @@ export class MovieSearchStack extends cdk.Stack {
     const initHandler = new lambda.Function(this, "InitHandler", {
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: "index.initHandler",
-      code: getLambdaCode(),
-      environment: paradeDbEnv,
+      code: lambdaCode,
+      environment: lambdaEnv,
       timeout: cdk.Duration.seconds(60),
       memorySize: 256,
     });
@@ -105,8 +104,8 @@ export class MovieSearchStack extends cdk.Stack {
     const seedHandler = new lambda.Function(this, "SeedHandler", {
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: "index.seedHandler",
-      code: getLambdaCode(),
-      environment: paradeDbEnv,
+      code: lambdaCode,
+      environment: lambdaEnv,
       timeout: cdk.Duration.minutes(10),
       memorySize: 1024,
     });

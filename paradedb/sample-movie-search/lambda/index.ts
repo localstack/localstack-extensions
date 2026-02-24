@@ -19,14 +19,17 @@ interface Movie {
 
 const pool = new Pool({
   host: process.env.PARADEDB_HOST || "paradedb.localhost.localstack.cloud",
-  port: parseInt(process.env.PARADEDB_PORT || "5432"),
-  database: process.env.PARADEDB_DATABASE || "postgres",
-  user: process.env.PARADEDB_USER || "postgres",
-  password: process.env.PARADEDB_PASSWORD || "postgres",
+  port: parseInt(process.env.PARADEDB_PORT || "4566"),
+  database: process.env.PARADEDB_DATABASE || "mydatabase",
+  user: process.env.PARADEDB_USER || "myuser",
+  password: process.env.PARADEDB_PASSWORD || "mypassword",
 });
 
+const S3_ENDPOINT = process.env.S3_ENDPOINT || "http://s3.localhost.localstack.cloud:4566";
+const DATA_BUCKET = process.env.DATA_BUCKET || "movie-search-data";
+
 const s3Client = new S3Client({
-  endpoint: "http://s3.localhost.localstack.cloud:4566",
+  endpoint: S3_ENDPOINT,
   region: "us-east-1",
   forcePathStyle: true,
   credentials: {
@@ -34,8 +37,6 @@ const s3Client = new S3Client({
     secretAccessKey: "test",
   },
 });
-
-const DATA_BUCKET = process.env.DATA_BUCKET || "movie-search-data";
 
 function successResponse(data: unknown): APIGatewayProxyResult {
   return {
@@ -266,34 +267,26 @@ export async function seedHandler(): Promise<APIGatewayProxyResult> {
 
     console.log(`Parsed ${movies.length} movies from bulk file`);
 
-    await client.query("DELETE FROM movies");
+    await client.query("BEGIN");
 
-    let inserted = 0;
-    const batchSize = 100;
+    try {
+      await client.query("DELETE FROM movies");
 
-    for (let i = 0; i < movies.length; i += batchSize) {
-      const batch = movies.slice(i, i + batchSize);
+      const batchSize = 100;
+      let inserted = 0;
 
-      for (const movie of batch) {
-        await client.query(
-          `
-          INSERT INTO movies (id, title, year, genres, rating, directors, actors, plot,
-                              image_url, release_date, rank, running_time_secs)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-          ON CONFLICT (id) DO UPDATE SET
-            title = EXCLUDED.title,
-            year = EXCLUDED.year,
-            genres = EXCLUDED.genres,
-            rating = EXCLUDED.rating,
-            directors = EXCLUDED.directors,
-            actors = EXCLUDED.actors,
-            plot = EXCLUDED.plot,
-            image_url = EXCLUDED.image_url,
-            release_date = EXCLUDED.release_date,
-            rank = EXCLUDED.rank,
-            running_time_secs = EXCLUDED.running_time_secs
-          `,
-          [
+      for (let i = 0; i < movies.length; i += batchSize) {
+        const batch = movies.slice(i, i + batchSize);
+
+        const values: unknown[] = [];
+        const placeholders: string[] = [];
+
+        batch.forEach((movie, idx) => {
+          const offset = idx * 12;
+          placeholders.push(
+            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12})`
+          );
+          values.push(
             movie.id,
             movie.title,
             movie.year || null,
@@ -305,21 +298,45 @@ export async function seedHandler(): Promise<APIGatewayProxyResult> {
             movie.image_url || null,
             movie.release_date || null,
             movie.rank || null,
-            movie.running_time_secs || null,
-          ]
+            movie.running_time_secs || null
+          );
+        });
+
+        await client.query(
+          `INSERT INTO movies (id, title, year, genres, rating, directors, actors, plot,
+                               image_url, release_date, rank, running_time_secs)
+           VALUES ${placeholders.join(", ")}
+           ON CONFLICT (id) DO UPDATE SET
+             title = EXCLUDED.title,
+             year = EXCLUDED.year,
+             genres = EXCLUDED.genres,
+             rating = EXCLUDED.rating,
+             directors = EXCLUDED.directors,
+             actors = EXCLUDED.actors,
+             plot = EXCLUDED.plot,
+             image_url = EXCLUDED.image_url,
+             release_date = EXCLUDED.release_date,
+             rank = EXCLUDED.rank,
+             running_time_secs = EXCLUDED.running_time_secs`,
+          values
         );
-        inserted++;
+
+        inserted += batch.length;
+        console.log(`Inserted ${inserted}/${movies.length} movies...`);
       }
 
-      console.log(`Inserted ${inserted}/${movies.length} movies...`);
+      await client.query("COMMIT");
+
+      console.log(`Seeding complete: ${inserted} movies`);
+
+      return successResponse({
+        message: "Data seeded successfully",
+        count: inserted,
+      });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
     }
-
-    console.log(`Seeding complete: ${inserted} movies`);
-
-    return successResponse({
-      message: "Data seeded successfully",
-      count: inserted,
-    });
   } catch (error) {
     console.error("Seed error:", error);
     return errorResponse(500, "Seeding failed");
