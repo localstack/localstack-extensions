@@ -5,6 +5,7 @@ from typing import Callable
 import requests
 
 from localstack.config import is_env_true
+from localstack.pro.core.utils.container.registry_strategies import CustomizableRegistryStrategy
 from localstack_extensions.utils.h2_proxy import (
     apply_http2_patches_for_grpc_support,
 )
@@ -103,7 +104,7 @@ class ProxiedDockerContainerExtension(Extension):
         http2_ports: list[int] | None = None,
         tcp_ports: list[int] | None = None,
     ):
-        self.image_name = image_name
+        self.image_name = CustomizableRegistryStrategy().resolve(image_name)
         if not container_ports:
             raise ValueError("container_ports is required")
         self.container_ports = container_ports
