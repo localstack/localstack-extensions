@@ -14,6 +14,10 @@ LOG = logging.getLogger(__name__)
 ENV_WIREMOCK_API_TOKEN = "WIREMOCK_API_TOKEN"
 # Host path to directory containing .wiremock/ (required for runner mode)
 ENV_WIREMOCK_CONFIG_DIR = "WIREMOCK_CONFIG_DIR"
+# Override the OSS image (default: wiremock/wiremock); accepts full ref with optional tag
+ENV_WIREMOCK_IMAGE = "WIREMOCK_IMAGE"
+# Override the runner image (default: wiremock/wiremock-runner); accepts full ref with optional tag
+ENV_WIREMOCK_IMAGE_RUNNER = "WIREMOCK_IMAGE_RUNNER"
 
 SERVICE_PORT = 8080  # Mock API port
 ADMIN_PORT = 9999  # Admin interface port (runner mode)
@@ -29,7 +33,7 @@ class WireMockExtension(ProxiedDockerContainerExtension):
 
     def __init__(self):
         env_vars = {}
-        image_name = self.DOCKER_IMAGE
+        image_name = os.getenv(ENV_WIREMOCK_IMAGE) or self.DOCKER_IMAGE
         volumes = None
         container_ports = [SERVICE_PORT]
         health_check_path = "/__admin/health"
@@ -41,7 +45,7 @@ class WireMockExtension(ProxiedDockerContainerExtension):
             env_vars["WMC_ADMIN_PORT"] = str(ADMIN_PORT)
             env_vars["WMC_API_TOKEN"] = api_token
             env_vars["WMC_RUNNER_ENABLED"] = "true"
-            image_name = self.DOCKER_IMAGE_RUNNER
+            image_name = os.getenv(ENV_WIREMOCK_IMAGE_RUNNER) or self.DOCKER_IMAGE_RUNNER
             container_ports = [SERVICE_PORT, ADMIN_PORT]
             health_check_path = "/__/health"
             health_check_retries = 90
