@@ -103,7 +103,6 @@ class ProxiedDockerContainerExtension(Extension):
         http2_ports: list[int] | None = None,
         tcp_ports: list[int] | None = None,
     ):
-        from localstack import config as ls_config
         from localstack.constants import ENV_PRO_ACTIVATED
 
         pro_activated = is_env_true(ENV_PRO_ACTIVATED)
