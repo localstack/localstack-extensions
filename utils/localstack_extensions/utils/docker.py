@@ -110,9 +110,6 @@ class ProxiedDockerContainerExtension(Extension):
 
         if pro_activated:
             from localstack.pro.core.utils.container.registry_strategies import CustomizableRegistryStrategy
-            # CustomizableRegistryStrategy.resolve() has a bug: for images in `name:tag` format
-            # (no namespace, e.g. `wiremock:3.0`), the colon in parts[0] causes it to treat the
-            # image as a registry reference and return an invalid result. Normalise first.
             self.image_name = CustomizableRegistryStrategy().resolve(image_name)
         else:
             self.image_name = image_name
