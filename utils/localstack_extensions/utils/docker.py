@@ -5,7 +5,6 @@ from typing import Callable
 import requests
 
 from localstack.config import is_env_true
-from localstack.pro.core.utils.container.registry_strategies import CustomizableRegistryStrategy
 from localstack_extensions.utils.h2_proxy import (
     apply_http2_patches_for_grpc_support,
 )
@@ -104,7 +103,21 @@ class ProxiedDockerContainerExtension(Extension):
         http2_ports: list[int] | None = None,
         tcp_ports: list[int] | None = None,
     ):
-        self.image_name = CustomizableRegistryStrategy().resolve(image_name)
+        from localstack import config as ls_config
+        from localstack.constants import ENV_PRO_ACTIVATED
+
+        pro_activated = is_env_true(ENV_PRO_ACTIVATED)
+        prefix = ls_config.DOCKER_GLOBAL_IMAGE_PREFIX
+
+        if pro_activated:
+            from localstack.pro.core.utils.container.registry_strategies import CustomizableRegistryStrategy
+            # CustomizableRegistryStrategy.resolve() has a bug: for images in `name:tag` format
+            # (no namespace, e.g. `wiremock:3.0`), the colon in parts[0] causes it to treat the
+            # image as a registry reference and return an invalid result. Normalise first.
+            self.image_name = CustomizableRegistryStrategy().resolve(image_name)
+        else:
+            self.image_name = image_name
+
         if not container_ports:
             raise ValueError("container_ports is required")
         self.container_ports = container_ports
