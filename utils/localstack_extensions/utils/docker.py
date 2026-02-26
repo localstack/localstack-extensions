@@ -107,7 +107,6 @@ class ProxiedDockerContainerExtension(Extension):
         from localstack.constants import ENV_PRO_ACTIVATED
 
         pro_activated = is_env_true(ENV_PRO_ACTIVATED)
-        prefix = ls_config.DOCKER_GLOBAL_IMAGE_PREFIX
 
         if pro_activated:
             from localstack.pro.core.utils.container.registry_strategies import CustomizableRegistryStrategy
