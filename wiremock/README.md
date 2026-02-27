@@ -108,6 +108,8 @@ localstack start
 
 - `WIREMOCK_API_TOKEN`: Your WireMock Cloud API token (required for runner mode)
 - `WIREMOCK_CONFIG_DIR`: Path to the directory containing your `.wiremock` folder (required for runner mode)
+- `WIREMOCK_IMAGE`: Custom Docker image name for the Wiremock OSS image (default: `wiremock/wiremock`)
+- `WIREMOCK_IMAGE_RUNNER`: Custom Docker image name for the Wiremock Cloud runner image (default: `wiremock/wiremock-runner`)
 
 Note: When using the LocalStack CLI, prefix environment variables with `LOCALSTACK_` to forward them to the container.
 
@@ -118,3 +120,12 @@ See the `sample-app-runner/` directory for a complete example using Terraform th
 - Creating an API Gateway
 - Lambda function that calls WireMock stubs
 - Integration testing with mocked external APIs
+
+## Change Log
+
+- `0.1.1`: Add environment variables to customize the WireMock image names
+- `0.1.0`: Initial release of the extension
+
+## License
+
+This project is licensed under the Apache License, Version 2.0.

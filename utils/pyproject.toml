@@ -32,7 +32,7 @@ dev = [
     "boto3",
     "build",
     "jsonpatch",
-    "localstack",
+    "localstack-core",
     "pytest",
     "ruff",
 ]
@@ -40,7 +40,7 @@ test = [
     "grpcio>=1.60.0",
     "grpcio-tools>=1.60.0",
     "jsonpatch",
-    "localstack",
+    "localstack-core",
     "pytest>=7.0",
     "pytest-timeout>=2.0",
 ]
