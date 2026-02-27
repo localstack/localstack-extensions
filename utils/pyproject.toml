@@ -18,6 +18,7 @@ dependencies = [
     "hpack",
     "httpx",
     "hyperframe",
+    "localstack",
     "priority",
     "requests",
     "rolo",
@@ -32,7 +33,6 @@ dev = [
     "boto3",
     "build",
     "jsonpatch",
-    "localstack",
     "pytest",
     "ruff",
 ]
@@ -40,7 +40,6 @@ test = [
     "grpcio>=1.60.0",
     "grpcio-tools>=1.60.0",
     "jsonpatch",
-    "localstack",
     "pytest>=7.0",
     "pytest-timeout>=2.0",
 ]
