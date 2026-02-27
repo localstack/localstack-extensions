@@ -1,0 +1,11 @@
+.venv/
+*.egg-info/
+dist/
+build/
+__pycache__/
+*.pyc
+.eggs/
+.pytest_cache/
+.ruff_cache/
+cdk.out/
+plan.md
