@@ -15,7 +15,7 @@ keywords = ["LocalStack", "WireMock"]
 classifiers = []
 dependencies = [
     "priority",
-    "localstack-extensions-utils"
+    "localstack-extensions-utils @ git+https://github.com/localstack/localstack-extensions.git@fix/tcp-only-base-class#egg=localstack-extensions-utils&subdirectory=utils"
 ]
 
 [project.urls]

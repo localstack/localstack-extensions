@@ -134,11 +134,22 @@ class ProxiedDockerContainerExtension(Extension):
             )
         # note: for simplicity, starting the external container at startup - could be optimized over time ...
         self.start_container()
-        # add resource for HTTP/1.1 requests
-        resource = RuleAdapter(ProxyResource(self.container_host, self.main_port))
-        if self.host:
-            resource = WithHost(self.host, [resource])
-        router.add(resource)
+
+        # Determine if HTTP proxy should be set up. Skip it when all container ports are
+        # TCP-only and no host restriction is set, since a catch-all HTTP proxy would
+        # intercept all requests and break other services.
+        tcp_only = (
+            self.tcp_ports
+            and not self.host
+            and set(self.container_ports) == set(self.tcp_ports)
+        )
+
+        if not tcp_only:
+            # add resource for HTTP/1.1 requests
+            resource = RuleAdapter(ProxyResource(self.container_host, self.main_port))
+            if self.host:
+                resource = WithHost(self.host, [resource])
+            router.add(resource)
 
         # apply patches to serve HTTP/2 requests
         for port in self.http2_ports or []:
