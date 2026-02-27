@@ -103,7 +103,12 @@ class ProxiedDockerContainerExtension(Extension):
         http2_ports: list[int] | None = None,
         tcp_ports: list[int] | None = None,
     ):
-        self.image_name = image_name
+        try:
+            from localstack.pro.core.utils.container.registry_strategies import CustomizableRegistryStrategy
+            self.image_name = CustomizableRegistryStrategy().resolve(image_name)
+        except ImportError:
+            self.image_name = image_name
+
         if not container_ports:
             raise ValueError("container_ports is required")
         self.container_ports = container_ports
