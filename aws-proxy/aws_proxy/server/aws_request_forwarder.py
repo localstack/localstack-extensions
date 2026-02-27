@@ -151,17 +151,6 @@ class AwsProxyHandler(Handler):
                     return False
                 # For metric operations without alarm names, check if pattern is generic
                 return bool(re.match(resource_name_pattern, ".*"))
-            if service_name == "lambda":
-                # Lambda function ARN format: arn:aws:lambda:{region}:{account}:function:{name}
-                function_name = context.service_request.get("FunctionName") or ""
-                if function_name:
-                    if ":function:" not in function_name:
-                        function_arn = f"arn:aws:lambda:{context.region}:{context.account_id}:function:{function_name}"
-                    else:
-                        function_arn = function_name
-                    return bool(re.match(resource_name_pattern, function_arn))
-                # For operations without FunctionName (e.g., ListFunctions), check if pattern is generic
-                return bool(re.match(resource_name_pattern, ".*"))
             if service_name == "logs":
                 # CloudWatch Logs ARN format: arn:aws:logs:{region}:{account}:log-group:{name}:*
                 log_group_name = context.service_request.get("logGroupName") or ""
