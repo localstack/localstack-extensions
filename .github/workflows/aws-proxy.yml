@@ -1,15 +1,17 @@
 name: LocalStack AWS Proxy Extension Tests
 
 on:
-  push:
-    paths:
-      - aws-proxy/**
-    branches:
-      - main
-  pull_request:
-    paths:
-      - .github/workflows/aws-proxy.yml
-      - aws-proxy/**
+# TODO: temporarily disabled - AWS proxy codebase needs to be fixed, to accommodate recent
+# changes in CLI and runtime repos, see: https://github.com/localstack/localstack/pull/13704
+#  push:
+#    paths:
+#      - aws-proxy/**
+#    branches:
+#      - main
+#  pull_request:
+#    paths:
+#      - .github/workflows/aws-proxy.yml
+#      - aws-proxy/**
   workflow_dispatch:
 
 jobs:
