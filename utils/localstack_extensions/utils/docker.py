@@ -138,13 +138,12 @@ class ProxiedDockerContainerExtension(Extension):
         # Determine if HTTP proxy should be set up. Skip it when all container ports are
         # TCP-only and no host restriction is set, since a catch-all HTTP proxy would
         # intercept all requests and break other services.
-        tcp_only = (
-            self.tcp_ports
-            and not self.host
-            and set(self.container_ports) == set(self.tcp_ports)
+        uses_http = (
+            self.host
+            and set(self.container_ports) - set(self.tcp_ports or [])
         )
 
-        if not tcp_only:
+        if uses_http:
             # add resource for HTTP/1.1 requests
             resource = RuleAdapter(ProxyResource(self.container_host, self.main_port))
             if self.host:
