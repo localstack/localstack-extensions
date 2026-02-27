@@ -14,6 +14,7 @@ authors = [
 keywords = ["LocalStack", "TypeDB"]
 classifiers = []
 dependencies = [
+    # TODO: temporary git ref for CI testing - revert to "localstack-extensions-utils" before merge
     "localstack-extensions-utils @ git+https://github.com/localstack/localstack-extensions.git@fix/tcp-only-base-class#egg=localstack-extensions-utils&subdirectory=utils"
 ]
 
