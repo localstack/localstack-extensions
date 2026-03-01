@@ -1,0 +1,109 @@
+.PHONY: install deploy init seed destroy clean help web-ui test-search get-api-url download-data
+
+DATASET_URL := https://docs.aws.amazon.com/opensearch-service/latest/developerguide/samples/sample-movies.zip
+DATA_DIR := data
+
+help:
+	@echo "ParadeDB Movie Search Sample App"
+	@echo ""
+	@echo "Usage:"
+	@echo "  make install       - Install all dependencies"
+	@echo "  make download-data - Download AWS sample movies dataset"
+	@echo "  make deploy        - Deploy CDK stack to LocalStack"
+	@echo "  make init          - Initialize database schema and BM25 index"
+	@echo "  make seed          - Load movie data from S3 into ParadeDB"
+	@echo "  make test-search   - Test the search endpoint"
+	@echo "  make get-api-url   - Get the API Gateway URL"
+	@echo "  make web-ui        - Run the Web UI on localhost port 3000"
+	@echo "  make destroy       - Tear down the stack"
+	@echo "  make clean         - Remove build artifacts"
+	@echo ""
+	@echo "Quick start:"
+	@echo "  make install && make download-data && make deploy && make init && make seed && make web-ui"
+
+install:
+	@echo "Installing CDK dependencies..."
+	npm install
+	@echo "Installing Lambda dependencies..."
+	cd lambda && npm install
+	@echo "Done!"
+
+download-data:
+	@echo "Downloading AWS sample movies dataset..."
+	@mkdir -p $(DATA_DIR)
+	@curl -sL $(DATASET_URL) -o $(DATA_DIR)/sample-movies.zip
+	@echo "Extracting dataset..."
+	@unzip -o $(DATA_DIR)/sample-movies.zip -d $(DATA_DIR)/
+	@echo "Pre-processing bulk file (removing index instructions)..."
+	@grep -v '^{ "index"' $(DATA_DIR)/sample-movies.bulk > $(DATA_DIR)/movies.bulk
+	@rm -rf $(DATA_DIR)/sample-movies.zip $(DATA_DIR)/sample-movies.bulk $(DATA_DIR)/__MACOSX
+	@echo "Dataset ready: $(DATA_DIR)/movies.bulk"
+	@wc -l $(DATA_DIR)/movies.bulk | awk '{print "Total movies: " $$1}'
+
+deploy:
+	@echo "Deploying MovieSearchStack to LocalStack..."
+	cdklocal bootstrap
+	cdklocal deploy --require-approval never
+	@echo ""
+	@echo "Deployment complete!"
+
+init:
+	@echo "Initializing database schema and BM25 index..."
+	@API_URL=$$(awslocal cloudformation describe-stacks \
+		--stack-name MovieSearchStack \
+		--query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' \
+		--output text 2>/dev/null); \
+	if [ -z "$$API_URL" ]; then \
+		echo "Error: Stack not deployed. Run 'make deploy' first."; \
+		exit 1; \
+	fi; \
+	curl -s -X POST "$${API_URL}admin/init" | jq .
+	@echo "Database initialized!"
+
+seed:
+	@echo "Seeding movie data from S3..."
+	@API_URL=$$(awslocal cloudformation describe-stacks \
+		--stack-name MovieSearchStack \
+		--query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' \
+		--output text 2>/dev/null); \
+	if [ -z "$$API_URL" ]; then \
+		echo "Error: Stack not deployed. Run 'make deploy' first."; \
+		exit 1; \
+	fi; \
+	curl -s -X POST "$${API_URL}admin/seed" | jq .
+	@echo "Data seeded!"
+
+test-search:
+	@echo "Testing search endpoint..."
+	@API_URL=$$(awslocal cloudformation describe-stacks \
+		--stack-name MovieSearchStack \
+		--query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' \
+		--output text 2>/dev/null); \
+	if [ -z "$$API_URL" ]; then \
+		echo "Error: Stack not deployed. Run 'make deploy' first."; \
+		exit 1; \
+	fi; \
+	echo "Searching for 'redemption'..."; \
+	curl -s "$${API_URL}search?q=redemption" | jq .
+
+destroy:
+	@echo "Destroying MovieSearchStack..."
+	cdklocal destroy --force
+	@echo "Stack destroyed!"
+
+clean:
+	rm -rf node_modules lambda/node_modules cdk.out dist data/movies.bulk
+	@echo "Cleaned!"
+
+get-api-url:
+	@awslocal cloudformation describe-stacks \
+		--stack-name MovieSearchStack \
+		--query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' \
+		--output text
+
+web-ui:
+	@echo "Starting Movie Search Web UI..."
+	@echo "API endpoint: http://movie-search-api.execute-api.localhost.localstack.cloud:4566/dev"
+	@echo ""
+	@which serve > /dev/null 2>&1 || (echo "Installing serve..." && npm i -g serve)
+	serve -s ./web -l 3000
