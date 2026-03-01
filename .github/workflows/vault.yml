@@ -1,0 +1,73 @@
+name: LocalStack Vault Extension Tests
+
+on:
+  push:
+    paths:
+      - vault/**
+    branches:
+      - main
+  pull_request:
+    paths:
+      - .github/workflows/vault.yml
+      - vault/**
+  workflow_dispatch:
+
+env:
+  LOCALSTACK_DISABLE_EVENTS: "1"
+  LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+
+jobs:
+  integration-tests:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Vault
+        uses: eLco/setup-vault@v1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup LocalStack and extension
+        run: |
+          cd vault
+
+          # Pull Docker images in parallel
+          docker pull localstack/localstack-pro &
+          docker pull hashicorp/vault:latest &
+          docker pull public.ecr.aws/lambda/python:3.11 &
+          pip install localstack awscli-local[ver1]
+
+          # Install and build extension
+          make install
+          make lint
+          make dist
+          localstack extensions -v install file://$(ls ./dist/localstack_vault-*.tar.gz)
+
+          # Wait for Docker pulls to complete
+          wait
+
+          # Start LocalStack with extension
+          DEBUG=1 EXTENSION_DEV_MODE=1 localstack start -d
+          localstack wait
+
+      - name: Run pytest tests
+        run: |
+          cd vault
+          make test
+
+      - name: Run sample app (Lambda + Vault Extension)
+        run: |
+          cd vault
+          make sample-app
+
+      - name: Print logs
+        if: always()
+        run: |
+          localstack logs
+          localstack stop
