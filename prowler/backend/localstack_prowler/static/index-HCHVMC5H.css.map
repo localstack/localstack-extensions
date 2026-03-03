@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../frontend/src/index.css"],
+  "sourcesContent": ["* { box-sizing: border-box; }\nbody { margin: 0; background: #f5f5f5; }\n"],
+  "mappings": "AAAA,EAAI,sBACJ,KADA,SACkB",
+  "names": []
+}

@@ -1,0 +1,89 @@
+import { Box, Chip, Divider, Typography, useTheme } from '@mui/material';
+import { ReactElement } from 'react';
+import { ScanSummary } from '../api';
+
+interface Props {
+  summary: ScanSummary;
+}
+
+const SEV_PALETTE: Record<string, 'error' | 'warning' | 'info' | 'success'> = {
+  critical: 'error',
+  high: 'warning',
+  medium: 'warning',
+  low: 'info',
+};
+
+export const SummaryBar = ({ summary }: Props): ReactElement => {
+  const theme = useTheme();
+
+  const sevColour = (sev: string): string => {
+    const map: Record<string, string> = {
+      critical: theme.palette.error.main,
+      high: theme.palette.warning.main,
+      medium: theme.palette.warning.light,
+      low: theme.palette.info.main,
+    };
+    return map[sev] ?? theme.palette.text.secondary;
+  };
+
+  return (
+    <Box
+      display="flex"
+      alignItems="center"
+      gap={3}
+      flexWrap="wrap"
+      px={2}
+      py={1.5}
+      mb={2}
+      sx={{
+        borderRadius: 1,
+        border: `1px solid ${theme.palette.divider}`,
+        bgcolor: theme.palette.action.hover,
+      }}
+    >
+      {(['critical', 'high', 'medium', 'low'] as const).map((sev) => (
+        <Box key={sev} textAlign="center" minWidth={48}>
+          <Typography
+            variant="h5"
+            fontWeight={700}
+            lineHeight={1}
+            sx={{ color: sevColour(sev) }}
+          >
+            {summary[sev]}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary' }}
+          >
+            {sev}
+          </Typography>
+        </Box>
+      ))}
+
+      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+      <Box display="flex" gap={1} alignItems="center" ml="auto" flexWrap="wrap">
+        <Chip
+          label={`${summary.pass} PASS`}
+          color="success"
+          size="small"
+          variant="outlined"
+          sx={{ fontWeight: 600 }}
+        />
+        <Chip
+          label={`${summary.fail} FAIL`}
+          color="error"
+          size="small"
+          variant="outlined"
+          sx={{ fontWeight: 600 }}
+        />
+        <Chip
+          label={`${summary.total} total`}
+          size="small"
+          variant="outlined"
+          sx={{ fontWeight: 600 }}
+        />
+      </Box>
+    </Box>
+  );
+};
