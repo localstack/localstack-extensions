@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "LocalStack Extension: Prowler Security Scanner"
 readme = {file = "README.md", content-type = "text/markdown; charset=UTF-8"}
 requires-python = ">=3.10"
-license = {text = "UNLICENSED"}
+license = {text = "Apache-2.0"}
 authors = [
     { name = "HarshCasper", email = "erbeusgriffincasper@gmail.com" }
 ]
@@ -19,8 +19,14 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "localstack>=0.0.0.dev"
+    "localstack>=0.0.0.dev",
+    "pytest>=7.0",
+    "boto3>=1.34",
+    "requests>=2.31",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [project.entry-points."localstack.extensions"]
 prowler = "localstack_prowler.extension:ProwlerExtension"

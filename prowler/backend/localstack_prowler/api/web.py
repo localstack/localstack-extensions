@@ -8,6 +8,50 @@ from ..scanner import NoScanError, ScanInProgressError, scanner
 
 LOG = logging.getLogger(__name__)
 
+ALLOWED_SEVERITIES = {"critical", "high", "medium", "low", "informational"}
+ALLOWED_SERVICES = {
+    "accessanalyzer",
+    "acm",
+    "cloudformation",
+    "cloudfront",
+    "cloudtrail",
+    "cloudwatch",
+    "cognito",
+    "config",
+    "dynamodb",
+    "ec2",
+    "ecr",
+    "ecs",
+    "eks",
+    "elb",
+    "elbv2",
+    "emr",
+    "eventbridge",
+    "glacier",
+    "glue",
+    "guardduty",
+    "iam",
+    "kms",
+    "lambda",
+    "opensearch",
+    "organizations",
+    "rds",
+    "redshift",
+    "route53",
+    "s3",
+    "sagemaker",
+    "secretsmanager",
+    "ses",
+    "shield",
+    "sns",
+    "sqs",
+    "ssm",
+    "stepfunctions",
+    "sts",
+    "transfer",
+    "waf",
+}
+
 
 def _json(data, status=200):
     return Response(
@@ -54,6 +98,26 @@ class WebApp:
 
         services = body.get("services") or []
         severity = body.get("severity") or []
+
+        if not isinstance(services, list):
+            return _json({"error": "'services' must be a list of strings"}, 400)
+        if not isinstance(severity, list):
+            return _json({"error": "'severity' must be a list of strings"}, 400)
+        if any(not isinstance(item, str) for item in services):
+            return _json({"error": "'services' must only contain strings"}, 400)
+        if any(not isinstance(item, str) for item in severity):
+            return _json({"error": "'severity' must only contain strings"}, 400)
+
+        services = [item.strip().lower() for item in services]
+        severity = [item.strip().lower() for item in severity]
+
+        unknown_services = [item for item in services if item not in ALLOWED_SERVICES]
+        if unknown_services:
+            return _json({"error": f"Unknown services: {', '.join(sorted(set(unknown_services)))}"}, 400)
+
+        unknown_severity = [item for item in severity if item not in ALLOWED_SEVERITIES]
+        if unknown_severity:
+            return _json({"error": f"Unknown severity: {', '.join(sorted(set(unknown_severity)))}"}, 400)
 
         try:
             scan_id = scanner.start_scan(services=services, severity=severity)
