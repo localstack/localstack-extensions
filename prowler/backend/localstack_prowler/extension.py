@@ -18,8 +18,8 @@ class ProwlerExtension(WebAppExtension):
     def on_platform_ready(self):
         LOG.info("Prowler extension ready — pre-pulling Docker image in background")
         import threading
-        t = threading.Thread(target=scanner.prefetch_image, daemon=True)
-        t.start()
+        prefetch_thread = threading.Thread(target=scanner.prefetch_image, daemon=True)
+        prefetch_thread.start()
 
     def collect_routes(self, routes: list[t.Any]):
         routes.append(WebApp())

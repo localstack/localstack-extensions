@@ -1,30 +1,14 @@
 import { Box, Chip, Divider, Typography, useTheme } from '@mui/material';
 import { ReactElement } from 'react';
 import { ScanSummary } from '../api';
+import { getSeverityColor, SUMMARY_SEVERITIES } from '../severity';
 
 interface Props {
   summary: ScanSummary;
 }
 
-const SEV_PALETTE: Record<string, 'error' | 'warning' | 'info' | 'success'> = {
-  critical: 'error',
-  high: 'warning',
-  medium: 'warning',
-  low: 'info',
-};
-
 export const SummaryBar = ({ summary }: Props): ReactElement => {
   const theme = useTheme();
-
-  const sevColour = (sev: string): string => {
-    const map: Record<string, string> = {
-      critical: theme.palette.error.main,
-      high: theme.palette.warning.main,
-      medium: theme.palette.warning.light,
-      low: theme.palette.info.main,
-    };
-    return map[sev] ?? theme.palette.text.secondary;
-  };
 
   return (
     <Box
@@ -41,13 +25,13 @@ export const SummaryBar = ({ summary }: Props): ReactElement => {
         bgcolor: theme.palette.action.hover,
       }}
     >
-      {(['critical', 'high', 'medium', 'low'] as const).map((sev) => (
+      {SUMMARY_SEVERITIES.map((sev) => (
         <Box key={sev} textAlign="center" minWidth={48}>
           <Typography
             variant="h5"
             fontWeight={700}
             lineHeight={1}
-            sx={{ color: sevColour(sev) }}
+            sx={{ color: getSeverityColor(theme, sev) }}
           >
             {summary[sev]}
           </Typography>

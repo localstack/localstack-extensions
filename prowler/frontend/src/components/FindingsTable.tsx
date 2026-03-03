@@ -9,25 +9,11 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import SearchIcon from '@mui/icons-material/Search';
 import { ReactElement, useState, useMemo } from 'react';
 import { Finding } from '../api';
-
-const SEV_ORDER: Record<string, number> = {
-  critical: 0, high: 1, medium: 2, low: 3, informational: 4,
-};
-
-function useSevColours() {
-  const theme = useTheme();
-  return {
-    critical: theme.palette.error.main,
-    high: theme.palette.warning.main,
-    medium: theme.palette.warning.light,
-    low: theme.palette.info.main,
-    informational: theme.palette.text.secondary,
-  } as Record<string, string>;
-}
+import { getSeverityColor, SEVERITY_ORDER } from '../severity';
 
 function SeverityChip({ severity }: { severity: string }) {
-  const colours = useSevColours();
-  const colour = colours[severity] ?? colours.informational;
+  const theme = useTheme();
+  const colour = getSeverityColor(theme, severity);
   return (
     <Chip
       label={severity}
@@ -164,7 +150,7 @@ export const FindingsTable = ({ findings }: Props): ReactElement => {
       );
     }
     return [...result].sort((a, b) => {
-      const diff = (SEV_ORDER[a.severity] ?? 5) - (SEV_ORDER[b.severity] ?? 5);
+      const diff = (SEVERITY_ORDER[a.severity] ?? 5) - (SEVERITY_ORDER[b.severity] ?? 5);
       return sortDir === 'asc' ? diff : -diff;
     });
   }, [findings, statusFilter, search, sortDir]);

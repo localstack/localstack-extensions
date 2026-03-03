@@ -4,7 +4,7 @@ import logging
 from localstack.http import Request, Response, route
 
 from .. import static
-from ..scanner import NoScanError, ScanInProgressError, scanner
+from ..scanner import ScanInProgressError, scanner
 
 LOG = logging.getLogger(__name__)
 

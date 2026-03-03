@@ -58,8 +58,10 @@ class ScanInProgressError(Exception):
     pass
 
 
-class NoScanError(Exception):
-    pass
+@dataclass(frozen=True)
+class ScanOutputDirs:
+    container: str
+    host: str
 
 
 @dataclass
@@ -98,6 +100,60 @@ class ScanState:
             "summary": self.summary(),
             "error": self.error,
         }
+
+
+def _prepare_scan_output_dirs(scan_id: str) -> ScanOutputDirs:
+    # Use /var/lib/localstack as the base — it's a mounted volume shared with the host.
+    container_outdir = f"/var/lib/localstack/prowler-{scan_id[:8]}"
+    os.makedirs(container_outdir, exist_ok=True)
+    host_outdir = _resolve_host_path(container_outdir)
+    LOG.info("Prowler output: container=%s  host=%s", container_outdir, host_outdir)
+    return ScanOutputDirs(container=container_outdir, host=host_outdir)
+
+
+def _build_scan_command(services: list, severity: list) -> list[str]:
+    cmd = [
+        "aws",
+        "--output-formats", "json-ocsf",
+        "--no-banner",
+        "--ignore-exit-code-3",
+        "--region", "us-east-1",
+        "--output-directory", "/tmp/prowler-output",
+    ]
+    if services:
+        cmd += ["--service"] + services
+    if severity:
+        cmd += ["--severity"] + severity
+    return cmd
+
+
+def _build_scan_environment(endpoint: str) -> dict[str, str]:
+    return {
+        "AWS_ACCESS_KEY_ID": "test",
+        "AWS_SECRET_ACCESS_KEY": "test",
+        "AWS_SECURITY_TOKEN": "test",
+        "AWS_SESSION_TOKEN": "test",
+        "AWS_DEFAULT_REGION": "us-east-1",
+        "AWS_ENDPOINT_URL": endpoint,
+    }
+
+
+def _load_ocsf_findings(container_outdir: str, scan_id: str) -> list[dict]:
+    import glob as _glob
+    import json
+
+    ocsf_files = _glob.glob(f"{container_outdir}/*.ocsf.json")
+    LOG.info("OCSF files found at %s: %s", container_outdir, ocsf_files)
+    if not ocsf_files:
+        LOG.warning("No JSON-OCSF output found for scan %s in %s", scan_id, container_outdir)
+        return []
+
+    with open(ocsf_files[0]) as fh:
+        raw = json.load(fh)
+        findings = raw if isinstance(raw, list) else []
+
+    LOG.info("Parsed %d findings from scan %s", len(findings), scan_id)
+    return findings
 
 
 class ProwlerScanner:
@@ -142,66 +198,26 @@ class ProwlerScanner:
         return scan_id
 
     def _run(self, scan_id: str, services: list, severity: list):
-        import json
-        import glob as _glob
-
-        # Use /var/lib/localstack as the base — it's a mounted volume shared with the host.
-        # We resolve the corresponding HOST-side path so Docker can bind-mount it correctly.
-        container_outdir = f"/var/lib/localstack/prowler-{scan_id[:8]}"
-        os.makedirs(container_outdir, exist_ok=True)
-        host_outdir = _resolve_host_path(container_outdir)
-        LOG.info("Prowler output: container=%s  host=%s", container_outdir, host_outdir)
+        outdirs = _prepare_scan_output_dirs(scan_id)
 
         try:
             endpoint = _resolve_localstack_endpoint()
             LOG.info("Starting Prowler scan %s → %s", scan_id, endpoint)
-
-            cmd = [
-                "aws",
-                "--output-formats", "json-ocsf",
-                "--no-banner",
-                "--ignore-exit-code-3",
-                "--region", "us-east-1",
-                "--output-directory", "/tmp/prowler-output",
-            ]
-            if services:
-                cmd += ["--service"] + services
-            if severity:
-                cmd += ["--severity"] + severity
-
-            env = {
-                "AWS_ACCESS_KEY_ID": "test",
-                "AWS_SECRET_ACCESS_KEY": "test",
-                "AWS_SECURITY_TOKEN": "test",
-                "AWS_SESSION_TOKEN": "test",
-                "AWS_DEFAULT_REGION": "us-east-1",
-                "AWS_ENDPOINT_URL": endpoint,
-            }
+            cmd = _build_scan_command(services, severity)
+            env = _build_scan_environment(endpoint)
 
             self._docker().containers.run(
                 PROWLER_IMAGE,
                 command=cmd,
                 environment=env,
-                volumes={host_outdir: {"bind": "/tmp/prowler-output", "mode": "rw"}},
+                volumes={outdirs.host: {"bind": "/tmp/prowler-output", "mode": "rw"}},
                 remove=True,
                 detach=False,
                 stdout=True,
                 stderr=True,
             )
 
-            # Find and parse the JSON-OCSF output file (written to container_outdir on our side)
-            ocsf_files = _glob.glob(f"{container_outdir}/*.ocsf.json")
-            LOG.info("OCSF files found at %s: %s", container_outdir, ocsf_files)
-            findings = []
-            if ocsf_files:
-                with open(ocsf_files[0]) as fh:
-                    raw = json.load(fh)
-                    findings = raw if isinstance(raw, list) else []
-                LOG.info("Parsed %d findings from scan %s", len(findings), scan_id)
-            else:
-                LOG.warning("No JSON-OCSF output found for scan %s in %s", scan_id, container_outdir)
-
-            # Normalise findings to a flat dict using key OCSF fields
+            findings = _load_ocsf_findings(outdirs.container, scan_id)
             normalised = [_normalise_finding(f) for f in findings]
 
             with self._lock:
