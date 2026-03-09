@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Search - ParadeDB Demo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Movie Search</h1>
+      <p class="subtitle">Powered by ParadeDB Full-Text Search</p>
+    </header>
+
+    <div class="search-box">
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Search movies (e.g., 'dark knight', 'redemption', 'godfather')..."
+        autofocus
+      >
+      <button id="search-btn">Search</button>
+    </div>
+
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <span>Searching...</span>
+    </div>
+
+    <div id="error" class="error hidden"></div>
+
+    <div id="results-info" class="results-info hidden">
+      <span id="results-count"></span>
+    </div>
+
+    <div id="results" class="results"></div>
+
+    <div id="pagination" class="pagination hidden">
+      <button id="prev-btn" disabled>Previous</button>
+      <span id="page-info"></span>
+      <button id="next-btn" disabled>Next</button>
+    </div>
+  </div>
+
+  <footer>
+    <p>
+      Built with <a href="https://docs.paradedb.com/" target="_blank">ParadeDB</a>
+      and <a href="https://localstack.cloud/" target="_blank">LocalStack</a>
+    </p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
