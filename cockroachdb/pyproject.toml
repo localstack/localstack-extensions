@@ -25,6 +25,7 @@ dev = [
     "boto3",
     "build",
     "jsonpatch",
+    "localstack-core",
     "psycopg2-binary",
     "pytest",
     "rolo",
