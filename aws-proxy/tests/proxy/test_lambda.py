@@ -211,8 +211,52 @@ def test_lambda_read_only(start_aws_proxy, cleanups, lambda_execution_role):
 
     retry(_list_contains_function, retries=5, sleep=2)
 
-    # Invoke is classified as a read operation for proxy purposes
-    # (it executes the function but doesn't modify it)
+    # Invoke has side-effects and is NOT a read operation - should be blocked in read_only mode
+    with pytest.raises(ClientError) as ctx:
+        lambda_client.invoke(
+            FunctionName=function_name,
+            Payload=json.dumps({"key": "value"}),
+        )
+    assert ctx.value.response["Error"]["Code"] == "ResourceNotFoundException"
+
+    # UpdateFunctionConfiguration is a write operation - should be blocked
+    with pytest.raises(ClientError) as ctx:
+        lambda_client.update_function_configuration(
+            FunctionName=function_name,
+            Description="updated via proxy - should not work",
+        )
+    assert ctx.value.response["Error"]["Code"] == "ResourceNotFoundException"
+
+
+def test_lambda_invoke_mode(start_aws_proxy, cleanups, lambda_execution_role):
+    """Test Lambda proxy with read_only + execute mode: reads and invocations proxied, writes blocked."""
+    function_name = f"test-fn-inv-{short_uid()}"
+
+    # start proxy with read_only + invoke flags
+    config = ProxyConfig(
+        services={"lambda": {"resources": ".*", "read_only": True, "execute": True}}
+    )
+    start_aws_proxy(config)
+
+    # create clients
+    region_name = "us-east-1"
+    lambda_client = connect_to(region_name=region_name).lambda_
+    lambda_client_aws = boto3.client("lambda", region_name=region_name)
+
+    # create function in real AWS (direct, not through proxy)
+    _create_lambda_function(
+        lambda_client_aws, function_name, lambda_execution_role, cleanups
+    )
+
+    # read operations should be proxied
+    fn_local = lambda_client.get_function(FunctionName=function_name)
+    fn_aws = lambda_client_aws.get_function(FunctionName=function_name)
+    assert (
+        fn_local["Configuration"]["FunctionArn"]
+        == fn_aws["Configuration"]["FunctionArn"]
+    )
+
+    # Invoke should be proxied when execute: True is set alongside read_only
     response = lambda_client.invoke(
         FunctionName=function_name,
         Payload=json.dumps({"key": "value"}),
@@ -222,7 +266,7 @@ def test_lambda_read_only(start_aws_proxy, cleanups, lambda_execution_role):
     body = json.loads(payload["body"])
     assert body["message"] == "hello"
 
-    # UpdateFunctionConfiguration is a write operation - should be blocked
+    # UpdateFunctionConfiguration is a write operation - should still be blocked
     with pytest.raises(ClientError) as ctx:
         lambda_client.update_function_configuration(
             FunctionName=function_name,

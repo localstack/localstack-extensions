@@ -11,6 +11,9 @@ class ProxyServiceConfig(TypedDict, total=False):
     operations: List[str]
     # whether only read requests should be forwarded
     read_only: bool
+    # whether invoke/execute operations (e.g., Lambda invocations) should be forwarded
+    # (only relevant when read_only is True, since execute has side-effects and is not a read operation)
+    execute: bool
 
 
 class ProxyConfig(TypedDict, total=False):

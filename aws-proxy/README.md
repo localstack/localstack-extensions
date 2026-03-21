@@ -85,6 +85,9 @@ services:
       - 'Put.*'
     # optionally, specify that only read requests should be allowed (Get*/List*/Describe*, etc)
     read_only: false
+    # optionally, allow invoke/execute operations (e.g., Lambda invocations) alongside read_only mode.
+    # execute operations have side-effects and are deliberately excluded from read_only by default.
+    execute: false
 ```
 
 Store the configuration above to a file named `proxy_config.yml`, then we can start up the proxy via:

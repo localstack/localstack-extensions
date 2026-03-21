@@ -88,8 +88,12 @@ class AwsProxyHandler(Handler):
 
             # check if only read requests should be forwarded
             read_only = service_config.get("read_only")
-            if read_only and not self._is_read_request(context):
-                return
+            if read_only:
+                allow_execute = service_config.get("execute")
+                if not self._is_read_request(context) and not (
+                    allow_execute and self._is_execute_request(context)
+                ):
+                    return
 
             # check if any operation name pattern matches
             operation_names = ensure_list(service_config.get("operations", []))
@@ -277,12 +281,6 @@ class AwsProxyHandler(Handler):
             "PartiQLSelect",
         }:
             return True
-        if context.service.service_name == "lambda" and operation_name in {
-            "Invoke",
-            "InvokeAsync",
-            "InvokeWithResponseStream",
-        }:
-            return True
         if context.service.service_name == "appsync" and operation_name in {
             "EvaluateCode",
             "EvaluateMappingTemplate",
@@ -301,6 +299,21 @@ class AwsProxyHandler(Handler):
         }:
             return True
         # TODO: add more rules
+        return False
+
+    def _is_execute_request(self, context: RequestContext) -> bool:
+        """
+        Function to determine whether a request is an invoke/execute request.
+        Invoke operations have side-effects and are not considered read operations.
+        They can be explicitly allowed alongside read_only mode via the 'execute' config flag.
+        """
+        operation_name = context.service_operation.operation
+        if context.service.service_name == "lambda" and operation_name in {
+            "Invoke",
+            "InvokeAsync",
+            "InvokeWithResponseStream",
+        }:
+            return True
         return False
 
     def _extract_region_from_domain(self, context: RequestContext):
