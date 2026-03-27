@@ -21,52 +21,55 @@ The AWS Cloud Proxy can be used to forward certain API calls in LocalStack to re
 
 **Warning:** Be careful when using the proxy - make sure to _never_ give access to production accounts or any critical/sensitive data!
 
-**Note:** The Cloud Proxy CLI currently works only when installing the `localstack` CLI via `pip`.
-If you're downloading the `localstack` CLI as a [binary release](https://docs.localstack.cloud/getting-started/installation/#localstack-cli), then please use the proxy configuration UI described below.
-
 ### Usage
 
-#### CLI
-For example, in order to forward all API calls for DynamoDB/S3/Cognito to real AWS, the proxy can be started via the CLI as follows:
+#### Using curl (API)
 
-1. Start LocalStack via CLI
-```
-$ localstack start -d
-```
-2. Enable LocalStack AWS Proxy from the Web Application Extension Library
-3. After installation restart Localstack
-4. Install the AWS Proxy CLI package
-```
-$ pip install localstack-extension-aws-proxy
-```
-5. Configure real cloud account credentials in a new terminal session to allow access
-```
-$ export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
-```
-6. Start proxy in aforementioned terminal session via the CLI
-```
-$ localstack aws proxy -s dynamodb,s3,cognito-idp
-```
-7. Now, when issuing an API call against LocalStack (e.g., via `awslocal`), the invocation gets forwarded to real AWS and should return data from your real cloud resources.
+The proxy can be enabled and disabled via the LocalStack internal API. This is the recommended approach.
 
-#### Proxy Configuration UI
+1. Start LocalStack and install the AWS Proxy extension (restart LocalStack after installation).
 
-1. Start Localstack with extra CORS
+2. Enable the proxy for specific services (e.g., DynamoDB, S3, Cognito) by posting a configuration along with your AWS credentials:
 ```
-EXTRA_CORS_ALLOWED_ORIGINS=https://aws-proxy.localhost.localstack.cloud:4566 localstack start -d
+$ curl -X POST http://localhost:4566/_localstack/aws/proxies \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "config": {
+      "services": {
+        "dynamodb": {},
+        "s3": {},
+        "cognito-idp": {}
+      }
+    },
+    "env_vars": {
+      "AWS_ACCESS_KEY_ID": "<your-access-key-id>",
+      "AWS_SECRET_ACCESS_KEY": "<your-secret-access-key>",
+      "AWS_SESSION_TOKEN": "<your-session-token>"
+    }
+  }'
 ```
 
-2. Enable Localstack AWS Proxy from the Web Application Extension Library
+3. Check the proxy status:
+```
+$ curl http://localhost:4566/_localstack/aws/proxies/status
+```
 
-3. Once the extension is installed, it will expose a small configuration endpoint in your LocalStack container under the following endpoint: http://localhost:4566/_localstack/aws-proxy/index.html . 
+4. Disable the proxy:
+```
+$ curl -X POST http://localhost:4566/_localstack/aws/proxies/status \
+  -H 'Content-Type: application/json' \
+  -d '{"status": "disabled"}'
+```
 
-4. Use this Web UI to define the proxy configuration (in YAML syntax), as well as the AWS credentials (AWS access key ID, secret access key, and optionally session token) and save configuration. The proxy should report enabled state and on the host a proxy container should spawn.
+5. Now, when issuing an API call against LocalStack (e.g., via `awslocal`), the invocation gets forwarded to real AWS and should return data from your real cloud resources.
+
+#### Using the LocalStack Web App
+
+You can also configure the proxy from the LocalStack Web App at https://app.localstack.cloud. Navigate to your instance and use the AWS Proxy extension settings to enable/disable the proxy and manage credentials.
+
+Alternatively, the extension exposes a local configuration UI at http://localhost:4566/_localstack/aws-proxy/index.html (requires starting LocalStack with `EXTRA_CORS_ALLOWED_ORIGINS=https://aws-proxy.localhost.localstack.cloud:4566`). Use this Web UI to define the proxy configuration (in YAML syntax) and AWS credentials, then save the configuration. To clean up the running proxy container, click "disable" in the UI.
 
 ![configuration settings](etc/proxy-settings.png)
-
-5. Now we can communicate with the real AWS cloud resources, directly via LocalStack.
-
-To clean up the running proxy container simply click "disable" on the Cloud Proxy UI.
 
 ### Resource-specific proxying
 
@@ -90,10 +93,7 @@ services:
     execute: false
 ```
 
-Store the configuration above to a file named `proxy_config.yml`, then we can start up the proxy via:
-```
-localstack aws proxy -c proxy_config.yml
-```
+Pass this configuration in the `config` field of the `POST /_localstack/aws/proxies` request body (as shown above).
 
 If we then perform local operations against the S3 bucket `my-s3-bucket`, the proxy will forward the request and will return the results from real AWS:
 ```
@@ -118,8 +118,6 @@ In addition to the proxy services configuration shown above, the following confi
 * `PROXY_LOCALSTACK_HOST`: the target host to use when the proxy container connects to the LocalStack main container (automatically determined by default)
 * `PROXY_DOCKER_FLAGS`: additional flags that should be passed when creating the proxy Docker containers
 
-**Note:** Due to some recent changes in the core framework, make sure to start up your LocalStack container with the `GATEWAY_SERVER=hypercorn` configuration enabled, for backwards compatibility. This will be fixed in an upcoming release.
-
 ## Resource Replicator CLI (deprecated)
 
 Note: Previous versions of this extension also offered a "replicate" mode to copy/clone (rather than proxy) resources from an AWS account into the local instance.
@@ -129,6 +127,7 @@ If you wish to access the deprecated instructions, they can be found [here](http
 
 ## Change Log
 
+* `0.2.4`: Replace deprecated `localstack aws proxy` CLI command with direct Python/HTTP-based proxy startup; update README with curl-based usage instructions
 * `0.2.3`: Enhance proxy support and tests for several services (API Gateway v1/v2, CloudWatch, AppSync, Kinesis, KMS, SNS, Cognito-IDP)
 * `0.2.2`: Refactor UI to use WebAppExtension pattern
 * `0.2.1`: Restructure project to use pyproject.toml

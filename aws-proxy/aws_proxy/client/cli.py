@@ -1,11 +1,14 @@
 import re
 import sys
 
+# Note: This CLI plugin is deprecated and may be removed in a future version.
+# Use the LocalStack internal API or the LocalStack Web App to configure the proxy instead.
+
 import click
 import yaml
-from localstack.cli import LocalstackCli, LocalstackCliPlugin, console
-from localstack.pro.core.cli.aws import aws
-from localstack.pro.core.config import is_auth_token_configured
+from localstack_cli.cli import LocalstackCli, LocalstackCliPlugin, console
+from localstack_cli.pro.core.cli.aws import aws
+from localstack_cli.pro.core.config import is_auth_token_configured
 from localstack.utils.files import load_file
 
 from aws_proxy.shared.models import ProxyConfig, ProxyServiceConfig

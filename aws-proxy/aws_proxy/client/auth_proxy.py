@@ -3,8 +3,6 @@ import json
 import logging
 import os
 import re
-import subprocess
-import sys
 from functools import cache
 from typing import Dict, Optional, Tuple
 from urllib.parse import urlparse, urlunparse
@@ -24,10 +22,6 @@ from localstack.constants import (
     LOCALHOST_HOSTNAME,
 )
 from localstack.http import Request
-from localstack.pro.core.bootstrap.licensingv2 import (
-    ENV_LOCALSTACK_API_KEY,
-    ENV_LOCALSTACK_AUTH_TOKEN,
-)
 from localstack.utils.aws.aws_responses import requests_response
 from localstack.utils.bootstrap import setup_logging
 from localstack.utils.collections import select_attributes
@@ -50,6 +44,7 @@ from aws_proxy.shared.constants import HEADER_HOST_ORIGINAL, SERVICE_NAME_MAPPIN
 from aws_proxy.shared.models import AddProxyRequest, ProxyConfig
 
 LOG = logging.getLogger(__name__)
+
 LOG.setLevel(logging.INFO)
 if localstack_config.DEBUG:
     LOG.setLevel(logging.DEBUG)
@@ -75,15 +70,32 @@ class AuthProxyAWS(Server):
         super().__init__(port=port)
 
     def do_run(self):
+        self.register_in_instance()
+        self.run_server()
+
+    def run_server(self):
         # note: keep import here, to avoid runtime errors
         from .http2_server import run_server
 
-        self.register_in_instance()
         bind_host = self.config.get("bind_host") or DEFAULT_BIND_HOST
         proxy = run_server(
             port=self.port, bind_addresses=[bind_host], handler=self.proxy_request
         )
         proxy.join()
+
+    @classmethod
+    def start_from_config_file(cls, config_file: str, port: int):
+        config = json.load(open(config_file))
+        config["bind_host"] = "0.0.0.0"
+        cls(config, port=port).run_server()
+
+    @staticmethod
+    def register_proxy(
+        config_file: str, port: int, localstack_host: str, localstack_port: int = 4566
+    ):
+        config = json.load(open(config_file))
+        url = f"http://{localstack_host}:{localstack_port}{HANDLER_PATH_PROXIES}"
+        requests.post(url, json={"port": port, "config": config})
 
     def proxy_request(self, request: Request, data: bytes) -> Response:
         parsed = self._extract_region_and_service(request.headers)
@@ -464,8 +476,7 @@ def start_aws_auth_proxy_in_container(
         "AWS_ACCESS_KEY_ID",
         "AWS_SESSION_TOKEN",
         "AWS_DEFAULT_REGION",
-        ENV_LOCALSTACK_API_KEY,
-        ENV_LOCALSTACK_AUTH_TOKEN,
+        "LOCALSTACK_AUTH_TOKEN",
     ]
     env_vars = env_vars or os.environ
     env_vars = select_attributes(dict(env_vars), env_var_names)
@@ -477,42 +488,33 @@ def start_aws_auth_proxy_in_container(
         target_host = get_docker_host_from_container()
     env_vars["LOCALSTACK_HOST"] = target_host
 
-    # Use the Docker SDK command either if quiet mode is enabled, or if we're executing
-    # in Docker itself (e.g., within the LocalStack main container, as part of an init script)
-    use_docker_sdk_command = quiet or localstack_config.is_in_docker
-
     try:
         print("Proxy container is ready.")
-        command = f"{venv_activate}; localstack aws proxy -c {CONTAINER_CONFIG_FILE} -p {port} --host 0.0.0.0 > {CONTAINER_LOG_FILE} 2>&1"
-        if use_docker_sdk_command:
-            DOCKER_CLIENT.exec_in_container(
-                container_name,
-                command=["bash", "-c", command],
-                env_vars=env_vars,
-                interactive=True,
-            )
-        else:
-            env_vars_list = []
-            for key, value in env_vars.items():
-                env_vars_list += ["-e", f"{key}={value}"]
-            # note: using docker command directly, as our Docker client doesn't fully support log piping yet
-            command = [
-                "docker",
-                "exec",
-                "-it",
-                *env_vars_list,
-                container_name,
-                "bash",
-                "-c",
-                command,
-            ]
-            subprocess.run(command, stdout=sys.stdout, stderr=sys.stderr)
+        # Start proxy server in background using Python directly (no CLI dependency)
+        start_server_cmd = (
+            f"{venv_activate}; "
+            f'python -c "from aws_proxy.client.auth_proxy import AuthProxyAWS; '
+            f"AuthProxyAWS.start_from_config_file('{CONTAINER_CONFIG_FILE}', {port})\" "
+            f">> {CONTAINER_LOG_FILE} 2>&1 &"
+        )
+        # Wait for proxy server to start, then register with LocalStack
+        register_cmd = (
+            f"sleep 2 && {venv_activate}; "
+            f'python -c "from aws_proxy.client.auth_proxy import AuthProxyAWS; '
+            f"AuthProxyAWS.register_proxy('{CONTAINER_CONFIG_FILE}', {port}, '{target_host}')\" "
+            f">> {CONTAINER_LOG_FILE} 2>&1"
+        )
+        command = f"{start_server_cmd} {register_cmd}"
+        DOCKER_CLIENT.exec_in_container(
+            container_name,
+            command=["bash", "-c", command],
+            env_vars=env_vars,
+            interactive=False,
+        )
     except KeyboardInterrupt:
         pass
     except Exception as e:
         LOG.info("Error: %s", e)
-        if isinstance(e, subprocess.CalledProcessError):
-            LOG.info("Error in called process - output: %s\n%s", e.stdout, e.stderr)
     finally:
         try:
             if repl_config.CLEANUP_PROXY_CONTAINERS:
