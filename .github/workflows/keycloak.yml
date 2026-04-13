@@ -35,7 +35,7 @@ jobs:
 
           make install
           make dist
-          localstack extensions -v install file://$(ls ./dist/localstack_extension_keycloak-*.tar.gz)
+          localstack extensions -v install file://$(ls ./dist/localstack_keycloak-*.tar.gz)
 
           DEBUG=1 localstack start -d
           localstack wait
