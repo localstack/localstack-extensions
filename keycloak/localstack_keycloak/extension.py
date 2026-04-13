@@ -279,7 +279,7 @@ class KeycloakExtension(ProxiedDockerContainerExtension):
 
             provider_url = f"keycloak.{constants.LOCALHOST_HOSTNAME}:{config.get_edge_port_http()}/realms/{self.realm}"
             iam.create_open_id_connect_provider(
-                Url=f"http://{provider_url}",
+                Url=f"https://{provider_url}",
                 ClientIDList=[self.audience],
                 ThumbprintList=["0" * 40],
             )
