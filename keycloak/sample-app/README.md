@@ -59,7 +59,7 @@ flowchart TB
 ### 1. Start LocalStack
 
 ```bash
-EXTENSION_AUTO_INSTALL=localstack-extension-keycloak localstack start
+EXTENSION_AUTO_INSTALL=localstack-keycloak localstack start
 ```
 
 ### 2. Deploy the Stack
