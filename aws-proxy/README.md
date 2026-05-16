@@ -1,9 +1,11 @@
 AWS Cloud Proxy Extension
 =========================
-[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-aws-proxy&subdirectory=aws-proxy)
 
 A LocalStack extension to proxy and integrate AWS resources into your local machine.
 This enables one flavor of "hybrid" or "remocal" setups where you can easily bridge the gap between LocalStack (local resources) and remote AWS (resources in the real cloud).
+
+For a step-by-step tutorial, please refer to the documentation:
+https://docs.localstack.cloud/aws/tutorials/aws-proxy-localstack-extension/
 
 ## Prerequisites
 
