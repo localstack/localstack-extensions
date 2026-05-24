@@ -1,0 +1,24 @@
+# Python
+.venv/
+build/
+dist/
+.eggs/
+*egg-info/
+__pycache__/
+.pytest_cache/
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate*
+*.tfplan
+
+# OS
+.DS_Store
+
+# Temp files
+*.zip
+/tmp/
+
+# Ignored Directories
+sample-app-terraform/
