@@ -31,6 +31,7 @@ jobs:
           LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
         run: |
           docker pull localstack/localstack-pro &
+          sudo apt-get install -y libvirt-dev
           pip install localstack localstack-ext
 
           branchName=${GITHUB_HEAD_REF##*/}

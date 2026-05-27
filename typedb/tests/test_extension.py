@@ -1,7 +1,7 @@
 import requests
 import httpx
 from localstack.utils.strings import short_uid
-from typedb.driver import TypeDB, Credentials, DriverOptions, TransactionType
+from typedb.driver import TypeDB, Credentials, DriverOptions, DriverTlsConfig, TransactionType
 
 
 def test_connect_to_db_via_http_api():
@@ -46,7 +46,7 @@ def test_connect_to_db_via_grpc_endpoint():
     driver_cfg = TypeDB.driver(
         server_host,
         Credentials("admin", "password"),
-        DriverOptions(is_tls_enabled=False),
+        DriverOptions(DriverTlsConfig.disabled()),
     )
     with driver_cfg as driver:
         if driver.databases.contains(db_name):
