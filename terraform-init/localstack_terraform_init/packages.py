@@ -47,7 +47,7 @@ class TerraformPackageInstaller(ArchiveDownloadAndExtractInstaller):
 
 
 class TflocalPackage(Package):
-    def __init__(self, default_version: str = "0.24.1"):
+    def __init__(self, default_version: str = "0.26.0"):
         super().__init__(name="terraform_local", default_version=default_version)
 
     def _get_installer(self, version: str) -> PackageInstaller:
