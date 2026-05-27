@@ -1,0 +1,1151 @@
+{
+  "mappings": [
+    {
+      "id": "ebb30712-4642-4723-b172-280becedf43a",
+      "name": "Absence Period - response",
+      "request": {
+        "urlPath": "/company/time-offs/534813865",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : {\n    \"attributes\" : {\n      \"certificate\" : {\n        \"status\" : \"not-required\"\n      },\n      \"created_at\" : \"2017-01-17T10:32:18+0100\",\n      \"days_count\" : 3,\n      \"employee\" : {\n        \"attributes\" : {\n          \"email\" : {\n            \"label\" : \"Email\",\n            \"value\" : \"michael.miller@demo.com\"\n          },\n          \"first_name\" : {\n            \"label\" : \"First name\",\n            \"value\" : \"Michael\"\n          },\n          \"id\" : {\n            \"label\" : \"id\",\n            \"value\" : 2367\n          },\n          \"last_name\" : {\n            \"label\" : \"Last name\",\n            \"value\" : \"Miller\"\n          }\n        },\n        \"type\" : \"Employee\"\n      },\n      \"end_date\" : \"2017-12-29T00:00:00+0100\",\n      \"half_day_end\" : 0,\n      \"half_day_start\" : 0,\n      \"id\" : 12345,\n      \"start_date\" : \"2017-12-27T00:00:00+0100\",\n      \"status\" : \"approved\",\n      \"time_off_type\" : {\n        \"attributes\" : {\n          \"id\" : 45678,\n          \"name\" : \"Vacation\"\n        },\n        \"type\" : \"TimeOffType\"\n      }\n    },\n    \"type\" : \"TimeOffPeriod\"\n  },\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "ebb30712-4642-4723-b172-280becedf43a",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.333425Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 0
+    },
+    {
+      "id": "d0bfe8c6-cc51-4a02-a3e7-87a04916e901",
+      "name": "This endpoint is responsible for deleting absence period data for the company em... - response",
+      "request": {
+        "urlPath": "/company/time-offs/819168064",
+        "method": "DELETE"
+      },
+      "response": {
+        "status": 404,
+        "body": "{\n  \"error\" : {\n    \"code\" : 404,\n    \"message\" : \"The absence period was not found.\"\n  },\n  \"success\" : false\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "d0bfe8c6-cc51-4a02-a3e7-87a04916e901",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.333355Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "error": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "success",
+                "error"
+              ],
+              "title": "Default error response",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 1
+    },
+    {
+      "id": "fc9a8d96-6435-4013-8c81-3fec123f6885",
+      "name": "Show employee by ID - response",
+      "request": {
+        "urlPath": "/company/employees/1677463238",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : {\n    \"attributes\" : {\n      \"absence_entitlement\" : {\n        \"label\" : \"Absence entitlement\",\n        \"value\" : [ {\n          \"attributes\" : {\n            \"entitlement\" : 30,\n            \"id\" : 12345,\n            \"name\" : \"Paid Vacation\"\n          },\n          \"type\" : \"TimeOffType\"\n        }, {\n          \"attributes\" : {\n            \"entitlement\" : 0,\n            \"id\" : 12346,\n            \"name\" : \"Parental leave\"\n          },\n          \"type\" : \"TimeOffType\"\n        }, {\n          \"attributes\" : {\n            \"entitlement\" : 0,\n            \"id\" : 12347,\n            \"name\" : \"Sick days\"\n          },\n          \"type\" : \"TimeOffType\"\n        } ]\n      },\n      \"contract_end_date\" : {\n        \"label\" : \"Contract ends\",\n        \"value\" : {\n          \"$ref\" : \"#/components/schemas/UpdateAttendancePeriodRequest/example/comment\"\n        }\n      },\n      \"cost_centers\" : {\n        \"label\" : \"Cost center\",\n        \"value\" : [ {\n          \"attributes\" : {\n            \"id\" : 320,\n            \"name\" : \"Cost Center One\",\n            \"percentage\" : 50\n          },\n          \"type\" : \"CostCenter\"\n        }, {\n          \"attributes\" : {\n            \"id\" : 321,\n            \"name\" : \"Cost Center Two\",\n            \"percentage\" : 50\n          },\n          \"type\" : \"CostCenter\"\n        } ]\n      },\n      \"created_at\" : {\n        \"label\" : \"created_at\",\n        \"value\" : \"2016-10-20T16:15:55+0200\"\n      },\n      \"department\" : {\n        \"label\" : \"Department\",\n        \"value\" : {\n          \"attributes\" : {\n            \"name\" : \"Marketing\"\n          },\n          \"type\" : \"Department\"\n        }\n      },\n      \"dynamic_21827\" : {\n        \"label\" : \"IBAN\",\n        \"value\" : \"DE98 8989 9898 0000 8989 00\"\n      },\n      \"dynamic_24407\" : {\n        \"label\" : \"Titel\",\n        \"value\" : \"Dr\"\n      },\n      \"email\" : {\n        \"label\" : \"Email\",\n        \"value\" : \"andreas.anderson@demo.com\"\n      },\n      \"employment_type\" : {\n        \"label\" : \"Employment type\",\n        \"value\" : \"internal\"\n      },\n      \"first_name\" : {\n        \"label\" : \"First name\",\n        \"value\" : \"Andreas\"\n      },\n      \"fix_salary\" : {\n        \"label\" : \"Fix salary\",\n        \"value\" : 4000\n      },\n      \"gender\" : {\n        \"label\" : \"Gender\",\n        \"value\" : \"male\"\n      },\n      \"hire_date\" : {\n        \"label\" : \"Hire date\",\n        \"value\" : \"2012-02-01T00:00:00+0100\"\n      },\n      \"holiday_calendar\" : {\n        \"label\" : \"Holiday Calendar\",\n        \"value\" : {\n          \"attributes\" : {\n            \"country\" : \"DE\",\n            \"id\" : 931,\n            \"name\" : \"DE (Hamburg) Feiertage\",\n            \"state\" : \"Hamburg\"\n          },\n          \"type\" : \"HolidayCalendar\"\n        }\n      },\n      \"hourly_salary\" : {\n        \"label\" : \"Hourly salary\",\n        \"value\" : 0\n      },\n      \"id\" : {\n        \"label\" : \"id\",\n        \"value\" : 83752\n      },\n      \"last_modified_at\" : {\n        \"label\" : \"Last modified\",\n        \"value\" : \"2016-10-22T16:15:55+0200\"\n      },\n      \"last_name\" : {\n        \"label\" : \"Last name\",\n        \"value\" : \"Anderson\"\n      },\n      \"last_working_day\" : {\n        \"label\" : \"Last working day\",\n        \"value\" : \"2017-02-28T00:00:00+0200\"\n      },\n      \"office\" : {\n        \"label\" : \"Office\",\n        \"value\" : {\n          \"attributes\" : {\n            \"name\" : \"Munich\"\n          },\n          \"type\" : \"Office\"\n        }\n      },\n      \"position\" : {\n        \"label\" : \"Position\",\n        \"value\" : \"Online Marketing Specialist\"\n      },\n      \"probation_period_end\" : {\n        \"label\" : \"Probation period end\",\n        \"value\" : \"2012-07-31T00:00:00+0200\"\n      },\n      \"status\" : {\n        \"label\" : \"Status\",\n        \"value\" : \"active\"\n      },\n      \"supervisor\" : {\n        \"label\" : \"Supervisor\",\n        \"value\" : {\n          \"attributes\" : {\n            \"email\" : {\n              \"label\" : \"Email\",\n              \"value\" : \"max.mustermann@example.org\"\n            },\n            \"first_name\" : {\n              \"label\" : \"First name\",\n              \"value\" : \"Max\"\n            },\n            \"id\" : {\n              \"label\" : \"id\",\n              \"value\" : 423506\n            },\n            \"last_name\" : {\n              \"label\" : \"Last name\",\n              \"value\" : \"Mustermann\"\n            }\n          },\n          \"type\" : \"Employee\"\n        }\n      },\n      \"termination_date\" : {\n        \"label\" : \"Termination date\",\n        \"value\" : {\n          \"$ref\" : \"#/components/schemas/UpdateAttendancePeriodRequest/example/comment\"\n        }\n      },\n      \"termination_reason\" : {\n        \"label\" : \"Termination reason\",\n        \"value\" : \"\"\n      },\n      \"termination_type\" : {\n        \"label\" : \"Termination type\",\n        \"value\" : \"\"\n      },\n      \"vacation_day_balance\" : {\n        \"label\" : \"Vacation day balance\",\n        \"value\" : 28.5\n      },\n      \"weekly_working_hours\" : {\n        \"label\" : \"Weekly hours\",\n        \"value\" : \"40\"\n      },\n      \"work_schedule\" : {\n        \"label\" : \"Work Schedule\",\n        \"value\" : {\n          \"attributes\" : {\n            \"friday\" : \"06:00\",\n            \"id\" : 123,\n            \"monday\" : \"08:30\",\n            \"name\" : \"Standard Hours\",\n            \"saturday\" : \"00:00\",\n            \"sunday\" : \"00:00\",\n            \"thursday\" : \"08:30\",\n            \"tuesday\" : \"08:30\",\n            \"wednesday\" : \"08:30\"\n          },\n          \"type\" : \"WorkSchedule\"\n        }\n      }\n    },\n    \"type\" : \"Employee\"\n  },\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "fc9a8d96-6435-4013-8c81-3fec123f6885",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.332514Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Response"
+                },
+                {
+                  "properties": {
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Employee"
+                        }
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              ],
+              "title": "Employee"
+            }
+          }
+        }
+      },
+      "insertionIndex": 10
+    },
+    {
+      "id": "b031301f-5cd2-4aac-9db3-54fb395aafc6",
+      "name": "Create an employee - response",
+      "request": {
+        "urlPath": "/company/employees",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : {\n    \"id\" : 81723,\n    \"message\" : \"success\"\n  },\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "b031301f-5cd2-4aac-9db3-54fb395aafc6",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.332411Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Response"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "insertionIndex": 11
+    },
+    {
+      "id": "df4679ad-d164-4f0a-b1e0-df128c28b0ce",
+      "name": "List Employees - response",
+      "request": {
+        "urlPath": "/company/employees",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : [ {\n    \"attributes\" : {\n      \"absence_entitlement\" : {\n        \"label\" : \"Absence entitlement\",\n        \"value\" : [ {\n          \"attributes\" : {\n            \"entitlement\" : 30,\n            \"id\" : 12345,\n            \"name\" : \"Paid Vacation\"\n          },\n          \"type\" : \"TimeOffType\"\n        }, {\n          \"attributes\" : {\n            \"entitlement\" : 0,\n            \"id\" : 12346,\n            \"name\" : \"Parental leave\"\n          },\n          \"type\" : \"TimeOffType\"\n        }, {\n          \"attributes\" : {\n            \"entitlement\" : 0,\n            \"id\" : 12347,\n            \"name\" : \"Sick days\"\n          },\n          \"type\" : \"TimeOffType\"\n        } ]\n      },\n      \"contract_end_date\" : {\n        \"label\" : \"Contract ends\",\n        \"value\" : {\n          \"$ref\" : \"#/components/schemas/UpdateAttendancePeriodRequest/example/comment\"\n        }\n      },\n      \"cost_centers\" : {\n        \"label\" : \"Cost center\",\n        \"value\" : [ {\n          \"attributes\" : {\n            \"id\" : 320,\n            \"name\" : \"Cost Center One\",\n            \"percentage\" : 50\n          },\n          \"type\" : \"CostCenter\"\n        }, {\n          \"attributes\" : {\n            \"id\" : 321,\n            \"name\" : \"Cost Center Two\",\n            \"percentage\" : 50\n          },\n          \"type\" : \"CostCenter\"\n        } ]\n      },\n      \"created_at\" : {\n        \"label\" : \"created_at\",\n        \"value\" : \"2016-10-20T16:15:55+0200\"\n      },\n      \"department\" : {\n        \"label\" : \"Department\",\n        \"value\" : {\n          \"attributes\" : {\n            \"name\" : \"Marketing\"\n          },\n          \"type\" : \"Department\"\n        }\n      },\n      \"dynamic_21827\" : {\n        \"label\" : \"IBAN\",\n        \"value\" : \"DE98 8989 9898 0000 8989 00\"\n      },\n      \"dynamic_24407\" : {\n        \"label\" : \"Titel\",\n        \"value\" : \"Dr\"\n      },\n      \"email\" : {\n        \"label\" : \"Email\",\n        \"value\" : \"andreas.anderson@demo.com\"\n      },\n      \"employment_type\" : {\n        \"label\" : \"Employment type\",\n        \"value\" : \"internal\"\n      },\n      \"first_name\" : {\n        \"label\" : \"First name\",\n        \"value\" : \"Andreas\"\n      },\n      \"fix_salary\" : {\n        \"label\" : \"Fix salary\",\n        \"value\" : 4000\n      },\n      \"gender\" : {\n        \"label\" : \"Gender\",\n        \"value\" : \"male\"\n      },\n      \"hire_date\" : {\n        \"label\" : \"Hire date\",\n        \"value\" : \"2012-02-01T00:00:00+0100\"\n      },\n      \"holiday_calendar\" : {\n        \"label\" : \"Holiday Calendar\",\n        \"value\" : {\n          \"attributes\" : {\n            \"country\" : \"DE\",\n            \"id\" : 931,\n            \"name\" : \"DE (Hamburg) Feiertage\",\n            \"state\" : \"Hamburg\"\n          },\n          \"type\" : \"HolidayCalendar\"\n        }\n      },\n      \"hourly_salary\" : {\n        \"label\" : \"Hourly salary\",\n        \"value\" : 0\n      },\n      \"id\" : {\n        \"label\" : \"id\",\n        \"value\" : 83752\n      },\n      \"last_modified_at\" : {\n        \"label\" : \"Last modified\",\n        \"value\" : \"2016-10-22T16:15:55+0200\"\n      },\n      \"last_name\" : {\n        \"label\" : \"Last name\",\n        \"value\" : \"Anderson\"\n      },\n      \"last_working_day\" : {\n        \"label\" : \"Last working day\",\n        \"value\" : \"2017-02-28T00:00:00+0200\"\n      },\n      \"office\" : {\n        \"label\" : \"Office\",\n        \"value\" : {\n          \"attributes\" : {\n            \"name\" : \"Munich\"\n          },\n          \"type\" : \"Office\"\n        }\n      },\n      \"position\" : {\n        \"label\" : \"Position\",\n        \"value\" : \"Online Marketing Specialist\"\n      },\n      \"probation_period_end\" : {\n        \"label\" : \"Probation period end\",\n        \"value\" : \"2012-07-31T00:00:00+0200\"\n      },\n      \"profile_picture\" : {\n        \"label\" : \"Profile Picture\",\n        \"value\" : \"http://api.dev.personio.de/v1/company/employees/2/profile-picture\"\n      },\n      \"status\" : {\n        \"label\" : \"Status\",\n        \"value\" : \"active\"\n      },\n      \"supervisor\" : {\n        \"label\" : \"Supervisor\",\n        \"value\" : {\n          \"attributes\" : {\n            \"email\" : {\n              \"label\" : \"Email\",\n              \"value\" : \"max.mustermann@example.org\"\n            },\n            \"first_name\" : {\n              \"label\" : \"First name\",\n              \"value\" : \"Max\"\n            },\n            \"id\" : {\n              \"label\" : \"id\",\n              \"value\" : 423506\n            },\n            \"last_name\" : {\n              \"label\" : \"Last name\",\n              \"value\" : \"Mustermann\"\n            }\n          },\n          \"type\" : \"Employee\"\n        }\n      },\n      \"termination_date\" : {\n        \"label\" : \"Termination date\",\n        \"value\" : {\n          \"$ref\" : \"#/components/schemas/UpdateAttendancePeriodRequest/example/comment\"\n        }\n      },\n      \"termination_reason\" : {\n        \"label\" : \"Termination reason\",\n        \"value\" : \"\"\n      },\n      \"termination_type\" : {\n        \"label\" : \"Termination type\",\n        \"value\" : \"\"\n      },\n      \"vacation_day_balance\" : {\n        \"label\" : \"Vacation day balance\",\n        \"value\" : 28.5\n      },\n      \"weekly_working_hours\" : {\n        \"label\" : \"Weekly hours\",\n        \"value\" : \"40\"\n      },\n      \"work_schedule\" : {\n        \"label\" : \"Work Schedule\",\n        \"value\" : {\n          \"attributes\" : {\n            \"friday\" : \"06:00\",\n            \"id\" : 123,\n            \"monday\" : \"08:30\",\n            \"name\" : \"Standard Hours\",\n            \"saturday\" : \"00:00\",\n            \"sunday\" : \"00:00\",\n            \"thursday\" : \"08:30\",\n            \"tuesday\" : \"08:30\",\n            \"wednesday\" : \"08:30\"\n          },\n          \"type\" : \"WorkSchedule\"\n        }\n      }\n    },\n    \"type\" : \"Employee\"\n  } ],\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "df4679ad-d164-4f0a-b1e0-df128c28b0ce",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.33237Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Response"
+                },
+                {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/Employee"
+                          }
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              ],
+              "title": "List of Employees"
+            }
+          }
+        }
+      },
+      "insertionIndex": 12
+    },
+    {
+      "id": "70ef2812-25f6-4895-9db7-0dc36932b883",
+      "name": "This endpoint is responsible for updating attendance data for the company employ... - response",
+      "request": {
+        "urlPath": "/company/attendances/1239382684",
+        "method": "PATCH"
+      },
+      "response": {
+        "status": 404,
+        "body": "{\n  \"error\" : {\n    \"code\" : 404,\n    \"message\" : \"The attendance period was not found.\"\n  },\n  \"success\" : false\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "70ef2812-25f6-4895-9db7-0dc36932b883",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.332252Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "error": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "success",
+                "error"
+              ],
+              "title": "Default error response",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 13
+    },
+    {
+      "id": "1dd1f1a7-047d-472d-a1fc-df72c9cac750",
+      "name": "This endpoint is responsible for updating attendance data for the company employ... - response",
+      "request": {
+        "urlPath": "/company/attendances/1917119796",
+        "method": "PATCH"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : {\n    \"message\" : \"The attendance period was updated.\"\n  },\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "1dd1f1a7-047d-472d-a1fc-df72c9cac750",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.332198Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "data": {
+                  "type": "object"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "success",
+                "data"
+              ],
+              "title": "Default response object",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 14
+    },
+    {
+      "id": "2790dcb0-888b-4e8d-941e-a71917cb338f",
+      "name": "This endpoint is responsible for deleting attendance data for the company employ... - response",
+      "request": {
+        "urlPath": "/company/attendances/1096344792",
+        "method": "DELETE"
+      },
+      "response": {
+        "status": 404,
+        "body": "{\n  \"error\" : {\n    \"code\" : 404,\n    \"message\" : \"The attendance period was not found.\"\n  },\n  \"success\" : false\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "2790dcb0-888b-4e8d-941e-a71917cb338f",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.332148Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "error": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "success",
+                "error"
+              ],
+              "title": "Default error response",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 15
+    },
+    {
+      "id": "65aa27e4-8474-4330-a57f-5af55b70dfd8",
+      "name": "This endpoint is responsible for deleting attendance data for the company employ... - response",
+      "request": {
+        "urlPath": "/company/attendances/1532793895",
+        "method": "DELETE"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : {\n    \"message\" : \"The attendance period was deleted.\"\n  },\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "65aa27e4-8474-4330-a57f-5af55b70dfd8",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.332072Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "data": {
+                  "type": "object"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "success",
+                "data"
+              ],
+              "title": "Default response object",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 16
+    },
+    {
+      "id": "2220a60e-0e82-44c0-95e0-c76dd4c0797a",
+      "name": "This endpoint is responsible for adding attendance data for the company employee... - response",
+      "request": {
+        "urlPath": "/company/attendances",
+        "method": "POST"
+      },
+      "response": {
+        "status": 400,
+        "body": "{\n  \"error\" : {\n    \"code\" : 400,\n    \"detailed_message\" : [ {\n      \"break\" : 60,\n      \"comment\" : \"\",\n      \"date\" : \"2017-01-01\",\n      \"employee\" : 1234,\n      \"end_time\" : \"18:00\",\n      \"error_msg\" : {\n        \"$ref\" : \"#/components/schemas/UpdateAttendancePeriodRequest/example/comment\"\n      },\n      \"id\" : 1,\n      \"start_time\" : \"09:00\",\n      \"success\" : true\n    }, {\n      \"break\" : 60,\n      \"comment\" : \"\",\n      \"date\" : \"2017-01-01\",\n      \"employee\" : 1234,\n      \"end_time\" : \"18:00\",\n      \"error_msg\" : \"Existing overlapping attendances periods\",\n      \"id\" : {\n        \"$ref\" : \"#/components/schemas/UpdateAttendancePeriodRequest/example/comment\"\n      },\n      \"start_time\" : \"09:00\",\n      \"success\" : false\n    } ],\n    \"message\" : \"Error when trying to insert Attendances periods rows\"\n  },\n  \"success\" : false\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "2220a60e-0e82-44c0-95e0-c76dd4c0797a",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.331994Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "error": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "detailed_message": {
+                      "items": {
+                        "properties": {
+                          "break": {
+                            "type": "integer"
+                          },
+                          "comment": {
+                            "type": "string"
+                          },
+                          "date": {
+                            "type": "string"
+                          },
+                          "employee": {
+                            "type": "integer"
+                          },
+                          "end_time": {
+                            "type": "string"
+                          },
+                          "error_msg": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "start_time": {
+                            "type": "string"
+                          },
+                          "success": {
+                            "type": "boolean"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "success",
+                "error"
+              ],
+              "title": "Default error response",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 17
+    },
+    {
+      "id": "57f46551-14af-406f-9865-dd6ca97e631a",
+      "name": "This endpoint is responsible for adding attendance data for the company employee... - response",
+      "request": {
+        "urlPath": "/company/attendances",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : {\n    \"id\" : [ 1, 2 ],\n    \"message\" : \"success\"\n  },\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "57f46551-14af-406f-9865-dd6ca97e631a",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.331803Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Response"
+                },
+                {
+                  "properties": {
+                    "data": {
+                      "properties": {
+                        "id": {
+                          "items": {
+                            "type": "integer"
+                          },
+                          "type": "array"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              ],
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 18
+    },
+    {
+      "id": "0c4a2fb7-cd71-4a0f-90c4-fbad96f0a113",
+      "name": "This endpoint is responsible for fetching attendance data for the company employ... - response",
+      "request": {
+        "urlPath": "/company/attendances",
+        "method": "GET",
+        "queryParameters": {
+          "end_date": {
+            "equalTo": "2022-05-25Z"
+          },
+          "start_date": {
+            "equalTo": "2023-12-09Z"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : [ {\n    \"attributes\" : {\n      \"break\" : 50,\n      \"comment\" : \"I was productive as hell\",\n      \"date\" : \"2017-01-17\",\n      \"employee\" : 325659,\n      \"end_time\" : \"18:00\",\n      \"is_holiday\" : false,\n      \"is_on_time_off\" : false,\n      \"start_time\" : \"9:00\",\n      \"updated_at\" : \"2017-01-17T16:41:08+00:00\"\n    },\n    \"id\" : 1234,\n    \"type\" : \"AttendancePeriod\"\n  }, {\n    \"attributes\" : {\n      \"break\" : 60,\n      \"comment\" : {\n        \"$ref\" : \"#/components/schemas/UpdateAttendancePeriodRequest/example/comment\"\n      },\n      \"date\" : \"2017-01-18\",\n      \"employee\" : 325660,\n      \"end_time\" : \"18:30\",\n      \"is_holiday\" : false,\n      \"is_on_time_off\" : true,\n      \"start_time\" : \"9:30\",\n      \"updated_at\" : \"2017-01-18T16:41:08+01:00\"\n    },\n    \"id\" : 1235,\n    \"type\" : \"AttendancePeriod\"\n  } ],\n  \"limit\" : 200,\n  \"offset\" : 0,\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "0c4a2fb7-cd71-4a0f-90c4-fbad96f0a113",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.33167Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Response"
+                },
+                {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "attributes": {
+                            "items": {
+                              "properties": {
+                                "break": {
+                                  "type": "integer"
+                                },
+                                "comment": {
+                                  "type": "string"
+                                },
+                                "date": {
+                                  "format": "date",
+                                  "type": "string"
+                                },
+                                "employee": {
+                                  "type": "integer"
+                                },
+                                "end_time": {
+                                  "pattern": "^\\d\\d:\\d\\d$",
+                                  "type": "string"
+                                },
+                                "is_holiday": {
+                                  "type": "boolean"
+                                },
+                                "is_on_time_off": {
+                                  "type": "boolean"
+                                },
+                                "start_time": {
+                                  "pattern": "^\\d\\d:\\d\\d$",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "employee",
+                                "date",
+                                "start_time",
+                                "end_time",
+                                "break",
+                                "comment",
+                                "is_holiday",
+                                "is_on_time_off"
+                              ],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "attributes"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              ],
+              "title": "List All Attenance Periods response",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 19
+    },
+    {
+      "id": "d2ff7a9e-9ada-47a1-8af2-ed30c903c379",
+      "name": "This endpoint is responsible for deleting absence period data for the company em... - response",
+      "request": {
+        "urlPath": "/company/time-offs/662916681",
+        "method": "DELETE"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : {\n    \"message\" : \"The absence period was deleted.\"\n  },\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "d2ff7a9e-9ada-47a1-8af2-ed30c903c379",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.333301Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "data": {
+                  "type": "object"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "success",
+                "data"
+              ],
+              "title": "Default response object",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 2
+    },
+    {
+      "id": "30aec6ac-3d7c-41bb-995f-3234dc6831df",
+      "name": "This endpoint is responsible for adding absence data for the company employees. - response",
+      "request": {
+        "urlPath": "/company/time-offs",
+        "method": "POST"
+      },
+      "response": {
+        "status": 422,
+        "body": "{\n  \"error\" : {\n    \"code\" : 0,\n    \"error_data\" : \"{...}\",\n    \"message\" : \"The given data failed to pass validation.\"\n  },\n  \"success\" : false\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "30aec6ac-3d7c-41bb-995f-3234dc6831df",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.333237Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "error": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "success",
+                "error"
+              ],
+              "title": "Default error response",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 3
+    },
+    {
+      "id": "c451f836-7711-49b5-ac41-466c379d8b16",
+      "name": "This endpoint is responsible for adding absence data for the company employees. - response",
+      "request": {
+        "urlPath": "/company/time-offs",
+        "method": "POST"
+      },
+      "response": {
+        "status": 404,
+        "body": "{\n  \"error\" : {\n    \"code\" : 0,\n    \"message\" : \"Something went wrong\"\n  },\n  \"success\" : false\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "c451f836-7711-49b5-ac41-466c379d8b16",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.333186Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "error": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "success",
+                "error"
+              ],
+              "title": "Default error response",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 4
+    },
+    {
+      "id": "ae95ada3-e217-4d82-81aa-7d41c873ee5d",
+      "name": "This endpoint is responsible for adding absence data for the company employees. - response",
+      "request": {
+        "urlPath": "/company/time-offs",
+        "method": "POST"
+      },
+      "response": {
+        "status": 400,
+        "body": "{\n  \"error\" : {\n    \"code\" : 400,\n    \"message\" : \"Error when trying to insert absence period\"\n  },\n  \"success\" : false\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "ae95ada3-e217-4d82-81aa-7d41c873ee5d",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.333135Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "error": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "success",
+                "error"
+              ],
+              "title": "Default error response",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 5
+    },
+    {
+      "id": "282c4a26-aeeb-491f-9610-c7b4459925ba",
+      "name": "This endpoint is responsible for adding absence data for the company employees. - response",
+      "request": {
+        "urlPath": "/company/time-offs",
+        "method": "POST"
+      },
+      "response": {
+        "status": 201,
+        "body": "{\n  \"data\" : {\n    \"attributes\" : {\n      \"certificate\" : {\n        \"status\" : \"not-required\"\n      },\n      \"created_at\" : \"2017-01-17T10:32:18+0100\",\n      \"days_count\" : 3,\n      \"employee\" : {\n        \"attributes\" : {\n          \"email\" : {\n            \"label\" : \"Email\",\n            \"value\" : \"michael.miller@demo.com\"\n          },\n          \"first_name\" : {\n            \"label\" : \"First name\",\n            \"value\" : \"Michael\"\n          },\n          \"id\" : {\n            \"label\" : \"id\",\n            \"value\" : 4567\n          },\n          \"last_name\" : {\n            \"label\" : \"Last name\",\n            \"value\" : \"Miller\"\n          }\n        },\n        \"type\" : \"Employee\"\n      },\n      \"end_date\" : \"2017-12-29T00:00:00+0100\",\n      \"half_day_end\" : 0,\n      \"half_day_start\" : 0,\n      \"id\" : 12345,\n      \"start_date\" : \"2017-12-27T00:00:00+0100\",\n      \"status\" : \"approved\",\n      \"time_off_type\" : {\n        \"attributes\" : {\n          \"id\" : 54321,\n          \"name\" : \"Vacation\"\n        },\n        \"type\" : \"TimeOffType\"\n      }\n    },\n    \"type\" : \"TimeOffPeriod\"\n  },\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "282c4a26-aeeb-491f-9610-c7b4459925ba",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.333072Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/CreateTimeOffPeriodResponse"
+                }
+              },
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 6
+    },
+    {
+      "id": "1752f3bf-30e3-4f41-ae05-98eb547e2154",
+      "name": "This endpoint is responsible for fetching absence data for the company employees... - response",
+      "request": {
+        "urlPath": "/company/time-offs",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : [ {\n    \"attributes\" : {\n      \"certificate\" : {\n        \"status\" : \"not-required\"\n      },\n      \"created_at\" : \"2017-01-17T10:32:18+0100\",\n      \"days_count\" : 3,\n      \"employee\" : {\n        \"attributes\" : {\n          \"email\" : {\n            \"label\" : \"Email\",\n            \"value\" : \"michael.miller@demo.com\"\n          },\n          \"first_name\" : {\n            \"label\" : \"First name\",\n            \"value\" : \"Michael\"\n          },\n          \"id\" : {\n            \"label\" : \"id\",\n            \"value\" : 4567\n          },\n          \"last_name\" : {\n            \"label\" : \"Last name\",\n            \"value\" : \"Miller\"\n          }\n        },\n        \"type\" : \"Employee\"\n      },\n      \"end_date\" : \"2017-12-29T00:00:00+0100\",\n      \"half_day_end\" : 0,\n      \"half_day_start\" : 0,\n      \"id\" : 12345,\n      \"start_date\" : \"2017-12-27T00:00:00+0100\",\n      \"status\" : \"approved\",\n      \"time_off_type\" : {\n        \"attributes\" : {\n          \"id\" : 54321,\n          \"name\" : \"Vacation\"\n        },\n        \"type\" : \"TimeOffType\"\n      }\n    },\n    \"type\" : \"TimeOffPeriod\"\n  } ],\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "1752f3bf-30e3-4f41-ae05-98eb547e2154",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.333011Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Response"
+                },
+                {
+                  "properties": {
+                    "data": {
+                      "properties": {
+                        "attributes": {
+                          "items": {
+                            "properties": {
+                              "certificate": {
+                                "properties": {
+                                  "status": {
+                                    "type": "string"
+                                  }
+                                },
+                                "type": "object"
+                              },
+                              "created_at": {
+                                "type": "string"
+                              },
+                              "days_count": {
+                                "type": "number"
+                              },
+                              "employee": {
+                                "properties": {
+                                  "attributes": {
+                                    "items": {
+                                      "properties": {
+                                        "email": {
+                                          "type": "string"
+                                        },
+                                        "first_name": {
+                                          "type": "string"
+                                        },
+                                        "id": {
+                                          "type": "integer"
+                                        },
+                                        "last_name": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "type": "object"
+                                    },
+                                    "type": "array"
+                                  },
+                                  "type": {
+                                    "type": "string"
+                                  }
+                                },
+                                "type": "object"
+                              },
+                              "end_date": {
+                                "type": "string"
+                              },
+                              "half_day_end": {
+                                "type": "number"
+                              },
+                              "half_day_start": {
+                                "type": "number"
+                              },
+                              "id": {
+                                "type": "integer"
+                              },
+                              "start_date": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "time_off_type": {
+                                "properties": {
+                                  "attributes": {
+                                    "items": {
+                                      "properties": {
+                                        "id": {
+                                          "type": "integer"
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "type": "object"
+                                    },
+                                    "type": "array"
+                                  },
+                                  "type": {
+                                    "type": "string"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "attributes"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              ],
+              "title": "List All Absence Periods response",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 7
+    },
+    {
+      "id": "f3c0b419-6ded-4dc6-94c1-40d7a4ac89c1",
+      "name": "Provides a list of available time-off types, for example 'Paid vacation', 'Paren... - response",
+      "request": {
+        "urlPath": "/company/time-off-types",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "body": "{\n  \"data\" : [ {\n    \"attributes\" : {\n      \"name\" : \"Paid vacation\"\n    },\n    \"id\" : 1234,\n    \"type\" : \"TimeOffType\"\n  }, {\n    \"attributes\" : {\n      \"name\" : \"Home office\"\n    },\n    \"id\" : 1235,\n    \"type\" : \"TimeOffType\"\n  } ],\n  \"success\" : true\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "uuid": "f3c0b419-6ded-4dc6-94c1-40d7a4ac89c1",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.332643Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "properties": {
+                "data": {
+                  "items": {
+                    "$ref": "#/components/schemas/TimeOffTypeResource"
+                  },
+                  "type": "array"
+                },
+                "success": {
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            }
+          }
+        }
+      },
+      "insertionIndex": 8
+    },
+    {
+      "id": "914f69d2-ea50-42e0-8ee8-3efeaf2c25a4",
+      "name": "Show employee profile picture",
+      "request": {
+        "urlPath": "/company/employees/1731593678/profile-picture/1052375224",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "body": "\"ejtfe55m5aw8nweskjhu9n1t40o9k37bqpo48gi2gc6fwfcrawm53v16vmnack09ai1xb3ay3yojkz85dn7mdhku7x36d5c7lnkbkd37ecgcnox8mfktnlsiafoaazb1c7ctzk02q367tujps8l0sqask3ttth9uqyucomh1ax4kh\"",
+        "headers": {
+          "Content-Type": "image/png"
+        }
+      },
+      "uuid": "914f69d2-ea50-42e0-8ee8-3efeaf2c25a4",
+      "persistent": true,
+      "metadata": {
+        "mocklab": {
+          "created": {
+            "at": "2023-03-28T09:23:58.332578Z",
+            "via": "OAS3_IMPORT"
+          },
+          "oas": {
+            "operationId": "(none)",
+            "schema": {
+              "format": "binary",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "insertionIndex": 9
+    }
+  ]
+}
