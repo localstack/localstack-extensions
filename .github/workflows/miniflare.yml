@@ -45,7 +45,7 @@ jobs:
       - name: Run test
         env:
           CLOUDFLARE_API_TOKEN: test
-          CLOUDFLARE_API_BASE_URL: "http://localhost:4566/miniflare"
+          CLOUDFLARE_API_BASE_URL: "https://localhost.localstack.cloud:4566/miniflare"
         run: |
           cd miniflare/example
           npm install
