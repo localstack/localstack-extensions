@@ -2,15 +2,14 @@
 
 # Import stubs into OSS WireMock (for WireMock Runner, use setup-wiremock-runner.sh)
 
-STUBS_URL="${STUBS_URL:-https://library.wiremock.org/catalog/api/p/personio.de/personio-de-personnel/personio.de-personnel-stubs.json}"
-TMP_STUBS_FILE="/tmp/personio-stubs.json"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STUBS_FILE="${SCRIPT_DIR}/../sample-app-oss/stubs.json"
 WIREMOCK_URL="${WIREMOCK_URL:-http://wiremock.localhost.localstack.cloud:4566}"
 
-echo "Downloading stubs from ${STUBS_URL}..."
-curl -s -o "$TMP_STUBS_FILE" "$STUBS_URL"
-
+# Note: stubs are bundled locally because library.wiremock.org now redirects to HTML
+# rather than serving the JSON file directly, making the remote URL unreliable.
 echo "Importing stubs into WireMock at ${WIREMOCK_URL}..."
-curl -v -X POST -H "Content-Type: application/json" --data-binary "@$TMP_STUBS_FILE" "${WIREMOCK_URL}/__admin/mappings/import"
+curl -v -X POST -H "Content-Type: application/json" --data-binary "@$STUBS_FILE" "${WIREMOCK_URL}/__admin/mappings/import"
 
 echo ""
 echo "Verify stubs at: ${WIREMOCK_URL}/__admin/mappings"

@@ -31,18 +31,16 @@ jobs:
           LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
         run: |
           docker pull localstack/localstack-pro &
+          sudo apt-get install -y libvirt-dev
           pip install localstack localstack-ext
 
-          branchName=${GITHUB_HEAD_REF##*/}
-          if [ "$branchName" = "" ]; then branchName=main; fi
-          echo "Installing from branch name $branchName"
           localstack extensions init
-          localstack extensions install "git+https://github.com/localstack/localstack-extensions.git@"$branchName"#egg=localstack-extension-miniflare&subdirectory=miniflare"
+          localstack extensions install "file://$(pwd)/miniflare"
 
           DEBUG=1 localstack start -d
           localstack wait
           curl http://localhost:4566/_localstack/health
-          curl http://localhost:4566/miniflare/user
+          curl --fail http://localhost:4566/miniflare/user
 
       - name: Run test
         env:
