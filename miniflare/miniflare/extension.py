@@ -75,7 +75,6 @@ def _patch_tls_disable_http2():
     (TLSMultiplexer / TwistedRuntimeServer). Proper HTTP/2 support would require
     integrating H2Connection's stream-based request lifecycle with rolo's gateway model,
     likely via an ASGI-style adapter rather than WSGI.
-    See: https://github.com/localstack/localstack-extensions/issues (track upstream fix here)
     """
     try:
         from rolo.serving.twisted import TwistedGateway
