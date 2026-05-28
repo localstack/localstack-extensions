@@ -1,4 +1,3 @@
-import pytest
 import requests
 import httpx
 from localstack.utils.strings import short_uid
