@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-cloudformation": "^3.700.0",
-    "aws-cdk-lib": "^2.170.0",
+    "aws-cdk-lib": "^2.246.0",
     "constructs": "^10.3.0"
   }
 }
