@@ -1,6 +1,8 @@
 name: LocalStack Extensions Utils Tests
 
 on:
+  schedule:
+    - cron: '0 2 * * 1-5'
   push:
     paths:
       - utils/**

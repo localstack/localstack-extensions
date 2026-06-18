@@ -1,6 +1,8 @@
 name: LocalStack WireMock Extension Tests
 
 on:
+  schedule:
+    - cron: '0 2 * * 1-5'
   pull_request:
     branches:
       - main

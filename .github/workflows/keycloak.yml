@@ -1,6 +1,8 @@
 name: LocalStack Keycloak Extension Tests
 
 on:
+  schedule:
+    - cron: '0 2 * * 1-5'
   push:
     paths:
       - keycloak/**
