@@ -12,32 +12,29 @@ on:
       - miniflare/**
   workflow_dispatch:
 
+env:
+  LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+
 jobs:
   tests-miniflare:
     name: Run extension tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Python 3.x
-        id: setup-python
-        uses: actions/setup-python@v4
+        uses: actions/checkout@v6
         with:
-          python-version: '3.13'
+          persist-credentials: true
 
       - name: Install LocalStack and extension
-        env:
-          LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
         run: |
-          docker pull localstack/localstack-pro &
-          pip install localstack localstack-ext
+          cd miniflare
 
-          branchName=${GITHUB_HEAD_REF##*/}
-          if [ "$branchName" = "" ]; then branchName=main; fi
-          echo "Installing from branch name $branchName"
-          localstack extensions init
-          localstack extensions install "git+https://github.com/localstack/localstack-extensions.git@"$branchName"#egg=localstack-extension-miniflare&subdirectory=miniflare"
+          docker pull localstack/localstack-pro &
+          pip install localstack
+
+          make install
+          make dist
+          localstack extensions -v install file://$(ls ./dist/localstack_extension_miniflare-*.tar.gz)
 
           DEBUG=1 localstack start -d
           localstack wait
