@@ -78,7 +78,7 @@ resource "aws_lambda_function" "hr_info_lambda" {
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
   handler = "handler.get_time_off"
-  runtime = "python3.9"
+  runtime = "python3.12"
 
   # Add a timeout for the function
   timeout = 10
