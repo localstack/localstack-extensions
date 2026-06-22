@@ -23,6 +23,8 @@ jobs:
   integration-tests:
     name: Run WireMock Extension Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     timeout-minutes: 10
     steps:
       - name: Checkout
