@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd utils
-          pip install -e .[dev,test]
+          pip install -e '.[dev,test]'
 
       - name: Lint
         run: |
@@ -67,7 +67,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd utils
-          pip install -e .[dev,test]
+          pip install -e '.[dev,test]'
 
       - name: Run integration tests
         run: |
