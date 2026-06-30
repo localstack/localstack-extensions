@@ -1,14 +1,14 @@
 import contextlib
 from typing import ContextManager
 
-from localstack.services.lambda_.invocation.assignment import AssignmentService
-from localstack.services.lambda_.invocation.docker_runtime_executor import (
+from localstack.pro.core.services.lambda_.invocation.assignment import AssignmentService
+from localstack.pro.core.services.lambda_.invocation.docker_runtime_executor import (
     DockerRuntimeExecutor,
 )
-from localstack.services.lambda_.invocation.execution_environment import (
+from localstack.pro.core.services.lambda_.invocation.execution_environment import (
     ExecutionEnvironment,
 )
-from localstack.services.lambda_.invocation.lambda_models import (
+from localstack.pro.core.services.lambda_.invocation.lambda_models import (
     FunctionVersion,
     InitializationType,
 )

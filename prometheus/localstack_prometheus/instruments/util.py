@@ -1,4 +1,4 @@
-from localstack.services.lambda_.event_source_mapping.esm_event_processor import (
+from localstack.pro.core.services.lambda_.event_source_mapping.esm_event_processor import (
     EsmEventProcessor,
     EventProcessor,
 )

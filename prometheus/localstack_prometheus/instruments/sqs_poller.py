@@ -1,6 +1,6 @@
 import logging
 
-from localstack.services.lambda_.event_source_mapping.pollers.sqs_poller import (
+from localstack.pro.core.services.lambda_.event_source_mapping.pollers.sqs_poller import (
     SqsPoller,
 )
 

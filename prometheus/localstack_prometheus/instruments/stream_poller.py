@@ -1,4 +1,4 @@
-from localstack.services.lambda_.event_source_mapping.pollers.stream_poller import (
+from localstack.pro.core.services.lambda_.event_source_mapping.pollers.stream_poller import (
     StreamPoller,
 )
 

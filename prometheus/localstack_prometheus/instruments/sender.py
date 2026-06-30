@@ -1,7 +1,7 @@
 import logging
 import time
 
-from localstack.services.lambda_.event_source_mapping.senders.sender import Sender
+from localstack.pro.core.services.lambda_.event_source_mapping.senders.sender import Sender
 
 from localstack_prometheus.metrics.event_processing import (
     LOCALSTACK_EVENT_PROCESSING_ERRORS_TOTAL,

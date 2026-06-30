@@ -1,19 +1,19 @@
 import logging
 
-from localstack.services.lambda_.event_source_mapping.pollers.dynamodb_poller import (
+from localstack.pro.core.services.lambda_.event_source_mapping.pollers.dynamodb_poller import (
     DynamoDBPoller,
 )
-from localstack.services.lambda_.event_source_mapping.pollers.kinesis_poller import (
+from localstack.pro.core.services.lambda_.event_source_mapping.pollers.kinesis_poller import (
     KinesisPoller,
 )
-from localstack.services.lambda_.event_source_mapping.pollers.sqs_poller import (
+from localstack.pro.core.services.lambda_.event_source_mapping.pollers.sqs_poller import (
     SqsPoller,
 )
-from localstack.services.lambda_.event_source_mapping.senders.lambda_sender import (
+from localstack.pro.core.services.lambda_.event_source_mapping.senders.lambda_sender import (
     LambdaSender,
 )
-from localstack.services.lambda_.invocation.assignment import AssignmentService
-from localstack.services.lambda_.invocation.docker_runtime_executor import (
+from localstack.pro.core.services.lambda_.invocation.assignment import AssignmentService
+from localstack.pro.core.services.lambda_.invocation.docker_runtime_executor import (
     DockerRuntimeExecutor,
 )
 from localstack.utils.patch import Patch, Patches
