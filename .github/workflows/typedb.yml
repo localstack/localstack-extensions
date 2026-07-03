@@ -5,6 +5,7 @@ on:
     - cron: '0 2 * * 1-5'
   push:
     paths:
+      - .github/workflows/typedb.yml
       - typedb/**
     branches:
       - main
