@@ -3,20 +3,20 @@
 ######################
 
 # CODEOWNERS
-/CODEOWNERS @lukqw @thrau @alexrashed
+/CODEOWNERS @lukqw @alexrashed
 
 # Template for new extensions
-/template/ @lukqw @thrau
+/template/ @lukqw
 
 ######################
 ###   Extensions   ###
 ######################
 
 /aws-proxy/ @whummer @nik-localstack
-/diagnosis-viewer/ @thrau @silv-io
-/hello-world/ @lukqw @thrau
-/http-bin/ @thrau @dominikschubert
-/mailhog/ @lukqw @thrau
+/diagnosis-viewer/ @silv-io
+/hello-world/ @lukqw
+/http-bin/ @dominikschubert
+/mailhog/ @lukqw
 /miniflare/ @whummer @HarshCasper
-/stripe/ @lukqw @thrau
+/stripe/ @lukqw
 /typedb/ @whummer @purcell
