@@ -1,14 +1,13 @@
 import logging
 import socket
+from collections.abc import Callable, Iterable
 from enum import Enum
-from typing import Iterable, Callable
 
 from h2.frame_buffer import FrameBuffer
 from hpack import Decoder
-from hyperframe.frame import HeadersFrame, Frame
-from twisted.internet import reactor
-
+from hyperframe.frame import Frame, HeadersFrame
 from localstack.utils.patch import patch
+from twisted.internet import reactor
 from twisted.web._http2 import H2Connection
 from werkzeug.datastructures import Headers
 
@@ -50,7 +49,7 @@ class TcpForwarder:
     def close(self):
         if self._closed:
             return
-        LOG.debug(f"Closing connection to upstream HTTP2 server on port {self.port}")
+        LOG.debug("Closing connection to upstream HTTP2 server on port %d", self.port)
         self._closed = True
         try:
             self._socket.shutdown(socket.SHUT_RDWR)
@@ -70,7 +69,7 @@ def apply_http2_patches_for_grpc_support(
     Apply some patches to proxy incoming gRPC requests and forward them to a target port.
     Note: this is a very brute-force approach and needs to be fixed/enhanced over time!
     """
-    LOG.debug(f"Enabling proxying to backend {target_host}:{target_port}")
+    LOG.debug("Enabling proxying to backend %s:%s", target_host, target_port)
     global patched_connection
     assert not patched_connection, (
         "It is not safe to patch H2Connection twice with this function"
@@ -96,7 +95,7 @@ def apply_http2_patches_for_grpc_support(
         def __init__(self, http_response_stream):
             self.http_response_stream = http_response_stream
             LOG.debug(
-                f"Starting TCP forwarder to port {target_port} for new HTTP2 connection"
+                "Starting TCP forwarder to port %s for new HTTP2 connection", target_port
             )
             self.backend = TcpForwarder(target_port, host=target_host)
             self.buffer = []
@@ -175,7 +174,6 @@ def get_frames_from_http2_stream(data: bytes) -> Iterable[Frame]:
     buffer.max_frame_size = 16384
     try:
         buffer.add_data(data)
-        for frame in buffer:
-            yield frame
+        yield from buffer
     except Exception:
         pass

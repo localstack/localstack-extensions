@@ -15,12 +15,11 @@ import time
 import pytest
 from hyperframe.frame import Frame
 from localstack.utils.net import get_free_tcp_port
+from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 from rolo import Router
 from rolo.gateway import Gateway
 from twisted.internet import reactor
 from twisted.web import server as twisted_server
-
-from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 
 GRPCBIN_IMAGE = "moul/grpcbin"
 GRPCBIN_INSECURE_PORT = 9000  # HTTP/2 without TLS
@@ -52,7 +51,7 @@ class GrpcbinExtension(ProxiedDockerContainerExtension):
                 # Use container_host from the parent class
                 sock.connect((self.container_host, GRPCBIN_INSECURE_PORT))
                 sock.close()
-            except (socket.timeout, socket.error) as e:
+            except (TimeoutError, OSError) as e:
                 raise AssertionError(f"Port {GRPCBIN_INSECURE_PORT} not ready: {e}")
 
         super().__init__(

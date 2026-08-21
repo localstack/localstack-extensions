@@ -1,8 +1,8 @@
 import os
 import socket
 
-from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 from localstack import config
+from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 
 # Environment variables for configuration
 ENV_POSTGRES_USER = "PARADEDB_POSTGRES_USER"
@@ -88,7 +88,7 @@ class ParadeDbExtension(ProxiedDockerContainerExtension):
         try:
             sock.connect((host, port))
             sock.close()
-        except (socket.timeout, socket.error) as e:
+        except (TimeoutError, OSError) as e:
             raise AssertionError(f"Port {port} not ready: {e}")
 
     def get_connection_info(self) -> dict:

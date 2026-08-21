@@ -3,7 +3,6 @@ import psycopg2
 from localstack.utils.strings import short_uid
 from localstack.utils.sync import retry
 
-
 # Connection details for ParadeDB
 # Connect through LocalStack gateway with TCP proxying
 HOST = "paradedb.localhost.localstack.cloud"
@@ -15,6 +14,7 @@ DATABASE = "mydatabase"
 
 def get_connection():
     """Create a connection to ParadeDB, retrying until the server is ready."""
+
     def _connect():
         return psycopg2.connect(
             host=HOST,
@@ -23,6 +23,7 @@ def get_connection():
             password=PASSWORD,
             database=DATABASE,
         )
+
     return retry(_connect, retries=15, sleep=2.0)
 
 

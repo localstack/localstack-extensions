@@ -38,7 +38,7 @@ class TestProxiedDockerContainerExtension:
             sock.connect(("localhost", gateway_port))
             sock.close()
             # Connection successful
-        except (socket.timeout, socket.error) as e:
+        except (TimeoutError, OSError) as e:
             raise AssertionError(f"Could not connect to gateway port: {e}")
 
     def test_extension_implements_required_methods(self, grpcbin_extension):

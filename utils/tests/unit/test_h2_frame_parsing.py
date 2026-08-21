@@ -6,14 +6,12 @@ including the HTTP/2 preface, settings frames, and headers frames.
 No Docker or network access required.
 """
 
-from hyperframe.frame import SettingsFrame, HeadersFrame, WindowUpdateFrame
-
+from hyperframe.frame import HeadersFrame, SettingsFrame, WindowUpdateFrame
 from localstack_extensions.utils.h2_proxy import (
     get_frames_from_http2_stream,
-    get_headers_from_frames,
     get_headers_from_data_stream,
+    get_headers_from_frames,
 )
-
 
 # HTTP/2 connection preface (24 bytes)
 HTTP2_PREFACE = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"

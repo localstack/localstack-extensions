@@ -7,12 +7,12 @@ protocols to share a single gateway port.
 """
 
 import logging
+
+from localstack import config
+from localstack.utils.patch import patch
 from twisted.internet import reactor
 from twisted.protocols.portforward import ProxyClient, ProxyClientFactory
 from twisted.web.http import HTTPChannel
-
-from localstack.utils.patch import patch
-from localstack import config
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG if config.DEBUG else logging.INFO)
@@ -117,7 +117,7 @@ def patch_gateway_for_tcp_routing():
                         reactor.connectTCP(backend_host, backend_port, client_factory)
                         return
                 except Exception as e:
-                    LOG.debug(f"Error in matcher for {ext_name}: {e}")
+                    LOG.debug("Error in matcher for %s: %s", ext_name, e)
                     continue
 
             # No extension claimed the connection
@@ -164,7 +164,7 @@ def register_tcp_extension(
     """
     _tcp_extensions.append((extension_name, matcher, backend_host, backend_port))
     LOG.info(
-        f"Registered TCP extension {extension_name} -> {backend_host}:{backend_port}"
+        "Registered TCP extension %s -> %s:%s", extension_name, backend_host, backend_port
     )
 
 
@@ -176,4 +176,4 @@ def unregister_tcp_extension(extension_name: str):
         for name, matcher, host, port in _tcp_extensions
         if name != extension_name
     ]
-    LOG.info(f"Unregistered TCP extension {extension_name}")
+    LOG.info("Unregistered TCP extension %s", extension_name)

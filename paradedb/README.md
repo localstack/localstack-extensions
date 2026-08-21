@@ -31,7 +31,7 @@ conn = psycopg2.connect(
     port=5432,
     database="mydatabase",
     user="myuser",
-    password="mypassword"
+    password="mypassword",
 )
 ```
 

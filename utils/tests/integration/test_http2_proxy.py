@@ -7,13 +7,12 @@ server to validate the utility functionality.
 """
 
 import threading
+
 import pytest
-
 from hyperframe.frame import SettingsFrame
-
 from localstack_extensions.utils.h2_proxy import (
-    get_headers_from_frames,
     TcpForwarder,
+    get_headers_from_frames,
 )
 
 # Import from conftest - pytest automatically loads conftest.py

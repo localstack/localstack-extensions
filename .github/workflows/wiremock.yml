@@ -51,7 +51,7 @@ jobs:
           docker pull "$IMAGE_NAME"
           docker pull wiremock/wiremock
           docker pull public.ecr.aws/lambda/python:3.12
-          pip install localstack terraform-local awscli-local[ver1]
+          pip install localstack terraform-local awscli-local
 
           make install
           make lint
