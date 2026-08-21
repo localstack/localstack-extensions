@@ -1,11 +1,11 @@
-import json
 import base64
+import json
 import time
+
+import boto3
 import pytest
 import requests
-import boto3
 from botocore.config import Config
-
 
 LOCALSTACK_URL = "http://localhost:4566"
 KEYCLOAK_URL = "http://keycloak.localhost.localstack.cloud:4566"
@@ -189,7 +189,7 @@ class TestUserManagement:
 
     def test_create_user_with_required_profile_fields(self, admin_token):
         """Verify user creation works with required Keycloak 26+ profile fields.
-        
+
         Keycloak 26+ requires email, firstName, lastName for users to be "fully set up".
         Password must be set separately via reset-password endpoint.
         """
@@ -302,7 +302,10 @@ class TestUserManagement:
             timeout=30,
         )
         assert token_response.status_code != 200
-        assert "not fully set up" in token_response.json().get("error_description", "").lower()
+        assert (
+            "not fully set up"
+            in token_response.json().get("error_description", "").lower()
+        )
 
         # Cleanup
         requests.delete(f"{users_url}/{user_id}", headers=headers, timeout=10)

@@ -1,12 +1,11 @@
 import logging
 import os
 from pathlib import Path
-import requests
 
+import requests
 from localstack import config, constants
 from localstack.utils.net import get_addressable_container_host
 from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
-
 
 LOG = logging.getLogger(__name__)
 
@@ -45,7 +44,9 @@ class WireMockExtension(ProxiedDockerContainerExtension):
             env_vars["WMC_ADMIN_PORT"] = str(ADMIN_PORT)
             env_vars["WMC_API_TOKEN"] = api_token
             env_vars["WMC_RUNNER_ENABLED"] = "true"
-            image_name = os.getenv(ENV_WIREMOCK_IMAGE_RUNNER) or self.DOCKER_IMAGE_RUNNER
+            image_name = (
+                os.getenv(ENV_WIREMOCK_IMAGE_RUNNER) or self.DOCKER_IMAGE_RUNNER
+            )
             container_ports = [SERVICE_PORT, ADMIN_PORT]
             health_check_path = "/__/health"
             health_check_retries = 90

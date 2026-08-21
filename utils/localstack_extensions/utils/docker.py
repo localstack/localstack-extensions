@@ -1,26 +1,27 @@
-import re
 import logging
+import re
+from collections.abc import Callable
 from functools import cache
-from typing import Callable
-import requests
 
+import requests
 from localstack.config import is_env_true
-from localstack_extensions.utils.h2_proxy import (
-    apply_http2_patches_for_grpc_support,
-)
-from localstack.utils.docker_utils import DOCKER_CLIENT
 from localstack.extensions.api import Extension, http
 from localstack.http import Request
 from localstack.utils.container_utils.container_client import (
     PortMappings,
     SimpleVolumeBind,
 )
+from localstack.utils.docker_utils import DOCKER_CLIENT
 from localstack.utils.net import get_addressable_container_host
 from localstack.utils.sync import retry
 from rolo import route
 from rolo.proxy import Proxy
 from rolo.routing import RuleAdapter, WithHost
 from werkzeug.datastructures import Headers
+
+from localstack_extensions.utils.h2_proxy import (
+    apply_http2_patches_for_grpc_support,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -104,7 +105,10 @@ class ProxiedDockerContainerExtension(Extension):
         tcp_ports: list[int] | None = None,
     ):
         try:
-            from localstack.pro.core.utils.container.registry_strategies import CustomizableRegistryStrategy
+            from localstack.pro.core.utils.container.registry_strategies import (
+                CustomizableRegistryStrategy,
+            )
+
             self.image_name = CustomizableRegistryStrategy().resolve(image_name)
         except ImportError:
             self.image_name = image_name
@@ -138,10 +142,7 @@ class ProxiedDockerContainerExtension(Extension):
         # Determine if HTTP proxy should be set up. Skip it when all container ports are
         # TCP-only and no host restriction is set, since a catch-all HTTP proxy would
         # intercept all requests and break other services.
-        uses_http = (
-            self.host
-            and set(self.container_ports) - set(self.tcp_ports or [])
-        )
+        uses_http = self.host and set(self.container_ports) - set(self.tcp_ports or [])
 
         if uses_http:
             # add resource for HTTP/1.1 requests
@@ -179,8 +180,8 @@ class ProxiedDockerContainerExtension(Extension):
         matcher = getattr(self, "tcp_connection_matcher", None)
         if not matcher:
             LOG.warning(
-                f"Extension {self.name} has tcp_ports but no tcp_connection_matcher(). "
-                "TCP routing will not work without a matcher."
+                "Extension %s has tcp_ports but no tcp_connection_matcher(). "
+                "TCP routing will not work without a matcher.", self.name
             )
             return
 
@@ -199,7 +200,7 @@ class ProxiedDockerContainerExtension(Extension):
         )
 
         LOG.info(
-            f"Registered TCP extension {self.name} -> {self.container_host}:{target_port} on gateway"
+            "Registered TCP extension %s -> %s:%s on gateway", self.name, self.container_host, target_port
         )
 
     def http2_request_matcher(self, headers: Headers) -> bool:

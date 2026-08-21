@@ -1,14 +1,20 @@
+import os
+
 from aws_cdk import (
-    Stack,
     Duration,
-    aws_lambda as lambda_,
-    aws_apigateway as apigw,
-    aws_dynamodb as dynamodb,
-    aws_iam as iam,
     RemovalPolicy,
+    Stack,
+)
+from aws_cdk import (
+    aws_apigateway as apigw,
+)
+from aws_cdk import (
+    aws_dynamodb as dynamodb,
+)
+from aws_cdk import (
+    aws_lambda as lambda_,
 )
 from constructs import Construct
-import os
 
 
 class KeycloakSampleApiStack(Stack):

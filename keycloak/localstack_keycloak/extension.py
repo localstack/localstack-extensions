@@ -9,7 +9,10 @@ from localstack.utils.net import get_addressable_container_host
 from localstack_extensions.utils.docker import ProxiedDockerContainerExtension
 
 from .utils import (
+    DEFAULT_AUDIENCE,
     DEFAULT_CLIENT_SECRET,
+    DEFAULT_REALM,
+    DEFAULT_VERSION,
     ENV_KEYCLOAK_DEFAULT_PASSWORD,
     ENV_KEYCLOAK_DEFAULT_USER,
     ENV_KEYCLOAK_FLAGS,
@@ -19,9 +22,6 @@ from .utils import (
     ENV_KEYCLOAK_VERSION,
     KEYCLOAK_HTTP_PORT,
     KEYCLOAK_MGMT_PORT,
-    DEFAULT_AUDIENCE,
-    DEFAULT_REALM,
-    DEFAULT_VERSION,
     get_default_client_config,
     get_default_realm_config,
     get_env,

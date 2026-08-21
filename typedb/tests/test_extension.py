@@ -1,7 +1,13 @@
-import requests
 import httpx
+import requests
 from localstack.utils.strings import short_uid
-from typedb.driver import TypeDB, Credentials, DriverOptions, TransactionType, DriverTlsConfig
+from typedb.driver import (
+    Credentials,
+    DriverOptions,
+    DriverTlsConfig,
+    TransactionType,
+    TypeDB,
+)
 
 
 def test_connect_to_db_via_http_api():
