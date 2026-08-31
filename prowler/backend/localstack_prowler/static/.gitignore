@@ -1,0 +1,5 @@
+# Keep only the stable extension entrypoint files in git.
+*
+!.gitignore
+!__init__.py
+!index.html
