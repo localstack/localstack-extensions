@@ -16,6 +16,11 @@ output "api_endpoint" {
   value       = "${aws_api_gateway_stage.dev_stage.invoke_url}/orders/{orderId}"
 }
 
+output "api_id" {
+  description = "The ID of the REST API."
+  value       = aws_api_gateway_rest_api.orders_api.id
+}
+
 variable "aws_region" {
   description = "The AWS region to deploy the resources in."
   type        = string

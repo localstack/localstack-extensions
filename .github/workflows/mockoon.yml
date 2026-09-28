@@ -104,7 +104,7 @@ jobs:
       - name: Run sample app test
         run: |
           cd mockoon
-          make sample TFLOCAL="lstk terraform" AWSLOCAL="lstk aws"
+          make sample TFLOCAL="lstk terraform"
 
       - name: Print logs
         if: always()
