@@ -7,3 +7,4 @@ build
 terraform.tfstate*
 *.zip
 sample-app/build
+sample-app/localstack_providers_override.tf

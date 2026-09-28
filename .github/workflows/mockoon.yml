@@ -34,7 +34,7 @@ jobs:
           - latest
           - dev
     env:
-      IMAGE_NAME: localstack/localstack-pro:${{matrix.tag}}
+      LOCALSTACK_TAG: ${{ matrix.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -44,23 +44,57 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
 
-      - name: Set up LocalStack and extension
+      - name: Install lstk CLI
+        env:
+          LSTK_VERSION: 1.2.0
+          LSTK_SHA256: f41140ab31b57b59fd5c9a24e2170513e1be4e9c820a97c512574b36b133f592
+        run: |
+          archive="lstk_${LSTK_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" "https://github.com/localstack/lstk/releases/download/v${LSTK_VERSION}/$archive"
+          echo "$LSTK_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/lstk"
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP/lstk"
+          echo "$RUNNER_TEMP/lstk" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/lstk/lstk" --version
+
+      - name: Build extension
         run: |
           cd mockoon
-
-          docker pull "$IMAGE_NAME"
-          docker pull mockoon/cli
-          docker pull public.ecr.aws/lambda/python:3.12
-          pip install localstack terraform-local awscli-local
-
           make install
           make lint
           make dist
-          localstack extensions -v install file://"$(ls ./dist/localstack_mockoon-*.tar.gz)"
 
+      - name: Start LocalStack with extension
+        run: |
+          cd mockoon
+
+          docker pull mockoon/cli
+          docker pull public.ecr.aws/lambda/python:3.12
+
+          # mount the built extension into the container, so LocalStack can install it at startup
+          CONFIG_FILE="$(lstk config path)"
+          mkdir -p "$(dirname "$CONFIG_FILE")"
+          cat > "$CONFIG_FILE" <<EOT
+          [[containers]]
+          type = "aws"
+          tag = "$LOCALSTACK_TAG"
+          port = "4566"
+          volumes = ["$PWD/dist:/opt/extension-dist:ro"]
+
+          [cli]
+          check_for_update_on_startup = false
+          EOT
+
+          # host variables prefixed with LOCALSTACK_ are forwarded to the emulator by lstk
+          export LOCALSTACK_DEBUG=1
+          DIST_FILE="$(cd dist && ls localstack_mockoon-*.tar.gz)"
+          export LOCALSTACK_EXTENSION_AUTO_INSTALL="/opt/extension-dist/$DIST_FILE"
           # start LocalStack with the sample Mockoon environment
-          DEBUG=1 LOCALSTACK_MOCKOON_DATA="$PWD/sample-app/environment.json" localstack start -d
-          localstack wait
+          export LOCALSTACK_MOCKOON_DATA="$PWD/sample-app/environment.json"
+          lstk --non-interactive start
+
+          # lstk returns once LocalStack is healthy - wait until the Mockoon server is reachable as well
+          timeout 120 bash -c 'until curl -sf -H "Authorization: Bearer test" http://mockoon.localhost.localstack.cloud:4566/mockoon-admin >/dev/null; do sleep 2; done'
 
       - name: Run integration tests
         run: |
@@ -70,10 +104,10 @@ jobs:
       - name: Run sample app test
         run: |
           cd mockoon
-          make sample
+          make sample TFLOCAL="lstk terraform" AWSLOCAL="lstk aws"
 
       - name: Print logs
         if: always()
         run: |
-          localstack logs
-          localstack stop
+          lstk logs --verbose
+          lstk stop

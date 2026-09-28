@@ -3,6 +3,8 @@ VENV_DIR ?= .venv
 VENV_ACTIVATE = $(VENV_DIR)/bin/activate
 VENV_RUN = . $(VENV_ACTIVATE)
 TEST_PATH ?= tests
+TFLOCAL ?= tflocal
+AWSLOCAL ?= awslocal
 
 usage:          ## Shows usage for this Makefile
 	@cat Makefile | grep -E '^[a-zA-Z_-]+:.*?## .*$$' | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -44,8 +46,8 @@ test:		    ## Run integration tests (requires LocalStack running with the Extens
 
 sample:		    ## Deploy and invoke the sample app (requires LocalStack started with MOCKOON_DATA=sample-app/environment.json)
 	echo "Deploying sample app into LocalStack via Terraform ..."
-	(cd sample-app; tflocal init; tflocal apply -auto-approve)
-	apiId=$$(awslocal apigateway get-rest-apis | jq -r '.items[0].id'); \
+	(cd sample-app; $(TFLOCAL) init; $(TFLOCAL) apply -auto-approve)
+	apiId=$$($(AWSLOCAL) apigateway get-rest-apis --output json | jq -r '.items[0].id'); \
 	    endpoint=https://$$apiId.execute-api.us-east-1.localhost.localstack.cloud/dev/orders/42; \
 	    echo "Invoking local API Gateway endpoint: $$endpoint"; \
 	    curl -k -v $$endpoint | grep customer_name
