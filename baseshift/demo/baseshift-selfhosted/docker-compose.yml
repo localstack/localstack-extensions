@@ -1,0 +1,86 @@
+# Baseshift self-hosted components (replication server + connector) as plain containers, as a
+# lightweight alternative to the Kubernetes deployment. Translated from the rendered `baseshift-dub`
+# Helm chart (bundled in the `baseshift` CLI) with `values-localstack.yaml`.
+#
+# Untested so far: requires access to the (private) replication server image, and the IDs/tokens
+# from Baseshift in `.env` (see `.env.example`).
+#
+#   docker login registry.gitlab.com   # with the credentials provided by Baseshift
+#   cp .env.example .env               # and fill in the values
+#   docker compose up -d
+
+x-localstack-hosts: &localstack-hosts
+  # LocalStack hostnames resolve to 127.0.0.1 - inside these containers they need to point to the host
+  # (where LocalStack publishes its ports). Note: host-gateway reaches ports bound to 127.0.0.1 on
+  # Docker Desktop, but not on Linux Docker engines.
+  - "localhost.localstack.cloud:host-gateway"
+  - "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:host-gateway"
+
+services:
+  repserver:
+    image: registry.gitlab.com/dubhub/core/multi-ubuntu2404/repserver:master
+    hostname: repserver
+    restart: unless-stopped
+    shm_size: 512m
+    extra_hosts: *localstack-hosts
+    environment:
+      SERVERID: ${BASESHIFT_SERVER_ID:?}
+      ORGID: ${BASESHIFT_ORG_ID:?}
+      GATEWAY: aws-gw-elb.dubhub.io:50052
+      ENVIRONMENT: production
+      ENROLLMENT_TOKEN: ${BASESHIFT_ENROLLMENT_TOKEN:?}
+      CERT_DIR: /dubhub/certs
+      EXTRAFLAGS: -proxytimeout=45s
+      SERVERNAME: localstack-demo
+      # the Kubernetes service maps port 15056 to the container's SSH port 22
+      SERVERURI: repserver:22
+      PASSWORD: ${BASESHIFT_ENCRYPTION_PASSWORD:-localstack123}
+      PROXYID: ${BASESHIFT_AGENT_ID:?}
+      PROXYTOKEN: ${BASESHIFT_AGENT_TOKEN:?}
+      TDS_PORT_RANGE_START: "32768"
+      TDS_PORT_RANGE_END: "32812"
+      REPSERVERTAG: master
+      EXTERNAL_HOSTNAME: localhost
+      # Docker snapshots are pushed to the LocalStack ECR registry (plain Docker v2 registry over HTTP)
+      DOCKER_SNAPSHOT_REGISTRY_ENABLED: "true"
+      DOCKER_SNAPSHOT_REGISTRY_PROVIDER: harbor
+      DOCKER_SNAPSHOT_REGISTRY: 000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud
+      DOCKER_SNAPSHOT_REGISTRY_PORT: "4566"
+      DOCKER_SNAPSHOT_REGISTRY_PROJECT: baseshift
+      DOCKER_SNAPSHOT_REGISTRY_USE_TLS: "false"
+      DOCKER_SNAPSHOT_REGISTRY_AUTH_TYPE: basic
+      DOCKER_SNAPSHOT_REGISTRY_USERNAME: AWS
+      DOCKER_SNAPSHOT_REGISTRY_PASSWORD: test
+    # same mounts as the Helm chart (its init container also pre-creates /dubhub/logs/repserver
+    # and makes the directories world-writable - may be required here as well)
+    volumes:
+      - repserver-targets:/dubhub/targets
+      - repserver-logs:/dubhub/logs
+      - repserver-certs:/dubhub/certs
+    ports:
+      # server clones
+      - "127.0.0.1:32768-32812:32768-32812"
+
+  agent:
+    image: public.ecr.aws/x5e2w4i3/proxy:master
+    restart: unless-stopped
+    depends_on:
+      - repserver
+    extra_hosts: *localstack-hosts
+    environment:
+      T: ${BASESHIFT_AGENT_TOKEN:?}
+      TOKENSERVER: repserver:15057
+      GRPCSERVER: repserver:50055
+      USETLS: "false"
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+      PROXY_SOURCE_CONNECT_TIMEOUT_SEC: "8"
+      PROXY_SOURCE_CONNECT_MAX_DURATION_SEC: "30"
+      PROXY_SOURCE_CONNECT_RETRY_DELAY_SEC: "3"
+      REQUESTED_RESTART_EXIT_CODE: "124"
+      EXIT_CONTAINER_ON_REQUESTED_RESTART: "true"
+
+volumes:
+  repserver-targets:
+  repserver-logs:
+  repserver-certs:

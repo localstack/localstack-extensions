@@ -1,0 +1,99 @@
+name: LocalStack Baseshift Extension Tests
+
+on:
+  schedule:
+    - cron: '0 2 * * 1-5'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/baseshift.yml
+      - 'baseshift/**'
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/baseshift.yml
+      - 'baseshift/**'
+  workflow_dispatch:
+
+env:
+  LOCALSTACK_DISABLE_EVENTS: "1"
+  LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+
+jobs:
+  integration-tests:
+    name: Run Baseshift Extension Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        tag:
+          - latest
+          - dev
+    env:
+      LOCALSTACK_TAG: ${{ matrix.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install lstk CLI
+        # version is pinned; there is no lockfile for global CLI tools
+        run: | # zizmor: ignore[adhoc-packages]
+          npm install -g @localstack/lstk@1.2.0
+          lstk --version
+
+      - name: Build extension
+        run: |
+          cd baseshift
+          make install
+          make lint
+          make dist
+
+      - name: Start LocalStack with extension
+        run: |
+          cd baseshift
+
+          # Baseshift clone images are private to each customer, hence we use a plain
+          # Postgres image as a stand-in (clones also accept connections without a password)
+          docker pull postgres:17
+
+          # mount the built extension into the container, so LocalStack can install it at startup
+          CONFIG_FILE="$(lstk config path)"
+          mkdir -p "$(dirname "$CONFIG_FILE")"
+          cat > "$CONFIG_FILE" <<EOT
+          [[containers]]
+          type = "aws"
+          tag = "$LOCALSTACK_TAG"
+          port = "4566"
+          volumes = ["$PWD/dist:/opt/extension-dist:ro"]
+
+          [cli]
+          check_for_update_on_startup = false
+          EOT
+
+          # host variables prefixed with LOCALSTACK_ are forwarded to the emulator by lstk
+          export LOCALSTACK_DEBUG=1
+          DIST_FILE="$(cd dist && ls localstack_baseshift-*.tar.gz)"
+          export LOCALSTACK_EXTENSION_AUTO_INSTALL="/opt/extension-dist/$DIST_FILE"
+          export LOCALSTACK_BASESHIFT_IMAGE=postgres:17
+          export LOCALSTACK_BASESHIFT_CLONE_POSTGRES_HOST_AUTH_METHOD=trust
+          lstk --non-interactive start
+
+          # lstk returns once LocalStack is healthy - wait until the database port is open as well
+          timeout 120 bash -c 'until (echo > /dev/tcp/localhost/5432) 2>/dev/null; do sleep 2; done'
+
+      - name: Run integration tests
+        run: |
+          cd baseshift
+          make test
+
+      - name: Print logs
+        if: always()
+        run: |
+          lstk logs --verbose
+          lstk stop
