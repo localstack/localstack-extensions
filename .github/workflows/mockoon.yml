@@ -1,0 +1,106 @@
+name: LocalStack Mockoon Extension Tests
+
+on:
+  schedule:
+    - cron: '0 2 * * 1-5'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/mockoon.yml
+      - 'mockoon/**'
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/mockoon.yml
+      - 'mockoon/**'
+  workflow_dispatch:
+
+env:
+  LOCALSTACK_DISABLE_EVENTS: "1"
+  LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+
+jobs:
+  integration-tests:
+    name: Run Mockoon Extension Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        tag:
+          - latest
+          - dev
+    env:
+      LOCALSTACK_TAG: ${{ matrix.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+
+      - name: Install lstk CLI
+        # version is pinned; there is no lockfile for global CLI tools
+        run: | # zizmor: ignore[adhoc-packages]
+          npm install -g @localstack/lstk@1.2.0
+          lstk --version
+
+      - name: Build extension
+        run: |
+          cd mockoon
+          make install
+          make lint
+          make dist
+
+      - name: Start LocalStack with extension
+        run: |
+          cd mockoon
+
+          docker pull mockoon/cli:9
+          docker pull public.ecr.aws/lambda/python:3.12
+
+          # mount the built extension into the container, so LocalStack can install it at startup
+          CONFIG_FILE="$(lstk config path)"
+          mkdir -p "$(dirname "$CONFIG_FILE")"
+          cat > "$CONFIG_FILE" <<EOT
+          [[containers]]
+          type = "aws"
+          tag = "$LOCALSTACK_TAG"
+          port = "4566"
+          volumes = ["$PWD/dist:/opt/extension-dist:ro"]
+
+          [cli]
+          check_for_update_on_startup = false
+          EOT
+
+          # host variables prefixed with LOCALSTACK_ are forwarded to the emulator by lstk
+          export LOCALSTACK_DEBUG=1
+          DIST_FILE="$(cd dist && ls localstack_mockoon-*.tar.gz)"
+          export LOCALSTACK_EXTENSION_AUTO_INSTALL="/opt/extension-dist/$DIST_FILE"
+          # start LocalStack with the sample Mockoon environment
+          export LOCALSTACK_MOCKOON_DATA="$PWD/sample-app/environment.json"
+          lstk --non-interactive start
+
+          # lstk returns once LocalStack is healthy - wait until the Mockoon server is reachable as well
+          timeout 120 bash -c 'until curl -sf -H "Authorization: Bearer test" http://mockoon.localhost.localstack.cloud:4566/mockoon-admin >/dev/null; do sleep 2; done'
+
+      - name: Run integration tests
+        run: |
+          cd mockoon
+          make test
+
+      - name: Run sample app test
+        run: |
+          cd mockoon
+          make sample
+
+      - name: Print logs
+        if: always()
+        run: |
+          lstk logs --verbose
+          lstk stop

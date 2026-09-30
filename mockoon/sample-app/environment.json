@@ -1,0 +1,117 @@
+{
+  "uuid": "6c1a3b4e-7f2d-4a8e-9b0c-1d2e3f4a5b6c",
+  "lastMigration": 33,
+  "name": "Orders API",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3000,
+  "hostname": "",
+  "folders": [],
+  "routes": [
+    {
+      "uuid": "a1b2c3d4-0001-4000-8000-000000000001",
+      "type": "http",
+      "documentation": "Get an order by ID (templated response)",
+      "method": "get",
+      "endpoint": "orders/:orderId",
+      "responses": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-8000-100000000001",
+          "body": "{\n  \"id\": \"{{urlParam 'orderId'}}\",\n  \"status\": \"shipped\",\n  \"customer\": {\n    \"first_name\": \"Jane\",\n    \"last_name\": \"Doe\"\n  },\n  \"items\": [\n    { \"sku\": \"SKU-1001\", \"quantity\": 2, \"price\": 19.99 },\n    { \"sku\": \"SKU-2002\", \"quantity\": 1, \"price\": 5.5 }\n  ],\n  \"total\": 45.48\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Order found",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a1b2c3d4-0001-4000-8000-100000000002",
+          "body": "{\n  \"message\": \"Order not found\"\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Order not found",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            { "target": "params", "modifier": "orderId", "value": "unknown", "invert": false, "operator": "equals" }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "a1b2c3d4-0002-4000-8000-000000000001",
+      "type": "http",
+      "documentation": "Create an order",
+      "method": "post",
+      "endpoint": "orders",
+      "responses": [
+        {
+          "uuid": "a1b2c3d4-0002-4000-8000-100000000001",
+          "body": "{\n  \"id\": \"ord-123\",\n  \"status\": \"created\",\n  \"sku\": \"{{body 'sku'}}\"\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "Order created",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "rootChildren": [
+    { "type": "route", "uuid": "a1b2c3d4-0001-4000-8000-000000000001" },
+    { "type": "route", "uuid": "a1b2c3d4-0002-4000-8000-000000000001" }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [{ "key": "Content-Type", "value": "application/json" }],
+  "proxyReqHeaders": [],
+  "proxyResHeaders": [],
+  "data": [],
+  "callbacks": []
+}

@@ -1,0 +1,77 @@
+{
+  "uuid": "d2f1e0c9-0000-4000-8000-000000000000",
+  "lastMigration": 33,
+  "name": "LocalStack Default",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3000,
+  "hostname": "",
+  "folders": [],
+  "routes": [
+    {
+      "uuid": "d2f1e0c9-0001-4000-8000-000000000001",
+      "type": "http",
+      "documentation": "Default welcome route",
+      "method": "get",
+      "endpoint": "welcome",
+      "responses": [
+        {
+          "uuid": "d2f1e0c9-0001-4000-8000-100000000001",
+          "body": "{\n  \"message\": \"Mockoon is running on LocalStack. Start LocalStack with MOCKOON_DATA pointing to your Mockoon environment file to serve your own mock APIs.\"\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Welcome",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "rootChildren": [
+    {
+      "type": "route",
+      "uuid": "d2f1e0c9-0001-4000-8000-000000000001"
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    }
+  ],
+  "proxyReqHeaders": [],
+  "proxyResHeaders": [],
+  "data": [],
+  "callbacks": []
+}
