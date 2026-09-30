@@ -6,6 +6,64 @@ Baseshift creates masked, writable clones of your production database (PostgreSQ
 
 For PostgreSQL clones, the database is available through the LocalStack gateway (`localhost.localstack.cloud:4566`), as well as on the regular host port `5432`.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph source["1 · Production data"]
+        rds[("LocalStack RDS<br/>PostgreSQL with PII")]
+    end
+
+    subgraph baseshift["2 · Baseshift (self-hosted)"]
+        direction TB
+        cloud["Baseshift Cloud<br/>control plane"]
+        connector["Connector<br/>masking policy"]
+        repserver["Replication server<br/>masked replica, snapshots"]
+        cloud -.- repserver
+        connector -- "masked data" --> repserver
+    end
+
+    subgraph registry["3 · Snapshot registry"]
+        ecr[("LocalStack ECR<br/>Docker snapshot images")]
+    end
+
+    subgraph clones["4 · Local clones (this extension)"]
+        direction TB
+        extension["Baseshift extension<br/>clones API"]
+        clone1[("Clone 'default'<br/>:5432")]
+        clone2[("Clone 'pr-123'<br/>:15432")]
+        extension -- "start / stop" --> clone1
+        extension -- "start / stop" --> clone2
+    end
+
+    gateway["LocalStack gateway :4566<br/>PostgreSQL routing"]
+
+    subgraph consumers["5 · Consumers of masked data"]
+        direction TB
+        app["App code<br/>Lambda, ECS, ..."]
+        dev["Developer / CI<br/>psql, IDE, tests"]
+        subgraph analytics["Analytics pipeline"]
+            direction LR
+            elt["ELT job"] -- "CSV" --> s3[("LocalStack S3")] -- "COPY INTO" --> snowflake[("LocalStack<br/>Snowflake")]
+        end
+    end
+
+    rds -- "replicate" --> connector
+    repserver -- "push" --> ecr
+    ecr -- "pull" --> extension
+    clone1 --> gateway
+    gateway -- "SQL" --> app
+    gateway -- "SQL" --> dev
+    gateway -- "SQL" --> elt
+    clone2 -. "SQL via host port" .-> dev
+```
+
+1. **Production data**: the source database, e.g. PostgreSQL in (LocalStack) RDS, containing PII.
+2. **Baseshift** replicates the source database via its connector, which applies the masking policy, and the replication server maintains a masked replica and creates snapshots. The components are managed via the Baseshift Cloud control plane. (In the [demo](demo/), a stand-in script currently takes the place of this step.)
+3. The replication server publishes Docker **snapshot images** to a registry, e.g. AWS ECR, or the LocalStack ECR registry for a fully local setup.
+4. This **extension** starts clones from these images as containers next to LocalStack: a default clone at startup (`BASESHIFT_IMAGE`), and further clones on demand via the clones API. Each clone is a writable copy of the masked database.
+5. **Consumers** work with the masked data only: app code running in LocalStack and developer tools connect through the LocalStack gateway (the first PostgreSQL clone is detected by its protocol handshake on port 4566), or to the host port of a clone. An analytics pipeline can extract data from a clone, and load it into Snowflake (see the [demo](demo/)).
+
 ## Prerequisites
 
 - Docker

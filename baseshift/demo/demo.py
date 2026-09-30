@@ -121,13 +121,28 @@ def wait_for_db_instance():
     raise TimeoutError(f"RDS instance {DB_INSTANCE} did not become available")
 
 
-def retry_connect(connect_fn, retries: int = 20):
-    for _ in range(retries - 1):
+def with_db(connect_fn, work_fn, autocommit: bool = False, retries: int = 30):
+    """
+    Run `work_fn(cursor)` on a fresh connection, retrying on connection errors. Databases may drop
+    connections while (re)starting (e.g., right after RDS reports an instance as available). Without
+    autocommit, the work runs in a single transaction, which is rolled back if the connection drops.
+    """
+    for attempt in range(retries):
         try:
-            return connect_fn()
+            conn = connect_fn()
+            try:
+                conn.autocommit = autocommit
+                with conn.cursor() as cursor:
+                    result = work_fn(cursor)
+                if not autocommit:
+                    conn.commit()
+                return result
+            finally:
+                conn.close()
         except psycopg2.OperationalError:
+            if attempt == retries - 1:
+                raise
             time.sleep(2)
-    return connect_fn()
 
 
 def cmd_source(_args):
@@ -149,18 +164,28 @@ def cmd_source(_args):
     # `rds.logical_replication` parameter - LocalStack RDS does not apply it (yet), hence we set the
     # WAL level directly (the RDS master user is a superuser in LocalStack) and reboot the instance.
     log("Enabling logical replication (wal_level=logical)")
-    conn = retry_connect(connect_source)
-    conn.autocommit = True
-    conn.cursor().execute("ALTER SYSTEM SET wal_level = 'logical'")
-    conn.close()
+    with_db(
+        connect_source,
+        lambda cursor: cursor.execute("ALTER SYSTEM SET wal_level = 'logical'"),
+        autocommit=True,
+    )
     rds.reboot_db_instance(DBInstanceIdentifier=DB_INSTANCE)
     time.sleep(3)
     wait_for_db_instance()
 
-    log("Seeding customer data (with PII) and orders")
-    with retry_connect(connect_source) as conn, conn.cursor() as cursor:
+    def _check_wal_level(cursor):
         cursor.execute("SHOW wal_level")
-        print(f"    wal_level: {cursor.fetchone()[0]}")
+        wal_level = cursor.fetchone()[0]
+        if wal_level != "logical":
+            # the instance may not have restarted yet - retry
+            raise psycopg2.OperationalError(f"wal_level is still {wal_level}")
+        return wal_level
+
+    print(f"    wal_level: {with_db(connect_source, _check_wal_level)}")
+
+    log("Seeding customer data (with PII) and orders")
+
+    def _seed(cursor):
         cursor.execute(
             """
             CREATE TABLE customers (
@@ -178,6 +203,8 @@ def cmd_source(_args):
         cursor.executemany(
             "INSERT INTO orders (customer_id, amount) VALUES (%s, %s)", ORDERS
         )
+
+    with_db(connect_source, _seed)
     host, port = get_source_endpoint()
     print(f"    source database: postgresql://{DB_USER}@{host}:{port}/{DB_NAME}")
 
@@ -205,13 +232,16 @@ def cmd_snapshot(_args):
     log(
         "Reading source data and applying masking policy (name, email, ssn, phone, address)"
     )
-    with connect_source() as conn, conn.cursor() as cursor:
+
+    def _read(cursor):
         cursor.execute(
             "SELECT id, name, email, ssn, phone, address FROM customers ORDER BY id"
         )
         customers = cursor.fetchall()
         cursor.execute("SELECT id, customer_id, amount FROM orders ORDER BY id")
-        orders = cursor.fetchall()
+        return customers, cursor.fetchall()
+
+    customers, orders = with_db(connect_source, _read)
     columns = ["name", "email", "ssn", "phone", "address"]
     masked = [
         (
@@ -326,7 +356,8 @@ def cmd_pipeline(_args):
         pass
 
     log("Exporting tables from the clone to S3 (CSV)")
-    with retry_connect(connect_clone) as conn, conn.cursor() as cursor:
+
+    def _export(cursor):
         for table in ("customers", "orders"):
             cursor.execute(f"SELECT * FROM {table} ORDER BY id")
             buffer = io.StringIO()
@@ -337,6 +368,8 @@ def cmd_pipeline(_args):
                 Bucket=EXPORT_BUCKET, Key=f"{table}/data.csv", Body=buffer.getvalue()
             )
             print(f"    s3://{EXPORT_BUCKET}/{table}/data.csv")
+
+    with_db(connect_clone, _export)
 
     log("Loading the data into Snowflake (S3 stage + COPY INTO)")
     conn = connect_snowflake()
@@ -368,12 +401,13 @@ def cmd_pipeline(_args):
 
 def cmd_compare(_args):
     query = f"SELECT name, email, ssn, phone, address FROM customers WHERE id = {CUSTOMER_ID}"
-    with connect_source() as conn, conn.cursor() as cursor:
+
+    def _fetch(cursor):
         cursor.execute(query)
-        source = cursor.fetchone()
-    with connect_clone() as conn, conn.cursor() as cursor:
-        cursor.execute(query)
-        clone = cursor.fetchone()
+        return cursor.fetchone()
+
+    source = with_db(connect_source, _fetch)
+    clone = with_db(connect_clone, _fetch)
     sf_conn = connect_snowflake()
     snowflake_row = sf_conn.cursor().execute(query).fetchone()
     sf_conn.close()

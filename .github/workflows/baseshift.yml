@@ -23,17 +23,23 @@ env:
 
 jobs:
   integration-tests:
-    name: Run Baseshift Extension Tests
+    name: Run Baseshift Extension Tests (${{ matrix.emulator }}, ${{ matrix.tag }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
+        # the Snowflake emulator image also provides the AWS services, and is used for the end-to-end demo
+        emulator:
+          - aws
+          - snowflake
         tag:
           - latest
           - dev
     env:
+      LOCALSTACK_EMULATOR: ${{ matrix.emulator }}
       LOCALSTACK_TAG: ${{ matrix.tag }}
     steps:
       - name: Checkout
@@ -67,7 +73,7 @@ jobs:
           mkdir -p "$(dirname "$CONFIG_FILE")"
           cat > "$CONFIG_FILE" <<EOT
           [[containers]]
-          type = "aws"
+          type = "$LOCALSTACK_EMULATOR"
           tag = "$LOCALSTACK_TAG"
           port = "4566"
           volumes = ["$PWD/dist:/opt/extension-dist:ro"]
@@ -91,6 +97,12 @@ jobs:
         run: |
           cd baseshift
           make test
+
+      - name: Run end-to-end demo
+        if: matrix.emulator == 'snowflake'
+        run: |
+          cd baseshift
+          make demo
 
       - name: Print logs
         if: always()
