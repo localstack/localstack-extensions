@@ -45,17 +45,10 @@ jobs:
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
 
       - name: Install lstk CLI
-        env:
-          LSTK_VERSION: 1.2.0
-          LSTK_SHA256: f41140ab31b57b59fd5c9a24e2170513e1be4e9c820a97c512574b36b133f592
-        run: |
-          archive="lstk_${LSTK_VERSION}_linux_amd64.tar.gz"
-          curl -fsSL -o "$RUNNER_TEMP/$archive" "https://github.com/localstack/lstk/releases/download/v${LSTK_VERSION}/$archive"
-          echo "$LSTK_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
-          mkdir -p "$RUNNER_TEMP/lstk"
-          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP/lstk"
-          echo "$RUNNER_TEMP/lstk" >> "$GITHUB_PATH"
-          "$RUNNER_TEMP/lstk/lstk" --version
+        # version is pinned; there is no lockfile for global CLI tools
+        run: | # zizmor: ignore[adhoc-packages]
+          npm install -g @localstack/lstk@1.2.0
+          lstk --version
 
       - name: Build extension
         run: |
@@ -68,7 +61,7 @@ jobs:
         run: |
           cd mockoon
 
-          docker pull mockoon/cli
+          docker pull mockoon/cli:9
           docker pull public.ecr.aws/lambda/python:3.12
 
           # mount the built extension into the container, so LocalStack can install it at startup
@@ -104,7 +97,7 @@ jobs:
       - name: Run sample app test
         run: |
           cd mockoon
-          make sample TFLOCAL="lstk terraform"
+          make sample
 
       - name: Print logs
         if: always()

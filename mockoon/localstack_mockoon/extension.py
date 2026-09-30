@@ -19,7 +19,7 @@ ENV_MOCKOON_DATA = "MOCKOON_DATA"
 ENV_MOCKOON_ADMIN_API_TOKEN = "MOCKOON_ADMIN_API_TOKEN"
 # Mockoon Cloud access token, used for `cloud://` data references
 ENV_MOCKOON_CLOUD_TOKEN = "MOCKOON_CLOUD_TOKEN"
-# Override the Mockoon CLI image (default: mockoon/cli); accepts full ref with optional tag
+# Override the Mockoon CLI image (default: mockoon/cli:9); accepts full ref with optional tag
 ENV_MOCKOON_IMAGE = "MOCKOON_IMAGE"
 
 SERVICE_PORT = 3000
@@ -32,7 +32,8 @@ class MockoonExtension(ProxiedDockerContainerExtension):
     name = "localstack-mockoon"
 
     HOST = "mockoon.<domain>"
-    DOCKER_IMAGE = "mockoon/cli"
+    # pinned to the major version, as the extension relies on the v9 CLI flags and admin API
+    DOCKER_IMAGE = "mockoon/cli:9"
 
     def __init__(self):
         image_name = os.getenv(ENV_MOCKOON_IMAGE) or self.DOCKER_IMAGE
@@ -51,6 +52,11 @@ class MockoonExtension(ProxiedDockerContainerExtension):
                 env_vars["MOCKOON_CLOUD_TOKEN"] = cloud_token
         else:
             if data:
+                if not os.path.isabs(data):
+                    # Docker would otherwise silently create an empty directory for a relative path
+                    raise ValueError(
+                        f"{ENV_MOCKOON_DATA} must be an absolute host path, URL, or cloud:// reference, got: {data}"
+                    )
                 host_data_file = data
             else:
                 host_data_file = self._prepare_default_environment()

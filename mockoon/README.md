@@ -2,19 +2,25 @@
 
 This repo contains a [LocalStack Extension](https://github.com/localstack/localstack-extensions) that facilitates developing [Mockoon](https://mockoon.com)-based applications locally.
 
-The extension runs the [Mockoon CLI](https://mockoon.com/cli/) (`mockoon/cli` Docker image) next to LocalStack, and makes your mock APIs available under `http://mockoon.localhost.localstack.cloud:4566`. This allows your application code (e.g., Lambda functions or ECS tasks running in LocalStack) to call mocked third-party APIs during local development and testing.
+The extension runs the [Mockoon CLI](https://mockoon.com/cli/) (`mockoon/cli:9` Docker image) next to LocalStack, and makes your mock APIs available under `http://mockoon.localhost.localstack.cloud:4566`. This allows your application code (e.g., Lambda functions or ECS tasks running in LocalStack) to call mocked third-party APIs during local development and testing.
 
 ## Prerequisites
 
 - Docker
 - LocalStack Pro (free trial available)
-- `localstack` CLI
-- `make`
+- [`lstk`](https://docs.localstack.cloud/aws/developer-tools/running-localstack/lstk/) CLI (`npm install -g @localstack/lstk`)
+- `make` and Terraform (for the sample app)
 - [Mockoon desktop app](https://mockoon.com/download/) (optional, for designing your mock APIs)
 
 ## Install from GitHub repository
 
-This extension can be installed directly from this Github repo via:
+`lstk` does not have commands for managing extensions, but LocalStack can install the extension at startup via the `EXTENSION_AUTO_INSTALL` config variable:
+
+```bash
+LOCALSTACK_EXTENSION_AUTO_INSTALL="git+https://github.com/localstack/localstack-extensions.git#egg=localstack-mockoon&subdirectory=mockoon" lstk start
+```
+
+Alternatively, if you are using the legacy `localstack` CLI:
 
 ```bash
 localstack extensions install "git+https://github.com/localstack/localstack-extensions.git#egg=localstack-mockoon&subdirectory=mockoon"
@@ -30,13 +36,13 @@ In the newly generated project, simply run
 make install
 ```
 
-Then, to enable the extension for LocalStack, run
+Developer mode currently requires the legacy `localstack` CLI, as `lstk` does not support extensions yet. To enable the extension for LocalStack, run
 
 ```bash
 localstack extensions dev enable .
 ```
 
-You can then start LocalStack with `EXTENSION_DEV_MODE=1` to load all enabled extensions:
+You can then start LocalStack with `EXTENSION_DEV_MODE=1` to load all enabled extensions (the `localstack` CLI mounts the extension sources into the container):
 
 ```bash
 EXTENSION_DEV_MODE=1 localstack start
@@ -49,7 +55,7 @@ Mockoon mock APIs are defined in [environment data files](https://mockoon.com/do
 To serve your own environment, start LocalStack with `MOCKOON_DATA` pointing to the **absolute** path of your environment file on the host:
 
 ```bash
-LOCALSTACK_MOCKOON_DATA=/path/to/my-environment.json localstack start
+LOCALSTACK_MOCKOON_DATA=/path/to/my-environment.json lstk start
 ```
 
 The mock API is then available at `http://mockoon.localhost.localstack.cloud:4566`, for example:
@@ -79,9 +85,9 @@ The admin API also allows to update route responses at runtime (`PUT /mockoon-ad
 - `MOCKOON_DATA`: Absolute host path, URL, or `cloud://` reference of the Mockoon environment to serve (default: bundled welcome environment)
 - `MOCKOON_ADMIN_API_TOKEN`: Bearer token for the Mockoon admin API (default: `test`)
 - `MOCKOON_CLOUD_TOKEN`: Mockoon Cloud access token, required when using `cloud://` environments
-- `MOCKOON_IMAGE`: Custom Docker image name for the Mockoon CLI (default: `mockoon/cli`)
+- `MOCKOON_IMAGE`: Custom Docker image name for the Mockoon CLI (default: `mockoon/cli:9`)
 
-Note: When using the LocalStack CLI, prefix environment variables with `LOCALSTACK_` to forward them to the container.
+Note: When starting LocalStack via `lstk` (or the `localstack` CLI), prefix environment variables with `LOCALSTACK_` to forward them to the container.
 
 ## Sample Application
 
@@ -91,10 +97,10 @@ See the `sample-app/` directory for a complete example using Terraform that demo
 - Lambda function that calls a mocked Orders API served by Mockoon
 - Integration testing with mocked external APIs
 
-To run the sample, start LocalStack with the sample environment, and then deploy and invoke the app:
+To run the sample, start LocalStack with the sample environment, and then deploy and invoke the app (the deployment uses `lstk terraform`, override via `make sample TERRAFORM=tflocal` if needed):
 
 ```bash
-LOCALSTACK_MOCKOON_DATA=$PWD/sample-app/environment.json localstack start -d
+LOCALSTACK_MOCKOON_DATA=$PWD/sample-app/environment.json lstk start
 make sample
 ```
 
