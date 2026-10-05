@@ -43,7 +43,7 @@ analytics workloads.
 Example of BM25 scoring, from the excellent [quickstart guide](https://docs.paradedb.com/documentation/getting-started/quickstart):
 
 ```sql
-CALL paradedb.create_bm25_test_table(
+CALL paradedb.create_paradedb_test_table(
   schema_name => 'public',
   table_name => 'mock_items'
 );
