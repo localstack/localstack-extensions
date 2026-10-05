@@ -52,7 +52,7 @@ def test_paradedb_quickstart():
     try:
         # Load sample data
         cursor.execute(f"""
-            CALL paradedb.create_bm25_test_table(
+            CALL paradedb.create_paradedb_test_table(
                 schema_name => 'public',
                 table_name => '{table_name}'
             );
