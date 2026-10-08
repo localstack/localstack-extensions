@@ -1,6 +1,4 @@
 # LocalStack Prometheus Metrics
-[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-prometheus-metrics&subdirectory=prometheus)
-
 Instruments, collects, and exposes LocalStack metrics via a [Prometheus](https://prometheus.io/) endpoint.
 
 ## Installing

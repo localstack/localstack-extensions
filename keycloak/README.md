@@ -19,7 +19,7 @@ This Extension:
 ## Installation
 
 ```bash
-localstack extensions install "git+https://github.com/localstack/localstack-extensions.git#egg=localstack-keycloak&subdirectory=keycloak"
+localstack extensions install localstack-keycloak
 ```
 
 ## Install local development version

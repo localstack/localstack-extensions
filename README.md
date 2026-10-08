@@ -47,17 +47,11 @@ Commands:
 ```
 
 To install an extension, specify the name of the pip dependency that contains
-the extension. For example, for the official Stripe extension, you can either
-use the package distributed on pypi:
+the extension. For example, for the official httpbin extension, use the package
+distributed on PyPI:
 
 ```console
 $ localstack extensions install localstack-extension-httpbin
-```
-
-or you can install the latest version directly from this Git repository
-
-```console
-$ localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-httpbin&subdirectory=httpbin"
 ```
 
 ## Official LocalStack Extensions

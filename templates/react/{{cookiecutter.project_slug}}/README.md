@@ -33,10 +33,10 @@ There are a few make commands available that will help your journey with the UI:
 - **start-frontend**: will start a live server on port 3000 (by default) that will allow you to have hot reloading when developing locally outside the extension (it will also build the frontend)
 
 
-## Install from GitHub repository
+## Publish to PyPI
 
-To distribute your extension, simply upload it to your github account. Your extension can then be installed via:
+To distribute your extension, publish it to PyPI with `make publish`. It can then be installed via:
 
 ```bash
-localstack extensions install "git+https://github.com/{{cookiecutter.github_username }}/{{ cookiecutter.project_slug }}/#egg={{ cookiecutter.project_slug }}"
+localstack extensions install {{ cookiecutter.project_slug }}
 ```
