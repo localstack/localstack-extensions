@@ -12,18 +12,18 @@ The extension runs the [Mockoon CLI](https://mockoon.com/cli/) (`mockoon/cli:9` 
 - `make` and Terraform (for the sample app)
 - [Mockoon desktop app](https://mockoon.com/download/) (optional, for designing your mock APIs)
 
-## Install from GitHub repository
+## Install from PyPI
 
 `lstk` does not have commands for managing extensions, but LocalStack can install the extension at startup via the `EXTENSION_AUTO_INSTALL` config variable:
 
 ```bash
-LOCALSTACK_EXTENSION_AUTO_INSTALL="git+https://github.com/localstack/localstack-extensions.git#egg=localstack-mockoon&subdirectory=mockoon" lstk start
+LOCALSTACK_EXTENSION_AUTO_INSTALL="localstack-mockoon" lstk start
 ```
 
 Alternatively, if you are using the legacy `localstack` CLI:
 
 ```bash
-localstack extensions install "git+https://github.com/localstack/localstack-extensions.git#egg=localstack-mockoon&subdirectory=mockoon"
+localstack extensions install localstack-mockoon
 ```
 
 ## Install local development version

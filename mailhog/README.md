@@ -1,7 +1,5 @@
 LocalStack Mailhog Extension
 ===============================
-[![Install LocalStack Extension](https://localstack.cloud/gh/extension-badge.svg)](https://app.localstack.cloud/extensions/remote?url=git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-mailhog&subdirectory=mailhog)
-
 Web and API based SMTP testing directly in LocalStack using [MailHog](https://github.com/mailhog/MailHog).
 
 If the standard configuration is used, LocalStack will serve the UI through http://mailhog.localhost.localstack.cloud:4566 or http://localhost:4566/mailhog/.
@@ -20,14 +18,6 @@ After starting LocalStack, you should see these lines in the log:
 ```
 2023-07-26T10:00:08.072  INFO --- [  MainThread] mailhog.extension          : serving mailhog extension on host: http://mailhog.localhost.localstack.cloud:4566
 2023-07-26T10:00:08.072  INFO --- [  MainThread] mailhog.extension          : serving mailhog extension on path: http://localhost:4566/mailhog/
-```
-
-## Install from GitHub repository
-
-Alternatively, you can install the latest unreleased version directly from the GitHub repository by running:
-
-```bash
-localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-mailhog-extension&subdirectory=mailhog"
 ```
 
 ## Integration with LocalStack

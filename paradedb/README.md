@@ -74,12 +74,10 @@ The following environment variables can be passed to the LocalStack container to
 * `localstack` CLI
 * `make`
 
-## Install from GitHub repository
-
-This extension can be installed directly from this Github repo via:
+## Install from PyPI
 
 ```bash
-localstack extensions install "git+https://github.com/localstack/localstack-extensions.git#egg=localstack-extension-paradedb&subdirectory=paradedb"
+localstack extensions install localstack-extension-paradedb
 ```
 
 ## Install local development version

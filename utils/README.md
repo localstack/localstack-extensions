@@ -14,15 +14,6 @@ dependencies = [
 ]
 ```
 
-Or, to install directly from the GitHub repository:
-
-```toml
-[project]
-dependencies = [
-    "localstack-extensions-utils @ git+https://github.com/localstack/localstack-extensions.git#subdirectory=utils",
-]
-```
-
 Then import the utilities in your extension code, for example:
 
 ```python

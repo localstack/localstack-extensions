@@ -102,10 +102,8 @@ You can then start LocalStack with `EXTENSION_DEV_MODE=1` to load all enabled ex
 EXTENSION_DEV_MODE=1 localstack start
 ```
 
-## Install from GitHub repository
-
-To distribute your extension, simply upload it to your github account. Your extension can then be installed via:
+## Install from PyPI
 
 ```bash
-localstack extensions install "git+https://github.com/localstack/localstack-extensions/#egg=localstack-extension-terraform-init&subdirectory=terraform-init"
+localstack extensions install localstack-extension-terraform-init
 ```

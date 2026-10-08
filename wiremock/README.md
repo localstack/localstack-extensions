@@ -15,12 +15,10 @@ The extension supports two modes:
 - `make`
 - [WireMock CLI](https://docs.wiremock.io/cli/overview) (for WireMock Runner mode)
 
-## Install from GitHub repository
-
-This extension can be installed directly from this Github repo via:
+## Install from PyPI
 
 ```bash
-localstack extensions install "git+https://github.com/localstack/localstack-extensions.git#egg=localstack-wiremock&subdirectory=wiremock"
+localstack extensions install localstack-wiremock
 ```
 
 ## Install local development version
