@@ -16,7 +16,6 @@ keywords = ["localstack", "localstack-extension", "extension", "prometheus", "me
 classifiers = []
 dependencies = [
     "prometheus-client (>=0.21.1,<0.22.0)",
-    "localstack-core (>=4.2.0,<5.0.0)",
 ]
 
 [project.urls]
@@ -24,7 +23,8 @@ Homepage = "https://github.com/localstack/localstack-extensions/tree/main/promet
 
 [project.optional-dependencies]
 dev = [
-    "localstack>=0.0.0.dev"
+    "localstack>=0.0.0.dev",
+    "localstack-core",
 ]
 
 [tool.black]
