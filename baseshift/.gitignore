@@ -1,0 +1,8 @@
+.venv
+dist
+build
+**/*.egg-info
+.eggs
+.pytest_cache
+__pycache__
+demo/baseshift-selfhosted/.env
