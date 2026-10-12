@@ -47,7 +47,7 @@ jobs:
       - name: Install lstk CLI
         # version is pinned; there is no lockfile for global CLI tools
         run: | # zizmor: ignore[adhoc-packages]
-          npm install -g @localstack/lstk@1.2.0
+          npm install -g @localstack/lstk@1.4.0
           lstk --version
 
       - name: Build extension
