@@ -1,0 +1,60 @@
+# Helm values for running the Baseshift self-hosted components (connector + replication server)
+# against LocalStack: the source database runs in LocalStack RDS, and Docker snapshots are pushed
+# to the LocalStack ECR registry.
+#
+# Values in <...> are provided by Baseshift (see the Dub setup wizard, or `baseshift dub create
+# --deployment self-hosted`). Untested so far - requires access to the replication server image.
+
+orgId: "<org-id>"
+serverId: "<server-id>"
+enrollmentToken: "<enrollment-token>"
+# encryption password for the Docker snapshot images (letters and numbers only)
+password: "localstack123"
+
+# LocalStack ECR is a plain Docker v2 registry, hence we use the generic ("harbor") provider over
+# HTTP, instead of the "aws_ecr" provider (which would call the real AWS ECR APIs)
+dockerSnapshotRegistry:
+  enabled: true
+  provider: harbor
+  registry: "000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud"
+  port: "4566"
+  project: "baseshift"
+  useTls: false
+  auth:
+    type: basic
+    # LocalStack ECR does not enforce authentication
+    username: "AWS"
+    password: "test"
+
+repserver:
+  image:
+    repository: registry.gitlab.com/dubhub/core/multi-ubuntu2404/repserver
+    tag: master
+  # a small demo database needs far less than the production defaults
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  storage:
+    size: "10Gi"
+
+agent:
+  id: "<agent-id>"
+  token: "<agent-token>"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "2Gi"
+
+# pull credentials for registry.gitlab.com (replication server image), provided by Baseshift
+imageCredentials:
+  enabled: true
+  registry: registry.gitlab.com
+  username: "<registry-username>"
+  token: "<registry-token>"
