@@ -5,7 +5,7 @@
 
 ## Install local development version
 
-To install the extension into localstack in developer mode, you will need Python 3.10, and create a virtual environment in the extensions project.
+To install the extension into localstack in developer mode, you will need Python 3.11, and create a virtual environment in the extensions project.
 
 In the newly generated project, simply run
 

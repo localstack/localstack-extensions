@@ -7,7 +7,7 @@ name = "localstack-keycloak"
 version = "0.1.0"
 description = "LocalStack Extension: Keycloak for Identity and Access Management"
 readme = {file = "README.md", content-type = "text/markdown; charset=UTF-8"}
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     { name = "LocalStack Team"}
 ]
@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "localstack-extensions-utils",

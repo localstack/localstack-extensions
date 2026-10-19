@@ -52,7 +52,7 @@ If you are using docker compose, simply add them as environment variables to the
 
 ### Install local development version
 
-To install the extension into localstack in developer mode, you will need Python 3.10, and create a virtual environment in the extensions project.
+To install the extension into localstack in developer mode, you will need Python 3.11, and create a virtual environment in the extensions project.
 
 In the newly generated project, simply run
 
@@ -80,24 +80,24 @@ The UI won't update automatically though, so you need to click the refresh butto
 ```
 2023-07-25T18:23:12.465 ERROR --- [-functhread3] hypercorn.error            : Error in ASGI Framework
 Traceback (most recent call last):
-File "/opt/code/localstack/.venv/lib/python3.10/site-packages/hypercorn/asyncio/task_group.py", line 23, in _handle
+File "/opt/code/localstack/.venv/lib/python3/site-packages/hypercorn/asyncio/task_group.py", line 23, in _handle
 await app(scope, receive, send, sync_spawn, call_soon)
-File "/opt/code/localstack/.venv/lib/python3.10/site-packages/hypercorn/app_wrappers.py", line 33, in __call__
+File "/opt/code/localstack/.venv/lib/python3/site-packages/hypercorn/app_wrappers.py", line 33, in __call__
 await self.app(scope, receive, send)
-File "/opt/code/localstack/.venv/lib/python3.10/site-packages/localstack/aws/serving/asgi.py", line 67, in __call__
+File "/opt/code/localstack/.venv/lib/python3/site-packages/localstack/aws/serving/asgi.py", line 67, in __call__
 return await self.wsgi(scope, receive, send)
-File "/opt/code/localstack/.venv/lib/python3.10/site-packages/localstack/http/asgi.py", line 324, in __call__
+File "/opt/code/localstack/.venv/lib/python3/site-packages/localstack/http/asgi.py", line 324, in __call__
 raise NotImplementedError("Unhandled protocol %s" % scope["type"])
 NotImplementedError: Unhandled protocol websocket
 2023-07-25T18:23:12.465 ERROR --- [-functhread3] hypercorn.error            : Error in ASGI Framework
 Traceback (most recent call last):
-File "/opt/code/localstack/.venv/lib/python3.10/site-packages/hypercorn/asyncio/task_group.py", line 23, in _handle
+File "/opt/code/localstack/.venv/lib/python3/site-packages/hypercorn/asyncio/task_group.py", line 23, in _handle
 await app(scope, receive, send, sync_spawn, call_soon)
-File "/opt/code/localstack/.venv/lib/python3.10/site-packages/hypercorn/app_wrappers.py", line 33, in __call__
+File "/opt/code/localstack/.venv/lib/python3/site-packages/hypercorn/app_wrappers.py", line 33, in __call__
 await self.app(scope, receive, send)
-File "/opt/code/localstack/.venv/lib/python3.10/site-packages/localstack/aws/serving/asgi.py", line 67, in __call__
+File "/opt/code/localstack/.venv/lib/python3/site-packages/localstack/aws/serving/asgi.py", line 67, in __call__
 return await self.wsgi(scope, receive, send)
-File "/opt/code/localstack/.venv/lib/python3.10/site-packages/localstack/http/asgi.py", line 324, in __call__
+File "/opt/code/localstack/.venv/lib/python3/site-packages/localstack/http/asgi.py", line 324, in __call__
 raise NotImplementedError("Unhandled protocol %s" % scope["type"])
 ```
 
