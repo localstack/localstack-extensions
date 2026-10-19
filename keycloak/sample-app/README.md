@@ -51,7 +51,7 @@ flowchart TB
 ## Prerequisites
 
 - LocalStack running with Keycloak extension
-- Python 3.10+
+- Python 3.11+
 - AWS CDK Local (`cdklocal`)
 
 ## Quick Start
