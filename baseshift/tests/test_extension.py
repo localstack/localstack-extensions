@@ -22,6 +22,7 @@ GATEWAY_PORT = int(os.environ.get("GATEWAY_PORT", "4566"))
 GATEWAY_ENDPOINT = ("localhost.localstack.cloud", GATEWAY_PORT)
 HOST_PORT_ENDPOINT = ("localhost", 5432)
 API_URL = f"http://baseshift.localhost.localstack.cloud:{GATEWAY_PORT}/clones"
+DUBS_API_URL = f"http://baseshift.localhost.localstack.cloud:{GATEWAY_PORT}/dubs"
 
 
 def connect(host: str, port: int):
@@ -164,3 +165,48 @@ def test_api_errors():
     # unknown clone
     assert requests.get(f"{API_URL}/unknown").status_code == 404
     assert requests.delete(f"{API_URL}/unknown").status_code == 404
+
+
+# Note: creating self-hosted Dubs requires a Baseshift account, and creates the Dubs in Baseshift
+# Cloud - hence, these tests only cover the validation of the Dubs API.
+
+DUB_REQUEST = {
+    "name": "test-dub",
+    "hostname": "localhost.localstack.cloud",
+    "port": 4510,
+    "database": "shop",
+    "username": "admin",
+    "password": "secret",
+}
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"name": "Invalid_Name"},
+        {"name": "1-starts-with-digit"},
+        {"hostname": None},
+        {"password": ""},
+        {"deployment": "nomad"},
+        {"maskingPolicy": {"rules": []}},
+    ],
+)
+def test_create_dub_invalid_request(overrides):
+    request = {**DUB_REQUEST, **overrides}
+    response = requests.post(DUBS_API_URL, json=request)
+    assert response.status_code == 400, response.text
+    assert response.json()["error"]
+
+
+def test_dubs_api_errors():
+    assert "dubs" in requests.get(DUBS_API_URL).json()
+    # unknown Dub
+    assert requests.get(f"{DUBS_API_URL}/unknown").status_code == 404
+    assert requests.post(f"{DUBS_API_URL}/unknown/snapshots").status_code == 404
+    response = requests.post(
+        f"{DUBS_API_URL}/unknown/masking", json={"manual_rules": []}
+    )
+    assert response.status_code == 404
+    # clone from an unknown Dub
+    response = requests.post(API_URL, json={"name": "from-dub", "dub": "unknown"})
+    assert response.status_code == 400

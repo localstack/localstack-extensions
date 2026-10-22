@@ -58,13 +58,33 @@ Set `LOCALSTACK_HOST` if LocalStack runs on a different port (default: `localhos
 
 ## What is emulated
 
-The `snapshot` step is currently a **stand-in** for the Baseshift replication server: it reads the source database, applies a simple deterministic masking policy, and builds a PostgreSQL image with the masked data. Its purpose is to illustrate the flow - the actual Baseshift components provide PII scanning, masking policies, subsetting, and continuous snapshots via logical replication.
+By default, the `snapshot` step is a **stand-in** for the Baseshift replication server: it reads the source database, applies a simple deterministic masking policy, and builds a PostgreSQL image with the masked data. Its purpose is to illustrate the flow - the actual Baseshift components provide PII scanning, masking policies, subsetting, and continuous snapshots via logical replication.
 
-The next step is to replace the stand-in with the actual Baseshift self-hosted components, running against LocalStack:
+## Running with the Baseshift self-hosted components
 
-- The [`baseshift-selfhosted/`](baseshift-selfhosted/) directory contains Helm values for LocalStack (`values-localstack.yaml`, validated against the Baseshift chart schema), and a `docker-compose.yml` translated from the rendered chart, as a lightweight alternative to Kubernetes.
-- The source database would be the RDS instance created by the `source` step (which already enables logical replication), and Docker snapshots would be pushed to the LocalStack ECR registry (as a plain Docker v2 registry).
-- This requires access to the Baseshift replication server image, and a Dub server enrolled in Baseshift Cloud (the control plane).
+With `--selfhosted`, the demo uses the actual Baseshift self-hosted components (agent and replication server) instead of the stand-in, via the [self-hosted Dubs](../README.md#self-hosted-dubs) API of the extension: the extension creates a Dub in Baseshift Cloud for the RDS source database, and runs its components as containers next to LocalStack. They replicate the source database, and push encrypted Docker snapshots to LocalStack ECR.
+
+Start LocalStack with the credentials of a Baseshift user:
+
+```bash
+LOCALSTACK_BASESHIFT_USER_EMAIL=<email> LOCALSTACK_BASESHIFT_USER_PASSWORD=<password> \
+  lstk start --type snowflake   # with LOCALSTACK_EXTENSION_AUTO_INSTALL set, see the extension README
+```
+
+Then run all steps with `make demo-selfhosted`, or one by one:
+
+```bash
+python demo/demo.py source                 # create the "production" RDS database, and seed it with PII
+python demo/demo.py dub                    # create a self-hosted Dub, running in LocalStack EKS (takes a few minutes)
+python demo/demo.py clone --selfhosted     # start a clone from the latest snapshot of the Dub
+python demo/demo.py pipeline               # export the clone data to S3, and load it into Snowflake
+python demo/demo.py compare                # show the same record at every stage
+python demo/demo.py snapshot --selfhosted  # (optional) take a new snapshot of the Dub
+```
+
+Set `BASESHIFT_DUB_NAME` to use a different Dub name (default: `localstack-shop`), and `BASESHIFT_DEPLOYMENT=kubernetes` to run the components in a LocalStack EKS cluster instead of plain containers. Dubs cannot be deleted via the Baseshift CLI, so use a new name when running the demo against a fresh LocalStack instance (unless the LocalStack volume directory is persisted).
+
+The `dub` step creates the Dub with the masking policy in [`masking-policy.json`](masking-policy.json), which covers the PII columns of the `customers` table. The `compare` step fails if any raw PII values reach the clone.
 
 ## Notes
 

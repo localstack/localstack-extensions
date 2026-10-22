@@ -45,7 +45,10 @@ test:		    ## Run integration tests (requires LocalStack running with the Extens
 demo: venv	    ## Run the end-to-end demo (requires LocalStack with the Snowflake emulator and the Extension installed)
 	$(VENV_RUN); pip install -q -r demo/requirements.txt; python demo/demo.py all
 
+demo-selfhosted: venv	## Run the end-to-end demo with the Baseshift self-hosted components (requires LocalStack started with BASESHIFT_USER_EMAIL/PASSWORD)
+	$(VENV_RUN); pip install -q -r demo/requirements.txt; python demo/demo.py all --selfhosted
+
 clean-dist: clean
 	rm -rf dist/
 
-.PHONY: clean clean-dist demo dist install publish usage venv format lint test
+.PHONY: clean clean-dist demo demo-selfhosted dist install publish usage venv format lint test

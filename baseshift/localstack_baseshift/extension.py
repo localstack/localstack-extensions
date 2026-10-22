@@ -22,6 +22,8 @@ from localstack_extensions.utils.tcp_protocol_router import (
 )
 from rolo.routing import RuleAdapter, WithHost
 
+from localstack_baseshift.dubs import DubManager
+
 LOG = logging.getLogger(__name__)
 
 # Image of the Baseshift clone (Docker snapshot) to start when LocalStack is ready, e.g.
@@ -110,11 +112,17 @@ class ClonesApi:
     def create_clone(self, request: Request, **kwargs):
         try:
             payload = request.get_json(force=True) or {}
+            image = payload.get("image", "")
+            env_vars = payload.get("env") or {}
+            if dub_name := payload.get("dub"):
+                # start the clone from the latest snapshot image of a self-hosted Dub
+                image, dub_env = self.extension.get_dub_clone_config(dub_name)
+                env_vars = {**dub_env, **env_vars}
             clone = self.extension.start_clone(
                 name=payload.get("name", ""),
-                image=payload.get("image", ""),
+                image=image,
                 db_type=payload.get("dbType", "postgres"),
-                env_vars=payload.get("env") or {},
+                env_vars=env_vars,
             )
         except ValueError as e:
             return Response.for_json({"error": str(e)}, status=400)
@@ -135,6 +143,55 @@ class ClonesApi:
         return Response.for_json({"error": f"Clone {name} not found"}, status=404)
 
 
+class DubsApi:
+    """HTTP API to create self-hosted Dubs, with their components running in LocalStack EKS."""
+
+    def __init__(self, dubs: DubManager):
+        self.dubs = dubs
+
+    @route("/dubs", methods=["GET"])
+    def list_dubs(self, request: Request, **kwargs):
+        return {"dubs": [dub.to_dict() for dub in self.dubs.list_dubs()]}
+
+    @route("/dubs", methods=["POST"])
+    def create_dub(self, request: Request, **kwargs):
+        try:
+            dub = self.dubs.create_dub(request.get_json(force=True) or {})
+        except ValueError as e:
+            return Response.for_json({"error": str(e)}, status=400)
+        except KeyError as e:
+            return Response.for_json({"error": str(e.args[0])}, status=409)
+        return Response.for_json(dub.to_dict(), status=202)
+
+    @route("/dubs/<name>", methods=["GET"])
+    def get_dub(self, request: Request, name: str, **kwargs):
+        if dub := self.dubs.get_dub(name):
+            result = dub.to_dict()
+            result["image"] = self.dubs.get_snapshot_image(name)
+            return result
+        return Response.for_json({"error": f"Dub {name} not found"}, status=404)
+
+    @route("/dubs/<name>/snapshots", methods=["POST"])
+    def create_snapshot(self, request: Request, name: str, **kwargs):
+        try:
+            dub = self.dubs.create_snapshot(name)
+        except LookupError as e:
+            return Response.for_json({"error": str(e)}, status=404)
+        except ValueError as e:
+            return Response.for_json({"error": str(e)}, status=409)
+        return Response.for_json(dub.to_dict(), status=202)
+
+    @route("/dubs/<name>/masking", methods=["POST"])
+    def set_masking_policy(self, request: Request, name: str, **kwargs):
+        try:
+            dub = self.dubs.set_masking_policy(name, request.get_json(force=True) or {})
+        except LookupError as e:
+            return Response.for_json({"error": str(e)}, status=404)
+        except ValueError as e:
+            return Response.for_json({"error": str(e)}, status=400)
+        return Response.for_json(dub.to_dict(), status=202)
+
+
 class BaseshiftExtension(Extension):
     name = "localstack-baseshift"
 
@@ -153,12 +210,19 @@ class BaseshiftExtension(Extension):
         self.container_host = get_addressable_container_host()
         self._clones: dict[str, Clone] = {}
         self._lock = threading.RLock()
+        self.dubs = DubManager()
 
     def update_gateway_routes(self, router: http.Router[http.RouteHandler]):
-        router.add(WithHost(API_HOST, [RuleAdapter(ClonesApi(self))]))
+        router.add(
+            WithHost(
+                API_HOST,
+                [RuleAdapter(ClonesApi(self)), RuleAdapter(DubsApi(self.dubs))],
+            )
+        )
         patch_gateway_for_tcp_routing()
 
     def on_platform_ready(self):
+        self.dubs.configure_dns()
         url = f"http://baseshift.{config.LOCALSTACK_HOST.host_and_port()}/clones"
         if not self.default_image:
             LOG.info(
@@ -177,6 +241,7 @@ class BaseshiftExtension(Extension):
     def on_platform_shutdown(self):
         for clone in self.list_clones():
             self._remove_container(clone)
+        self.dubs.shutdown()
 
     # clone management
 
@@ -220,6 +285,16 @@ class BaseshiftExtension(Extension):
             self._clones[name] = clone
         threading.Thread(target=self._run_clone, args=(clone,), daemon=True).start()
         return clone
+
+    def get_dub_clone_config(self, dub_name: str) -> tuple[str, dict[str, str]]:
+        """Return the latest snapshot image of a self-hosted Dub, and the env vars to start it."""
+        dub = self.dubs.get_dub(dub_name)
+        if not dub:
+            raise ValueError(f"Dub {dub_name} not found")
+        if not (image := self.dubs.get_snapshot_image(dub_name)):
+            raise ValueError(f"Dub {dub_name} has no snapshot image yet")
+        # the snapshot images are encrypted with the encryption password of the Dub
+        return image, {"PASSWORD": dub.encryption_password}
 
     def stop_clone(self, name: str) -> bool:
         with self._lock:

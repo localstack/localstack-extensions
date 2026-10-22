@@ -14,14 +14,16 @@ flowchart LR
         rds[("LocalStack RDS<br/>PostgreSQL with PII")]
     end
 
-    subgraph baseshift["2 · Baseshift (self-hosted)"]
+    cloud["Baseshift Cloud (SaaS)<br/>control plane"]
+
+    subgraph baseshift["2 · Baseshift self-hosted components"]
         direction TB
-        cloud["Baseshift Cloud<br/>control plane"]
         connector["Connector<br/>masking policy"]
         repserver["Replication server<br/>masked replica, snapshots"]
-        cloud -.- repserver
         connector -- "masked data" --> repserver
     end
+
+    cloud -. "manages" .-> baseshift
 
     subgraph registry["3 · Snapshot registry"]
         ecr[("LocalStack ECR<br/>Docker snapshot images")]
@@ -59,7 +61,7 @@ flowchart LR
 ```
 
 1. **Production data**: the source database, e.g. PostgreSQL in (LocalStack) RDS, containing PII.
-2. **Baseshift** replicates the source database via its connector, which applies the masking policy, and the replication server maintains a masked replica and creates snapshots. The components are managed via the Baseshift Cloud control plane. (In the [demo](demo/), a stand-in script currently takes the place of this step.)
+2. **Baseshift** replicates the source database via its connector, which applies the masking policy, and the replication server maintains a masked replica and creates snapshots. Connector and replication server run in your environment, and are managed via the Baseshift Cloud control plane (SaaS). The extension can run these components in a LocalStack EKS cluster (see [Self-hosted Dubs](#self-hosted-dubs)).
 3. The replication server publishes Docker **snapshot images** to a registry, e.g. AWS ECR, or the LocalStack ECR registry for a fully local setup.
 4. This **extension** starts clones from these images as containers next to LocalStack: a default clone at startup (`BASESHIFT_IMAGE`), and further clones on demand via the clones API. Each clone is a writable copy of the masked database.
 5. **Consumers** work with the masked data only: app code running in LocalStack and developer tools connect through the LocalStack gateway (the first PostgreSQL clone is detected by its protocol handshake on port 4566), or to the host port of a clone. An analytics pipeline can extract data from a clone, and load it into Snowflake (see the [demo](demo/)).
@@ -185,6 +187,53 @@ curl -X POST http://baseshift.localhost.localstack.cloud:4566/clones \
 
 The LocalStack ECR registry does not require a `docker login`.
 
+### Self-hosted Dubs
+
+The extension can also create self-hosted Dubs, and run their Baseshift components (agent and replication server) in LocalStack. This way, the full flow runs locally: the source database (e.g., in LocalStack RDS) is replicated and masked by the Baseshift components, which push encrypted Docker snapshots to the LocalStack ECR registry, from where clones are started. The components are managed via Baseshift Cloud, which requires a Baseshift user - configure its credentials when starting LocalStack:
+
+```bash
+LOCALSTACK_BASESHIFT_USER_EMAIL=<email> \
+LOCALSTACK_BASESHIFT_USER_PASSWORD=<password> \
+  lstk start
+```
+
+Then create a Dub for a source database. The extension uses the `baseshift` CLI (logged in with these credentials) to create the Dub, and runs the components as containers next to LocalStack (or in a LocalStack EKS cluster, see `deployment` below), configured for LocalStack. Creating a Dub takes a few minutes, until the components are connected, the health checks have passed, and the initial snapshot is pushed to LocalStack ECR:
+
+```bash
+# create a Dub (source: e.g., an RDS instance, as seen from LocalStack)
+curl -X POST http://baseshift.localhost.localstack.cloud:4566/dubs \
+  -d '{"name": "my-dub", "hostname": "localhost.localstack.cloud", "port": 4510,
+       "database": "shop", "username": "admin", "password": "<db-password>"}'
+
+# get the status, progress log, and latest snapshot image of the Dub
+curl http://baseshift.localhost.localstack.cloud:4566/dubs/my-dub
+
+# take a new snapshot
+curl -X POST http://baseshift.localhost.localstack.cloud:4566/dubs/my-dub/snapshots
+
+# update the masking policy (restarts the Dub, which re-creates the masked replica and takes a new snapshot)
+curl -X POST http://baseshift.localhost.localstack.cloud:4566/dubs/my-dub/masking \
+  -d '{"manual_rules": [{"table": "shop.public.customers", "column": "email", "masking_function": "random_email_gen"}]}'
+
+# start a clone from the latest snapshot of the Dub
+curl -X POST http://baseshift.localhost.localstack.cloud:4566/clones \
+  -d '{"name": "pr-123", "dub": "my-dub"}'
+```
+
+The request accepts `name`, `hostname`, `port`, `database`, `username`, `password`, and optionally `engine` (default `postgres`), `encryptionPassword` (for the snapshot images, letters and numbers only, default `localstack123`), `maskingPolicy` (in the format of `baseshift dub masking get`, see below), and `deployment`:
+
+- `docker` (default): the components run as plain containers next to LocalStack (`ls-baseshift-dub-<name>-repserver` and `-agent`), attached to the LocalStack network. This starts faster and needs fewer resources than a Kubernetes cluster.
+- `kubernetes`: the components run in a LocalStack EKS cluster (`baseshift`), installed with the Baseshift Helm chart.
+ The `status` of the Dub changes from `creating` to `deploying` and `connecting`, and finally to `ready` (or `failed`, with an `error`, see the `log` for details).
+
+Without a masking policy, the Dub replicates the data unmasked. A masking policy has a rule per column (`table` is `database.schema.table` for PostgreSQL), with masking functions such as `full_name_gen`, `first_name_gen`, `last_name_gen`, `random_email_gen`, `anon_email`, `street_address_gen`, `random_city_gen`, `zip_code_gen`, `company_name_gen`, `varchar_random`, `md5`, `sha256`, `string_const`, or `setnull` (see the masking policy in the Baseshift dashboard for all functions). See [`demo/masking-policy.json`](demo/masking-policy.json) for an example.
+
+Notes:
+
+- Dubs are created in your Baseshift organization, and cannot be deleted via the CLI. The credentials of the components (Helm values) are stored in the LocalStack volume directory (`lib/baseshift`). The replication server enrolls with a one-time token, and keeps its certificates on its data volume: with the `docker` deployment, the data volumes are kept across restarts, so the Dub can be re-created with the same name after a restart. The EKS cluster (and its volumes) is removed with LocalStack, hence use a new Dub name with the `kubernetes` deployment after a restart.
+- The replication server builds the snapshot images on top of base images from the Baseshift ECR registry in AWS. The extension configures the LocalStack DNS server to resolve these names upstream (instead of pointing them to LocalStack).
+- The components need about 2 CPUs and 3 GiB of memory, and a few GB of disk space for the images.
+
 ### MySQL clones
 
 Set `BASESHIFT_DB_TYPE=mysql` (or `"dbType": "mysql"` in the API) for MySQL clones. MySQL clones are only available on their host port (`3306` for the first one): unlike PostgreSQL, the MySQL protocol starts with the server sending a greeting, so MySQL connections cannot be told apart from other traffic on the gateway port `4566`.
@@ -194,6 +243,7 @@ Set `BASESHIFT_DB_TYPE=mysql` (or `"dbType": "mysql"` in the API) for MySQL clon
 - `BASESHIFT_IMAGE`: Image of the default clone to start once LocalStack is ready (optional, clones can also be started via the API)
 - `BASESHIFT_DB_TYPE`: Database engine of the default clone, `postgres` (default) or `mysql`
 - `BASESHIFT_ENCRYPTION_PASSWORD`: Encryption password defined when the Dub was created (passed to the clones as `PASSWORD`)
+- `BASESHIFT_USER_EMAIL` / `BASESHIFT_USER_PASSWORD`: Credentials of the Baseshift user to create [self-hosted Dubs](#self-hosted-dubs) with
 - `BASESHIFT_CLONE_<NAME>`: Passed to the clone containers as `<NAME>`, for the [advanced clone options](https://docs.baseshift.com/docs/clones/local-clones#advanced-configuration), e.g. `BASESHIFT_CLONE_BACKUP_SCHEDULE`, `BASESHIFT_CLONE_MAX_BACKUPS`, or `BASESHIFT_CLONE_SPACE_USAGE_MIN_PERCENT`
 
 Note: When starting LocalStack via `lstk` (or the `localstack` CLI), prefix environment variables with `LOCALSTACK_` to forward them to the container, e.g. `LOCALSTACK_BASESHIFT_IMAGE`.

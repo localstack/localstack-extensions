@@ -9,9 +9,21 @@ Walks through the flow of masked production data, fully local:
   pipeline  - export the clone data to S3, and load it into Snowflake (LocalStack Snowflake emulator)
   compare   - show the same record in the source, the clone, and Snowflake side by side
 
-Note: the `snapshot` step is a stand-in for the Baseshift replication server (connector + masking +
-snapshot image creation), until the demo can run the Baseshift self-hosted components. Its masking
-rules are deliberately simple, and only serve to illustrate the flow.
+By default, the `snapshot` step is a stand-in for the Baseshift replication server (connector +
+masking + snapshot image creation). Its masking rules are deliberately simple, and only serve to
+illustrate the flow.
+
+With `--selfhosted`, the actual Baseshift self-hosted components are used instead, via the
+extension's Dubs API:
+
+  dub       - create a self-hosted Dub in Baseshift Cloud for the RDS source database - the extension
+              runs its components (agent + replication server) in a LocalStack EKS cluster, which
+              take the initial snapshot, pushed to LocalStack ECR
+  snapshot  - (with --selfhosted) take a new snapshot of the Dub
+  clone     - (with --selfhosted) start the clone from the latest snapshot of the Dub
+
+The self-hosted mode requires the extension to be configured with the credentials of a Baseshift
+user (`BASESHIFT_USER_EMAIL` and `BASESHIFT_USER_PASSWORD`).
 
 Requires LocalStack with the Snowflake emulator (e.g., `lstk` with `type = "snowflake"`) and the
 Baseshift extension installed.
@@ -21,6 +33,7 @@ import argparse
 import csv
 import hashlib
 import io
+import json
 import os
 import subprocess
 import sys
@@ -36,6 +49,7 @@ LOCALSTACK_HOST = os.environ.get("LOCALSTACK_HOST", "localhost.localstack.cloud:
 ENDPOINT_URL = f"http://{LOCALSTACK_HOST}"
 GATEWAY_HOST, GATEWAY_PORT = LOCALSTACK_HOST.split(":")
 CLONES_API = f"http://baseshift.{LOCALSTACK_HOST}/clones"
+DUBS_API = f"http://baseshift.{LOCALSTACK_HOST}/dubs"
 
 DB_INSTANCE = "prod-db"
 DB_NAME = "shop"
@@ -45,6 +59,13 @@ SNAPSHOT_REPO = "baseshift/shop-dub"
 CLONE_NAME = "shop-dev"
 EXPORT_BUCKET = "shop-analytics-export"
 CUSTOMER_ID = 1
+
+# self-hosted Dub (see `--selfhosted`) - note that Dubs cannot be deleted via the Baseshift CLI/API
+DUB_NAME = os.environ.get("BASESHIFT_DUB_NAME", "localstack-shop")
+# how the extension runs the Baseshift components: "docker" (containers next to LocalStack) or "kubernetes" (in LocalStack EKS)
+DUB_DEPLOYMENT = os.environ.get("BASESHIFT_DEPLOYMENT", "docker")
+# masking policy of the Dub, for the PII columns of the source database
+MASKING_POLICY_FILE = os.path.join(os.path.dirname(__file__), "masking-policy.json")
 
 CUSTOMERS = [
     (
@@ -228,7 +249,9 @@ def mask_value(column: str, value: str) -> str:
     return value
 
 
-def cmd_snapshot(_args):
+def cmd_snapshot(args):
+    if args.selfhosted:
+        return cmd_snapshot_selfhosted(args)
     log(
         "Reading source data and applying masking policy (name, email, ssn, phone, address)"
     )
@@ -295,6 +318,75 @@ def cmd_snapshot(_args):
     print(f"    snapshot image: {image}")
 
 
+def cmd_snapshot_selfhosted(_args):
+    log(
+        f"Taking a snapshot of Dub {DUB_NAME}, pushed to LocalStack ECR by the replication server"
+    )
+    response = requests.post(f"{DUBS_API}/{DUB_NAME}/snapshots")
+    if not response.ok:
+        sys.exit(f"Failed to take a snapshot: {response.json().get('error')}")
+    wait_for_dub()
+
+
+def get_snapshot_image() -> str:
+    """Return the image of the stand-in snapshot in LocalStack ECR."""
+    repo = aws_client("ecr").describe_repositories(repositoryNames=[SNAPSHOT_REPO])[
+        "repositories"
+    ][0]
+    return f"{repo['repositoryUri']}:latest"
+
+
+# ---------- dub: Baseshift self-hosted components in LocalStack EKS, via the extension ----------
+
+
+def cmd_dub(_args):
+    host, port = get_source_endpoint()
+    log(
+        f"Creating self-hosted Dub {DUB_NAME} for source {host}:{port}/{DB_NAME} ({DUB_DEPLOYMENT})"
+    )
+    response = requests.post(
+        DUBS_API,
+        json={
+            "name": DUB_NAME,
+            "hostname": host,
+            "port": port,
+            "database": DB_NAME,
+            "username": DB_USER,
+            "password": DB_PASSWORD,
+            "deployment": DUB_DEPLOYMENT,
+            "maskingPolicy": json.load(open(MASKING_POLICY_FILE)),
+        },
+    )
+    if response.status_code == 409:
+        print(f"    Dub {DUB_NAME} already exists")
+    elif not response.ok:
+        sys.exit(f"Failed to create Dub: {response.json().get('error')}")
+    wait_for_dub()
+
+
+def wait_for_dub():
+    """Wait for the Dub to be ready, and print the progress log of the extension."""
+    printed = []
+    while True:
+        dub = requests.get(f"{DUBS_API}/{DUB_NAME}").json()
+        # the API returns the last lines of the log - print the ones we have not seen yet
+        log_lines = dub["log"]
+        overlap = next(
+            (n for n in range(min(len(printed), len(log_lines)), 0, -1)
+             if printed[-n:] == log_lines[:n]),
+            0,
+        )  # fmt: skip
+        for line in log_lines[overlap:]:
+            print(f"    {line}", flush=True)
+        printed = log_lines
+        if dub["status"] in ("ready", "failed"):
+            break
+        time.sleep(5)
+    if dub["status"] != "ready":
+        sys.exit(f"Dub {DUB_NAME} failed: {dub.get('error')}")
+    print(f"    snapshot image: {dub['image']}")
+
+
 # ---------- clone: start a clone from the snapshot, via the extension ----------
 
 
@@ -308,13 +400,15 @@ def connect_clone():
     return psycopg2.connect(host=host, port=int(port), user="postgres", dbname=DB_NAME)
 
 
-def cmd_clone(_args):
-    image = aws_client("ecr").describe_repositories(repositoryNames=[SNAPSHOT_REPO])[
-        "repositories"
-    ][0]
-    image = f"{image['repositoryUri']}:latest"
-    log(f"Starting clone {CLONE_NAME} from {image}")
-    response = requests.post(CLONES_API, json={"name": CLONE_NAME, "image": image})
+def cmd_clone(args):
+    if args.selfhosted:
+        # the extension starts the clone from the latest snapshot image of the Dub
+        request = {"name": CLONE_NAME, "dub": DUB_NAME}
+        log(f"Starting clone {CLONE_NAME} from the latest snapshot of Dub {DUB_NAME}")
+    else:
+        request = {"name": CLONE_NAME, "image": get_snapshot_image()}
+        log(f"Starting clone {CLONE_NAME} from {request['image']}")
+    response = requests.post(CLONES_API, json=request)
     if response.status_code == 409:
         print(f"    clone {CLONE_NAME} already exists")
     else:
@@ -433,7 +527,9 @@ def cmd_compare(_args):
 
 
 def cmd_all(args):
-    for step in (cmd_source, cmd_snapshot, cmd_clone, cmd_pipeline, cmd_compare):
+    # with --selfhosted, the Dub takes an initial snapshot when it is created
+    snapshot_step = cmd_dub if args.selfhosted else cmd_snapshot
+    for step in (cmd_source, snapshot_step, cmd_clone, cmd_pipeline, cmd_compare):
         step(args)
 
 
@@ -447,9 +543,15 @@ def main():
         "clone": cmd_clone,
         "pipeline": cmd_pipeline,
         "compare": cmd_compare,
+        "dub": cmd_dub,
         "all": cmd_all,
     }
     parser.add_argument("command", choices=commands)
+    parser.add_argument(
+        "--selfhosted",
+        action="store_true",
+        help="use the Baseshift self-hosted components instead of the stand-in snapshot",
+    )
     args = parser.parse_args()
     commands[args.command](args)
 

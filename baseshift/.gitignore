@@ -5,4 +5,4 @@ build
 .eggs
 .pytest_cache
 __pycache__
-demo/baseshift-selfhosted/.env
+demo/.work
