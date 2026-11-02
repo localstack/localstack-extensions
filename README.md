@@ -62,6 +62,7 @@ You can install the respective extension by calling `localstack extensions insta
 | Extension                                                                                          | Install name | Version | Support status |
 |----------------------------------------------------------------------------------------------------| ------------ |---------| -------------- |
 | [AWS Proxy](https://github.com/localstack/localstack-extensions/tree/main/aws-proxy)               | localstack-extension-aws-proxy | 0.2.1   | Experimental |
+| [Baseshift](https://github.com/localstack/localstack-extensions/tree/main/baseshift)               | localstack-baseshift | 0.1.0   | Experimental |
 | [Diagnosis Viewer](https://github.com/localstack/localstack-extensions/tree/main/diagnosis-viewer) | localstack-extension-diagnosis-viewer | 0.1.0   | Stable |
 | [Hello World](https://github.com/localstack/localstack-extensions/tree/main/hello-world)           | localstack-extension-hello-world | 0.1.0   | Stable |
 | [httpbin](https://github.com/localstack/localstack-extensions/tree/main/httpbin)                   | localstack-extension-httpbin | 0.1.0   | Stable |
