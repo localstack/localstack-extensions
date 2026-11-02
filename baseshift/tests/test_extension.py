@@ -105,6 +105,14 @@ def test_list_clones():
     assert default["image"] == STAND_IN_IMAGE
 
 
+def test_clone_port_bound_to_loopback():
+    # clones are copies of production data without a password, so they must not be exposed on all interfaces
+    container = DOCKER_CLIENT.inspect_container("ls-baseshift-clone-default")
+    bindings = container["HostConfig"]["PortBindings"]["5432/tcp"]
+    assert bindings
+    assert all(binding["HostIp"] == "127.0.0.1" for binding in bindings)
+
+
 def test_start_clone_from_ecr_image(ecr_image):
     name = f"pr-{short_uid()}"
     response = requests.post(

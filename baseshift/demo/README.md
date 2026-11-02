@@ -75,7 +75,7 @@ Then run all steps with `make demo-selfhosted`, or one by one:
 
 ```bash
 python demo/demo.py source                 # create the "production" RDS database, and seed it with PII
-python demo/demo.py dub                    # create a self-hosted Dub, running in LocalStack EKS (takes a few minutes)
+python demo/demo.py dub                    # create a self-hosted Dub with masking (takes 10-15 minutes)
 python demo/demo.py clone --selfhosted     # start a clone from the latest snapshot of the Dub
 python demo/demo.py pipeline               # export the clone data to S3, and load it into Snowflake
 python demo/demo.py compare                # show the same record at every stage

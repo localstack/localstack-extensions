@@ -14,7 +14,7 @@ authors = [
 keywords = ["LocalStack", "Baseshift", "PostgreSQL", "MySQL"]
 classifiers = []
 dependencies = [
-    "baseshift",
+    "baseshift>=3.7.3,<4",
     "localstack-extensions-utils",
     "pyyaml"
 ]

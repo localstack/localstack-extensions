@@ -33,6 +33,10 @@ ENV_BASESHIFT_IMAGE = "BASESHIFT_IMAGE"
 ENV_BASESHIFT_DB_TYPE = "BASESHIFT_DB_TYPE"
 # Encryption password defined when the Dub was created (passed to clones as PASSWORD)
 ENV_BASESHIFT_ENCRYPTION_PASSWORD = "BASESHIFT_ENCRYPTION_PASSWORD"
+# Host interface the clone ports are published on (default: 127.0.0.1, set to 0.0.0.0 for remote access).
+# Note: clones are copies of production data and accept connections without a password.
+ENV_BASESHIFT_BIND_HOST = "BASESHIFT_BIND_HOST"
+DEFAULT_BIND_HOST = "127.0.0.1"
 # Any variable with this prefix is passed to the clone containers with the prefix stripped,
 # e.g. BASESHIFT_CLONE_BACKUP_SCHEDULE -> BACKUP_SCHEDULE
 ENV_CLONE_PREFIX = "BASESHIFT_CLONE_"
@@ -307,7 +311,8 @@ class BaseshiftExtension(Extension):
     def _run_clone(self, clone: Clone):
         try:
             self._pull_image(clone.image)
-            ports = PortMappings()
+            bind_host = os.environ.get(ENV_BASESHIFT_BIND_HOST) or DEFAULT_BIND_HOST
+            ports = PortMappings(bind_host=bind_host)
             ports.add(clone.port, DB_PORTS[clone.db_type])
             DOCKER_CLIENT.run_container(
                 clone.image,

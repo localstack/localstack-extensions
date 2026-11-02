@@ -9,70 +9,69 @@ For PostgreSQL clones, the database is available through the LocalStack gateway 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    subgraph source["1 · Production data"]
-        rds[("LocalStack RDS<br/>PostgreSQL with PII")]
-    end
-
+flowchart TB
+    dev["Developer / CI<br/>psql, IDE, tests, ELT job"]
     cloud["Baseshift Cloud (SaaS)<br/>control plane"]
 
-    subgraph baseshift["2 · Baseshift self-hosted components"]
-        direction TB
-        connector["Connector<br/>masking policy"]
-        repserver["Replication server<br/>masked replica, snapshots"]
-        connector -- "masked data" --> repserver
-    end
+    subgraph docker["Docker host"]
+        subgraph ls["LocalStack container"]
+            gateway["Gateway :4566"]
+            subgraph ext["Baseshift extension"]
+                dubsapi["Dubs API<br/>(baseshift CLI)"]
+                clonesapi["Clones API"]
+            end
+            rds[("RDS PostgreSQL<br/>source data with PII")]
+            ecr[("ECR registry<br/>snapshot images")]
+            s3[("S3")]
+            snowflake[("Snowflake")]
+        end
 
-    cloud -. "manages" .-> baseshift
+        subgraph dub["Dub containers"]
+            agent["Agent<br/>reads the source DB"]
+            repserver["Replication server<br/>masking, snapshots"]
+        end
 
-    subgraph registry["3 · Snapshot registry"]
-        ecr[("LocalStack ECR<br/>Docker snapshot images")]
-    end
-
-    subgraph clones["4 · Local clones (this extension)"]
-        direction TB
-        extension["Baseshift extension<br/>clones API"]
-        clone1[("Clone 'default'<br/>:5432")]
-        clone2[("Clone 'pr-123'<br/>:15432")]
-        extension -- "start / stop" --> clone1
-        extension -- "start / stop" --> clone2
-    end
-
-    gateway["LocalStack gateway :4566<br/>PostgreSQL routing"]
-
-    subgraph consumers["5 · Consumers of masked data"]
-        direction TB
-        app["App code<br/>Lambda, ECS, ..."]
-        dev["Developer / CI<br/>psql, IDE, tests"]
-        subgraph analytics["Analytics pipeline"]
-            direction LR
-            elt["ELT job"] -- "CSV" --> s3[("LocalStack S3")] -- "COPY INTO" --> snowflake[("LocalStack<br/>Snowflake")]
+        subgraph clones["Clone containers"]
+            clone1[("Clone 'shop-dev'<br/>:5432")]
+            clone2[("Clone 'pr-123'<br/>:15432")]
         end
     end
 
-    rds -- "replicate" --> connector
-    repserver -- "push" --> ecr
-    ecr -- "pull" --> extension
-    clone1 --> gateway
-    gateway -- "SQL" --> app
-    gateway -- "SQL" --> dev
-    gateway -- "SQL" --> elt
-    clone2 -. "SQL via host port" .-> dev
+    cloud <-- "1 · create Dub, masking policy" --> dubsapi
+    dubsapi -- "2 · run" --> agent
+    rds -- "3 · logical replication" --> agent
+    agent -- "changes" --> repserver
+    cloud -. "manages" .-> repserver
+    repserver -- "4 · push masked snapshot" --> ecr
+    clonesapi -- "5 · start" --> clone1
+    ecr -. "pull" .-> clone1
+    gateway -- "SQL" --> clone1
+    dev -- "AWS APIs, SQL" --> gateway
+    dev -- "CSV export" --> s3
+    s3 -- "COPY INTO" --> snowflake
+    dev -. "SQL via host port" .-> clone2
 ```
 
-1. **Production data**: the source database, e.g. PostgreSQL in (LocalStack) RDS, containing PII.
-2. **Baseshift** replicates the source database via its connector, which applies the masking policy, and the replication server maintains a masked replica and creates snapshots. Connector and replication server run in your environment, and are managed via the Baseshift Cloud control plane (SaaS). The extension can run these components in a LocalStack EKS cluster (see [Self-hosted Dubs](#self-hosted-dubs)).
-3. The replication server publishes Docker **snapshot images** to a registry, e.g. AWS ECR, or the LocalStack ECR registry for a fully local setup.
-4. This **extension** starts clones from these images as containers next to LocalStack: a default clone at startup (`BASESHIFT_IMAGE`), and further clones on demand via the clones API. Each clone is a writable copy of the masked database.
-5. **Consumers** work with the masked data only: app code running in LocalStack and developer tools connect through the LocalStack gateway (the first PostgreSQL clone is detected by its protocol handshake on port 4566), or to the host port of a clone. An analytics pipeline can extract data from a clone, and load it into Snowflake (see the [demo](demo/)).
+The extension runs inside the LocalStack container, and starts the Baseshift containers next to it on the same Docker host:
+
+1. The **Dubs API** of the extension uses the `baseshift` CLI, logged in with a Baseshift user, to create a Dub (the replicated source database) in Baseshift Cloud, and to set its masking policy.
+2. It runs the Baseshift self-hosted components as **Dub containers**: the agent, and the replication server. Both are managed via the Baseshift Cloud control plane. Alternatively, the components can run in a LocalStack EKS cluster (see [Self-hosted Dubs](#self-hosted-dubs)).
+3. The agent replicates the source database, e.g. PostgreSQL in LocalStack RDS with PII, via logical replication. The replication server applies the masking policy, and maintains a masked replica.
+4. The replication server pushes masked Docker **snapshot images** to the LocalStack ECR registry.
+5. The **Clones API** starts clones from these images as **clone containers**: a default clone at startup (`BASESHIFT_IMAGE`), and further clones on demand. Each clone is a writable copy of the masked database.
+
+Steps 1-4 are optional: if your Dub runs elsewhere (e.g., in your AWS account), clones can also be started from its snapshot images directly (see [Getting the clone image](#getting-the-clone-image)).
+
+App code running in LocalStack (e.g., Lambda functions or ECS tasks) and developer tools only ever see masked data. They connect to a clone through the LocalStack gateway (the first PostgreSQL clone is detected by its protocol handshake on port 4566), or to the host port of a clone. An ELT job can export data from a clone to S3, and load it into Snowflake (see the [demo](demo/)).
 
 ## Prerequisites
 
 - Docker
 - LocalStack Pro (free trial available)
 - [`lstk`](https://docs.localstack.cloud/aws/developer-tools/running-localstack/lstk/) CLI (`npm install -g @localstack/lstk`)
-- A Baseshift account with a Dub, and a Docker snapshot (clone image) of it
-- AWS CLI, for pulling the clone image from ECR
+- A Baseshift account, with either:
+  - a Dub and a Docker snapshot (clone image) of it, and the AWS CLI for pulling the image from ECR, or
+  - a Baseshift user, for creating [self-hosted Dubs](#self-hosted-dubs) in LocalStack
 - `make`
 
 ## Getting the clone image
@@ -244,6 +243,7 @@ Set `BASESHIFT_DB_TYPE=mysql` (or `"dbType": "mysql"` in the API) for MySQL clon
 - `BASESHIFT_DB_TYPE`: Database engine of the default clone, `postgres` (default) or `mysql`
 - `BASESHIFT_ENCRYPTION_PASSWORD`: Encryption password defined when the Dub was created (passed to the clones as `PASSWORD`)
 - `BASESHIFT_USER_EMAIL` / `BASESHIFT_USER_PASSWORD`: Credentials of the Baseshift user to create [self-hosted Dubs](#self-hosted-dubs) with
+- `BASESHIFT_BIND_HOST`: Host interface the clone ports are published on (default `127.0.0.1`). Clones are copies of production data and accept connections without a password, so only set this to `0.0.0.0` if you need remote access and the host is not reachable by untrusted parties
 - `BASESHIFT_CLONE_<NAME>`: Passed to the clone containers as `<NAME>`, for the [advanced clone options](https://docs.baseshift.com/docs/clones/local-clones#advanced-configuration), e.g. `BASESHIFT_CLONE_BACKUP_SCHEDULE`, `BASESHIFT_CLONE_MAX_BACKUPS`, or `BASESHIFT_CLONE_SPACE_USAGE_MIN_PERCENT`
 
 Note: When starting LocalStack via `lstk` (or the `localstack` CLI), prefix environment variables with `LOCALSTACK_` to forward them to the container, e.g. `LOCALSTACK_BASESHIFT_IMAGE`.
