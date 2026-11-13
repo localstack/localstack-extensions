@@ -391,7 +391,9 @@ def wait_for_dub():
 
 
 def get_clone() -> dict:
-    return requests.get(f"{CLONES_API}/{CLONE_NAME}").json()
+    return requests.get(
+        f"{CLONES_API}/{CLONE_NAME}", headers={"Accept": "application/json"}
+    ).json()
 
 
 def connect_clone():
