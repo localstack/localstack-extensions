@@ -420,6 +420,7 @@ def cmd_clone(args):
         clone = get_clone()
         if clone["status"] in ("running", "failed"):
             break
+        log(f"Waiting for clone {CLONE_NAME} to start: status={clone}")
         time.sleep(2)
     print(
         f"    clone status: {clone['status']}, endpoints: {', '.join(clone['endpoints'])}"
