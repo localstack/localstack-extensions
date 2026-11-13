@@ -1,0 +1,9 @@
+{
+  "manual_rules": [
+    {"table": "shop.public.customers", "column": "name", "masking_function": "full_name_gen"},
+    {"table": "shop.public.customers", "column": "email", "masking_function": "random_email_gen"},
+    {"table": "shop.public.customers", "column": "ssn", "masking_function": "varchar_random"},
+    {"table": "shop.public.customers", "column": "phone", "masking_function": "varchar_random"},
+    {"table": "shop.public.customers", "column": "address", "masking_function": "street_address_gen"}
+  ]
+}
