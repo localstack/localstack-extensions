@@ -53,7 +53,7 @@ Uses the official [AWS OpenSearch sample movies dataset](https://docs.aws.amazon
 
 ```bash
 # Install the ParadeDB extension
-localstack extensions install localstack-extension-paradedb
+localstack extensions install localstack-paradedb
 
 # Start LocalStack
 localstack start
