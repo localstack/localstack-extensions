@@ -77,7 +77,7 @@ The following environment variables can be passed to the LocalStack container to
 ## Install from PyPI
 
 ```bash
-localstack extensions install localstack-extension-paradedb
+localstack extensions install localstack-paradedb
 ```
 
 ## Install local development version
