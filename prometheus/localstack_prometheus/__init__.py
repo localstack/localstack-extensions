@@ -1,1 +1,0 @@
-name = "localstack_prometheus"
