@@ -4,6 +4,10 @@ AWS Cloud Proxy Extension
 A LocalStack extension to proxy and integrate AWS resources into your local machine.
 This enables one flavor of "hybrid" or "remocal" setups where you can easily bridge the gap between LocalStack (local resources) and remote AWS (resources in the real cloud).
 
+> [!WARNING]
+> This extension does not work with LocalStack for AWS 2026.9.0 and later.
+> Version 2026.9.0 removed the step in the request flow that the extension uses to forward requests to AWS.
+
 For a step-by-step tutorial, please refer to the documentation:
 https://docs.localstack.cloud/aws/tutorials/aws-proxy-localstack-extension/
 
